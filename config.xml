@@ -1,0 +1,352 @@
+<?xml version='1.0' encoding='utf-8'?>
+
+<!DOCTYPE mab SYSTEM './config.dtd' [
+<!ENTITY seuil '10800'>
+]>
+
+<mab version="4.8.0" debug="false" name="SQL Sandbox">
+	<!-- numéro de version de l'application -->
+	<!-- durée limite de vie d'une copie de base : 60*60*3 = 3 heures -->
+	<seuil>&seuil;</seuil>
+
+	<aPropos>
+		<div class="post">
+			<h2 class="title">A propos de SQL et du SGBD utilisé</h2>
+			<h3 class="posted">par E. Desmontils</h3>
+			<div class="story">
+				<p>Cette petite application est développée sous PHP 5.6.27 min. (<a
+						href="http://www.php.net/">http://www.php.net/</a>), avec SQLite3 3.8.10.2
+					comme SGBD (<a href="http://www.sqlite.org/">http://www.sqlite.org/</a>). Par
+					conséquent la syntaxe de SQL et les fonctions associées sont celles de SQLite.
+					Pour plus de renseignements, consulter <a href="http://www.sqlite.org/lang.html"
+						>http://www.sqlite.org/lang.html</a>.</p>
+				<p><a href="http://www.sqlite.org/"><img src="./images/sqlite.gif" alt="SQLite.org"
+						/></a></p>
+			</div>
+		</div>
+
+		<div class="post">
+			<h2 class="title">Quelques remarques sur SQLite</h2>
+			<div class="story">
+				<h3>Opérateur SQL 'Distinct' et SQLite</h3>
+				<p>Attention, certaines versions de SQLite (dont celle utilisée à ce jour par OVH)
+					n’acceptent pas les «distinct» dans une fonction de calcul. Il faut alors
+					trouver d’autres solutions. Par exemple : <br/> "Select count(X) From (select
+					distinct X From Table Where ...)"  <br/>=  <br/>"Select count(distinct X) From
+					Table Where ..." </p>
+				<h3>Parenthèses et jointures dans SQLite</h3>
+				<p>Attention, dans le "from", SQLite (version actuelle) "t1 natural join t2 natural
+					join t3" ne donne pas le même résultat que "(t1 natural join t2) natural join
+					t3". En effet, il considère les parenthèses comme une sous requête. Il renomme
+					donc les colonnes avec un nom "aléatoire". Du coup, l'utilisation des attributs
+					(dans le "select" ou le "where" par exemple), n'est plus possible. Il faut donc
+					préférer la version sans parenthèses.</p>
+				<h3>Guillemets</h3>
+				<p>En SQLite, les valeurs de type chaine de caractères doivent être entourées de
+					guillemets (par exemple "Dupont") et non d'apostrophe (exemple 'Dupont').</p>
+			</div>
+		</div>
+	</aPropos>
+
+	<mentions>
+		<p>Cette petite application Web a été développée à des fins pédagogiques. Elle ne peut donc
+			aucunement être utilisée pour d'autre desseins. Elle est mise à disposition dans la
+			mesure où son utilisation n'est pas détournée. L'auteur ne peut être considéré
+			responsable des dysfonctionnements ou pertes de données en cas d'utilisation détournée
+			et se réserve le droit de la supprimer à tout moment.</p>
+		<p>Application développée et testée avec PHP 5.6.27, SQLite 3.8.10.2 et SimpleXML
+			(rev. d7077fc935154236afb4fe70814ba358efdbdca4).</p>
+		<p>Design adapté du modèle "<a href="http://www.freecsstemplates.org/preview/dusplic/"
+				>dusplic</a>" de <a href="http://www.freecsstemplates.org/"><strong>Free CSS
+					Templates</strong></a>, sous licence <a href="./license.txt">Creative
+			Common</a>.</p>
+		<p>Icônes prises sur <a href="http://www.iconspedia.com/">http://www.iconspedia.com/</a>
+			dans le jeu "<a href="http://www.iconspedia.com/pack/basic-set-2061/">Basic set</a>" de
+			PixelMixer (<a href="http://pixel-mixer.com/">http://pixel-mixer.com/</a>) sous licence
+				CC-by-sa.<br/><!--img src="http://www.iconspedia.com/common/images/logo.jpg"
+				width="100" alt="CC-by-sa"/--></p>
+		<p>Effets et développement JavaScript grâce aux frameworks <a
+				href="http://www.prototypejs.org">prototypejs.org<!--img
+					src="http://www.prototypejs.org/images/logo-home.gif" alt="prototypejs.org"
+				/--></a> et <a href="http://www.script.aculo.us">script.aculo.us<!--img
+					src="http://www.script.aculo.us/scriptaculous_logo.png" width="300"
+					alt="script.aculo.us"/--></a>.</p>
+		<p>Projet soutenu par le Conseil Régional Des Pays de La Loire dans le cadre des projets
+			ENRC 2008-2009.<br/><img src="./images/RVB-PDL_Institutionnel.jpg" width="25%"
+				alt="Région Pays de la Loire"/></p>
+		<p><a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/2.0/fr/"><img
+					alt="Contrat Creative Commons" style="border-width:0"
+					src="http://i.creativecommons.org/l/by-nc-sa/2.0/fr/88x31.png"/></a><br/>Cette
+			application est mise à disposition sous la licence <a rel="license"
+				href="http://creativecommons.org/licenses/by-nc-sa/2.0/fr/">Creative Commons
+				Paternité - Pas d'Utilisation Commerciale - Partage des Conditions Initiales à
+				l'Identique 2.0 France</a> (<a
+				href="http://creativecommons.org/licenses/by-nc-sa/2.0/fr/legalcode"
+				>http://creativecommons.org/licenses/by-nc-sa/2.0/fr/legalcode</a>).</p>
+	</mentions>
+
+	<aides>
+		<div class="post">
+			<h2 class="title">Icônes utilisés</h2>
+			<div class="story">
+				<p><img src="images/home_64.png" width="32" alt="aide"/> : permet de consulter les
+					informations sur l'application.</p>
+				<p><img src="images/pencil_64.png" width="32" alt="éditer"/> : permet d'éditer une
+					requête :</p><ul>
+					<li>depuis la barre de menu, pour une nouvelle requête, celle présentée est la
+						dernière faite ;</li>
+					<li>depuis l'historique, pour retravailler une requête déjà proposée.</li>
+				</ul>
+				<p><img src="images/add_64.png" width="32" alt="aide"/> : permet de mémoriser une
+					requête.</p>
+				<p><img src="images/buy_64.png" width="32" alt="mémoire"/> : permet d'accéder au
+					requêtes mémorisées durant la session courante. Il propose un tableau où, pour
+					chaque requête, est indiqué son état (réussite <img src="images/tick_64.png"
+						width="16" alt="ok"/> ou échec <img src="images/block_64.png" width="16"
+						alt="ko"/>) et où il est possible de l'exécuter à nouveau, de l'éditer ou de
+					la supprimer. Attention, un rechargement de la page perdra ces requêtes
+					mémorisées.</p>
+				<p><img src="images/help_64.png" width="32" alt="aide"/> : permet de consulter cette
+					aide.</p>
+				<p><img src="images/gear_64.png" width="32" alt="exécuter"/> :</p><ul>
+					<li>depuis l'édition d'une requête pour lancer son exécution, l'affichage du
+						résultat est alors fait juste en dessous ;</li>
+					<li>depuis l'historique, pour exécuter à nouveau une requête déjà proposée (un
+						nouveau clic efface le résultat).</li>
+				</ul>
+				<p><img src="images/delete_64.png" width="32" alt="supprimer"/> : permet, dans
+					l'historique, de supprimer une requête.</p>
+				<p><img src="images/Database.png" width="32" alt="base de données"/>UneBase : permet
+					de consulter la description et le contenu d'une base de données.</p>
+				<p><img src="images/info_64.png" width="32" alt="base de données"/> : Propose
+					quelques informations concernant SQLite, ses particularités et ses
+					limitations.</p>
+				<p><img src="images/shield_64.png" width="32" alt="base de données"/> : Énonce les
+					différentes mentions légales liées à cette application.</p>
+			</div>
+		</div>
+	</aides>
+
+	<!-- messages d'acceuil -->
+	<listeMessages>
+		<!--message titre="" post=""><p></p>
+		</message-->
+		<message titre="Mise à jours technique" date="03/11/16" auteur="E. Desmontils">
+			<p>Une mise à jours technique a été effectuée pour passer à SQLite3.</p>
+		</message>
+		<message titre="Bienvenue" date="22/10/10 (màj le 22/11/11)" auteur="E. Desmontils">
+			<p>Cette petite application Web a pour seul objectif de permettre aux étudiants novices
+				de manipuler de petites bases de données. Elle permet d'effectuer des requêtes de
+				recherche, mais aussi des requêtes de modification de la base. Ces modifications
+				seront perdues à la fermeture de la page ou du navigateur. La base d'origine sera à
+				nouveau accessible au prochain lancement du programme.</p>
+		</message>
+
+		<message titre="Nouvelle évolution" date="18/11/11" auteur="E. Desmontils">
+			<p>SQLSandbox (version 4.5) mémorise maintenant les requêtes au niveau du navigateur (et
+				non plus sur le serveur). La mémorisation des requêtes est donc perdue lorsque la
+				page est rechargée.</p>
+		</message>
+		<message titre="Problèmes avec IE" date="16/11/11" auteur="E. Desmontils">
+			<p>SQLSandbox ne fonctionne pas correctement avec IE 8. Le disfonctionnement, et surtout
+				sa cause, ne sont pas encore bien identifiés. Avec IE 9, il semble fonctionner.</p>
+		</message>
+		<message titre="Vers une application 2.0 ?" date="15/11/11" auteur="E. Desmontils">
+			<p>Cette nouvelle version (4.0) propose un fonctionnement mettant en œuvre des
+				technologies plus récentes (plus 2.0). Bien sûr, un long chemin reste à faire...</p>
+		</message>
+		<message titre="Application partielle" date="24/10/10" auteur="E. Desmontils">
+			<p>Attention, l'application est en cours de conception. Il reste certainement plein de
+				problèmes (en particulier sur la gestion des requêtes mal rédigées, et plus
+				généralement, la gestion des erreurs). Si vous trouvez des problèmes, merci de me le
+				signaler.</p>
+		</message>
+	</listeMessages>
+
+	<!-- bases de données manipulées -->
+	<listeBases>
+		<base_de_donnee nom="cours">
+			<fichier nom="cours" prefixe="bcour"/>
+			<référence/>
+			<description>
+				<p>M. Tiron, responsable de la société de formation "Info-Dev Formation" (IDF),
+					souhaite mettre en place une base de données permettant de faire le suivi
+					pédagogique de ses étudiants. Les étudiants, seront identifiés par un numéro, le
+					nom et leur prénom. Les enseignements sont composés de matières (dont on connaît
+					le code et le titre) qui appartiennent à une formation (un diplôme) et qui sont
+					dispensées par un seul enseignant (repéré par son numéro). Les étudiants, dans
+					chaque matière, passent un contrôle continu et un examen. Le schéma de la base
+					est donc le suivant : </p>
+				<ul>
+					<li><b>etudiants</b>( noetu varchar(6) not null, nom varchar(10) not null,
+						prenom varchar(10) not null, primary key (noetu)) ;</li>
+					<li><b>matieres</b>( codemat varchar(8) not null primary key, titre varchar(10),
+						responsable varchar(4), diplome varchar(20)) ;</li>
+					<li><b>notes</b>( noe varchar(6), codemat varchar(8) , noteex numeric check
+						(noteex between 0 and 20), notecc numeric check (notecc between 0 and 20),
+						primary key (noe, codemat), CONSTRAINT FK_noe FOREIGN KEY (noe) REFERENCES
+						etudiants (noetu), CONSTRAINT FK_codemat FOREIGN KEY (codemat) REFERENCES
+						matieres (codemat)).</li>
+				</ul>
+				<p>Cette base de données est volontairement très simple, car elle est utilisée pour
+					présenter les concepts de base des bases de données relationnelles durant le CM
+					en faculté des sciences et des techniques (université de Nantes).</p>
+			</description>
+		</base_de_donnee>
+		<base_de_donnee nom="tp-robots">
+			<fichier nom="robots"/>
+			<référence/>
+			<description>
+				<p>Cette base de données suivante a été définie par une association pour gérer un
+					classement international de robots. Elle est volontairement très simple, car
+					elle est utilisée pour manipuler les concepts de base des bases de données
+					relationnelles durant les TP en faculté des sciences et des techniques
+					(université de Nantes). Ce classement est établi sur une année, en prenant en
+					compte les résultats de chaque robot aux différentes compétitions organisées par
+					l'association. Un robot a un nom, qui lui est propre. Il est construit par un
+					seul laboratoire, lui-même établi dans un seul pays. Il appartient à une
+					catégorie de robots et une seule. Les catégories sont représentées par des
+					nombres. Au cours de l'année, les caractéristiques d'un robot ne peuvent changer
+					au point de le faire passer dans une autre catégorie. Pour que son robot puisse
+					être classé, le laboratoire doit verser la somme de 5000 euros au cours de
+					l'année. Cette somme est payable en plusieurs fois, lors de l'inscription du
+					robot aux compétitions. Un laboratoire peut inscrire plusieurs robots, de même
+					catégorie ou non. Dans une compétition, il y a plusieurs épreuves pour chaque
+					catégorie de robots. On suppose que les noms des compétitions sont tous
+					différents. Les numéros d'épreuves sont tous différents dans une compétition,
+					mais pas forcément d'une compétition à l'autre. Les épreuves ont lieu sur une
+					demi-journée (matin ou après-midi). A l'issue de chaque épreuve, chaque robot
+					obtient un certain nombre de points et un gain (en euros). Le classement toutes
+					catégories confondues s'effectue en faisant la somme de tous les points obtenus
+					pour chaque robot. Les gains obtenus par un robot reviennent au laboratoire qui
+					l'a construit. Le schéma de la base est donc le suivant :</p>
+				<ul>
+					<li><b>robots</b> (nom varchar(6), labo varchar(6), pays varchar(8), cat int,
+						primary key (nom)),<br/> Le robot "nom" a été réalisé par le laboratoire
+						"labo" du pays "pays" ; il entre dans la catégorie "cat" ; </li>
+					<li><b>inscriptions</b> (nom varchar(6), compet varchar(4), montant real,
+						primary key (nom, compet)), <br/> Le robot "nom" a été inscrit à la
+						compétition "compet" ; la somme "montant" a été versée ; </li>
+					<li><b>competitions</b> (compet varchar(4) primary key, ville varchar(10), pays
+						varchar(8), datc date), <br/> La compétition "compet" a lieu dans la ville
+						"ville" du pays "pays" à la date "dat" ;</li>
+					<li><b>epreuves</b> (numep int, compet varchar(4), cat int, titre varchar(12),
+						demij char(2), primary key (numep, compet) ), <br/> L'épreuve de numéro
+						"numep" de la compétition "compet" est réservée aux robots de catégorie
+						"cat" ; elle a un "titre" et se déroule dans la demi-journée "demij" ;</li>
+					<li><b>resultats</b> (nom varchar(6), numep int, compet varchar(4), nbpts int,
+						gain real, primary key(nom, numep, compet) ), <br/> Le robot "nom" a fait un
+						score de "nbpts" à l'épreuve de numéro "numep" de la compétition "compet" et
+						il a obtenu "gain" euros pour ses résultats.</li>
+				</ul>
+			</description>
+		</base_de_donnee>
+		<!--base_de_donnee nom="tp-mondial">
+			<fichier nom="tp_mondial.sqlite"/>
+			<référence>http://www.dbis.informatik.uni-goettingen.de/Mondial/</référence>
+			<description>
+				<p>La base de données MONDIAL a été construite à partir des sources de données
+					géographiques Web : le CIA World Factbook (<a
+						href="https://www.cia.gov/library/publications/the-world-factbook/"
+						>https://www.cia.gov/library/publications/the-world-factbook/</a>), un
+					prédécesseur de Global Satistics (http://www.geohive.com/) qui a été collectée
+					par Johan van der Heijden, d'autres sources textuelles pour les coordonnées,
+					l'International Atlas de Kümmerly &amp; Frey, Rand McNally, et Westermann et des
+					données géographiques de la base de Karlsruhe TERRA. Cette base peut être testée
+					dans sa version la plus récente sur <a
+						href="http://www.semwebtech.org/sqlfrontend/"
+						>http://www.semwebtech.org/sqlfrontend/</a>.</p>
+			</description>
+		</base_de_donnee-->
+		<base_de_donnee nom="tp-cinema">
+			<fichier nom="cinema"/>
+			<référence>http://miage.univ-nantes.fr/miage/DVD-MIAGEv2/BD.html</référence>
+			<description>
+				<p>La base de données Programme-Cinéma qui décrit les films qui
+					passent dans les cinémas de Loire Atlantique. Elle est décrite par les tables
+					suivantes :</p>
+				<ul>
+					<li><b>Acteur</b> (<em>id_act</em>, nom, prenom, age)<br/>
+						un acteur est identifié par un identifiant et possède les caractéristiques suivantes : nom,
+						prénom, age ;</li>
+					<li><b>Jouer</b>
+						(<em>id_act</em>, <em>id_film</em>, role)<br/>décrit les acteurs jouant dans les films, la relation est identifiée
+						par le numéro du film et le numéro de l'acteur et on précise le rôle de l'acteur (personnage
+						joué).</li>
+					<li><b>Film</b>
+						(<em>id</em>, titre, genre, année)<br/>décrit un film (son titre, son genre (Drame /
+						Comédie / Epouvante / Western /  Policier / Autres) et
+						l'année de sa sortie – un film est identifié par un identifiant</li>
+					<li><b>Projection</b>
+						(<em>id_cine</em>, <em>id_film</em>, <em>date</em>)<br/>décrit les films passant dans un cinéma à une date donnée
+						– la projection est identifiée par l'identifiant du film, du cinéma et de sa date de projection
+						(JJ/MM/AAAA)</li>
+					<li><b>Cinema</b>
+						(<em>id_cine</em>, Nom, Ville) : décrit les cinémas de Nantes. Un cinéma de Nantes est
+						identifié par un identifiant et possède un nom et la ville où
+						il se situe.</li>
+				</ul>
+			</description>
+		</base_de_donnee>
+		<base_de_donnee nom="tp-vols">
+			<fichier nom="vols"/>
+			<référence/>
+			<description>
+				<p>Cette base de données a été créée par Sylvie Cazalens et a été principalement
+					utilisée pour les L3 informatique à la faculté des Sciences et Techniques de
+					Nantes. Elle est actuellement utilisée pour les TPs de L3 math-eco. Cette BD
+					gère les réservations de vols sur différentes compagnies aériennes et les
+					employés (notamment les pilotes). Le schéma de la base de données est le suivant
+					:</p>
+				<ul>
+					<li><b>vols</b> (<em>nov</em> char(6), origin varchar2(10), destin varchar2(10),
+						distance number, hdep number(4,2), harr number(4,2), prixbase number) <br/>
+						Un vol est identifié par un numéro dont les 2 premières lettres indiquent la
+						compagnie, une ville d'origine et une de destination, les heures de départ
+						et d'arrivée ainsi que le prix de base. Les heures sont données sous forme
+						de décimal comportant au plus 2 chiffres après la virgule. Nous supposerons
+						que la différence ’harr-hdep’ représente toujours la durée du vol.</li>
+					<li><b>varprix</b> (<em>class</em> number(1), coeff number(4,2))<br/> Le prix du
+						vol sera obtenu en multipliant le prix de base se trouvant dans la relation
+						vols par le coefficient ’coeff’ en fonction de la classe.</li>
+					<li><b>employes</b> (<em>noe</em> number(5), nome varchar2(10), naiss date,
+						embauche date, derpromo date, salaire number, indem number)</li>
+					<li><b>qualif</b> (<em>noe</em> number(5), <em>noav</em> number(4)) <br/> Cette
+						relation indique sur quels avions les employés pilotes sont habilités. Tout
+						pilote apparaît au moins une fois dans cette relation ; aucun employé non
+						pilote n’y figure.</li>
+					<li><b>avions</b> (<em>noav</em> number(4), type varchar2(10), distmax
+						number)<br/> Un avion est identifié par son numéro, possède un type et une
+						distance maximale sur laquelle il peut voler.</li>
+					<li><b>clients</b> (<em>nocl</em> number(5), nomcl varchar2(10), prenomcl
+						varchar2(10), nomsoc varchar2(10))<br/> Les clients ont un numéro qui leur
+						est propre. Ils possèdent un nom, un prénom et le nom de la société pour
+						laquelle ils travaillent.</li>
+					<li><b>reservs</b> (<em>nocl</em> number(5), <em>nov</em> char(6), <em>jour</em> date,
+						class number(1)) <br/> Une réservation est faite un jour donné pour un vol
+						et un client. Il ne peut donc pas y avoir plus d'une réservation par jour
+						pour un même client sur le même vol.</li>
+				</ul>
+			</description>
+		</base_de_donnee>
+		<base_de_donnee nom="tp-Lutins">
+			<fichier nom="lutins.db"/>
+			<référence/>
+			<description>
+				<p>Soit une base de données permettant au Père Noël de gérer les commandes et les livraisons qui devront être faites aux enfants en Europe en décembre 2019. Elle est décrite par les tables suivantes :</p>
+				<ul>
+					<li><b>Lutin</b> (<em>idLutin</em>, prenom, pays)<br/>
+						représente tous les lutins du Père Noël – chaque lutin est identifié par un identifiant et caractérisé par son prénom, et le pays où il réside ;</li>
+					<li><b>Livraison</b>
+						(#<em>idLutin</em>, <em>idCommande</em>)<br/>représente les livraisons que devront faire les lutins le jour de Noël ;</li>
+					<li><b>Enfant</b>
+						(<em>idEnfant</em>, prenom, ville, pays)<br/>dreprésente tous les enfants d’Europe qui vont passer des commandes au Père Noël ;</li>
+					<li><b>Commande</b>
+						(<em>idCommande</em>, #idEnfant, #idJ)<br/>représente les commandes faites par les enfants, chaque commande est identifiée par un identifiant, correspond à un jouet (idJ) pour un enfant donné. Un enfant peut passer plusieurs commandes pour ce Noël ;</li>
+					<li><b>Jouet</b>
+						(<em>idJ</em>,nom, prix)<br/>représente tous les jouets disponibles pour cette année dans la réserve du Père Noël, identifiés par un identifiant, le nom du jouet et son prix pour cette année.</li>
+				</ul>
+			</description>
+		</base_de_donnee>
+	</listeBases>
+</mab>

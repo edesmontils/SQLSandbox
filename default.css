@@ -1,0 +1,166 @@
+
+/*
+Design by Free CSS Templates
+http://www.freecsstemplates.org
+Released for free under a Creative Commons Attribution 2.5 License
+*/
+
+body {
+	margin: 0 20px 0 0;
+	padding: 0;
+	background: #FFFFFF url(images/img1.jpg) repeat-y;
+	font: normal small "Trebuchet MS", Arial, Helvetica, sans-serif;
+	color: #8A8E99;
+}
+
+form {
+	margin: 0;
+	padding: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+	text-transform: uppercase;
+	color: #6F7A9F;
+}
+
+th {
+	font-weight : bolder;
+	font-style : italic;
+	color: #6F7A9F;
+}
+
+a {
+	border-bottom: 1px solid #8A8E99;
+	text-decoration: none;
+	color: #4369D1;
+}
+
+a:hover {
+	border: none;
+}
+
+/* Boxed */
+
+.boxed {
+}
+
+.boxed .heading {
+	margin: 0;
+	padding: 10px 30px 5px 30px;
+	font-size: 1em;
+}
+
+.boxed .content {
+	padding-bottom: 20px;
+	background: url(images/img3.jpg) no-repeat left bottom;
+}
+
+.boxed ul {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.boxed li {
+	padding: 2px 30px 2px 40px;
+	background: url(images/img4.jpg) no-repeat;
+}
+
+.boxed a {
+	border: none;
+}
+
+/* Header */
+
+#header {
+	width: 230px;
+	height: 90px;
+	padding: 70px 0 0 30px;
+	background: url(images/img2.jpg) no-repeat;
+}
+
+#header h1 {
+	margin: 0;
+	padding: 0;
+	font-size: 2em;
+}
+
+#header h2 {
+	margin: -.75em 0 0 2px;
+	padding: 0;
+	font-size: 1em;
+}
+
+#header a {
+	border: none;
+	color: #6F7A9F;
+}
+
+/* Posts */
+
+#posts {
+	float: left;
+	position: absolute;
+	left: 270px;
+	top: 0;
+	margin: 160px 20px 0 0;
+}
+
+.post {
+	margin-bottom: 20px;
+	padding-bottom: 20px;
+	border-bottom: 1px dotted #8A8E99;
+}
+
+.title {
+	margin: 0;
+	font-size: 1.8em;
+}
+
+.posted {
+	margin-top: 0;
+	font-size: .8em;
+}
+
+.meta {
+	font-size: .8em;
+}
+
+/* Search */
+
+#search form {
+	padding: 0 30px 0 40px;
+}
+
+#textfield1 {
+	width: 160px;
+	padding: 2px 5px;
+	background: url(images/img5.jpg);
+	border: none;
+	border-top: 1px solid #638DBD;
+	border-left: 1px solid #638DBD;
+	font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+	font-weight: bold;
+	color: #8A8E99;
+}
+
+#submit1 {
+	display: none;
+}
+
+/* Footer */
+
+#footer {
+	clear: both;
+}
+
+#footer p {
+	padding-top: 20px;
+	text-align: left;
+	font-size: .7em;
+	margin: 20px;
+}
+
+#footer a {
+	color: #8A8E99;
+}

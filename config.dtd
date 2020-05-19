@@ -1,0 +1,35 @@
+<?xml encoding="UTF-8"?>
+
+<!ENTITY % html SYSTEM "./xhtml1-strict.dtd">
+%html;
+
+<!ELEMENT mab (seuil,aPropos,mentions,aides,listeMessages,listeBases)>
+<!ATTLIST mab 
+  version CDATA #REQUIRED
+  name CDATA #REQUIRED
+  debug (true|false) 'false'>
+
+<!ELEMENT seuil (#PCDATA)>
+
+<!ELEMENT aPropos (%Block;)>
+<!ELEMENT mentions (%Block;)>
+<!ELEMENT aides (%Block;)>
+
+<!ELEMENT listeMessages (message)*>
+<!ELEMENT message (%Block;)>
+<!ATTLIST message 
+	titre CDATA #REQUIRED
+	auteur CDATA "E. Desmontils" 
+	date CDATA #REQUIRED >
+	
+<!ELEMENT listeBases (base_de_donnee)*>
+<!ELEMENT base_de_donnee (fichier,référence,description)>
+<!ATTLIST base_de_donnee nom NMTOKEN #REQUIRED>
+
+<!ELEMENT fichier EMPTY>
+<!ATTLIST fichier 
+    nom CDATA #REQUIRED 
+    prefixe NMTOKEN 'btp'>
+
+<!ELEMENT référence (#PCDATA)>
+<!ELEMENT description (%Block;)*>

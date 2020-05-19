@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="12.2">
+    <meta>
+        <filters directoryPatterns="" filePatterns="" positiveFilePatterns="" showHiddenFiles="false"/>
+        <options/>
+    </meta>
+    <projectTree name="sqlsandbox.xpr">
+        <file name="js/bd_base.js"/>
+        <file name="config.dtd"/>
+        <file name="config.xml"/>
+        <file name="controler.php5"/>
+        <file name="default.css"/>
+        <file name="fonctions.php"/>
+        <file name="index.php5"/>
+        <file name="prototip.css"/>
+        <file name="resultat.php"/>
+        <file name="xhtml1-strict.dtd"/>
+        <file name="xhtml-lat1.ent"/>
+        <file name="xhtml-special.ent"/>
+        <file name="xhtml-symbol.ent"/>
+    </projectTree>
+</project>
