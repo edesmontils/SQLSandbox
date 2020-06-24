@@ -41,7 +41,7 @@ try {
 			'prefixe' => (string)$base->fichier['prefixe'],
 			'référence' => (string)$base->référence,
 			'description' => (string)$base->description->asXML(),
-			'tables' => $tables
+			'tables' => array() //$tables
 		);
 		if ($debug) echo "<p>Description de ".$listeBase[(string)$base['nom']]['fichier']."</p>";
 	}
