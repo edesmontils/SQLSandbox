@@ -4,5 +4,6 @@ Cette petite application Web a été développée à des fins pédagogiques. Ell
 
 Elle peut être testée ici : http://desmontils.net/SQLSandbox/
 
-
+NB : pour le bon fonctionnement de l'application, il faut vérifier que le répertoire "tmp" est accessible en écriture.
+A cas où, faire : 'chmod a+w tmp'
 
