@@ -348,5 +348,24 @@
 				</ul>
 			</description>
 		</base_de_donnee>
+		<base_de_donnee nom="tp-em">
+			<fichier nom="em.db"/>
+			<référence/>
+			<description>
+				<p>Soit une base de données géographique orientée sur les fleuves et espaces maritimes du continent européen. Elle est décrite par les tables suivantes :</p>
+				<ul>
+					<li><b>Pays</b> (<em>id_p</em>,nom_p, superficie, nbhab)<br/>
+						représente tous les pays – chaque pays est identifié par un identifiant et caractérisé par son nom, sa surface et le nombre d'habitants;</li>
+					<li><b>EspaceMaritime</b>
+						(<em>id_em</em>, nom_e, type)<br/>représente les espaces maritimes - chaque espace est identifié par un identifiant et est caractérisé par son nom et son type ("mer" ou "océan") ;</li>
+					<li><b>Fleuve</b>
+						(<em>id_f</em>, nom_f, longueur, #id_p, #id_em)<br/>représente les fleuves d’Europe - chaque fleuve est identifié par un identifiant et caractérisé par son nom, sa longueur, le pays dans lequel il prend sa source et l'espace maritime dans lequel il se jette;</li>
+					<li><b>Cotoie</b>
+						(#<em>id_p</em>, #<em>id_em</em>)<br/>représente la proximité entre un pays et un espace maritime ;</li>
+					<li><b>Parcourt</b>
+						(#<em>id_p</em>,#<em>id_f</em>)<br/>représente les pays parcourus par un fleuve.</li>
+				</ul>
+			</description>
+		</base_de_donnee>
 	</listeBases>
 </mab>
