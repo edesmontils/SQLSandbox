@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE base_de_donnee SYSTEM '../../config.dtd'>
+<base_de_donnee nom="tp-robots">
+    <fichier nom="robots"/>
+    <référence/>
+    <description>
+        <p>Cette base de données suivante a été définie par une association pour gérer un
+            classement international de robots. Elle est volontairement très simple, car
+            elle est utilisée pour manipuler les concepts de base des bases de données
+            relationnelles durant les TP en faculté des sciences et des techniques
+            (université de Nantes). Ce classement est établi sur une année, en prenant en
+            compte les résultats de chaque robot aux différentes compétitions organisées par
+            l'association. Un robot a un nom, qui lui est propre. Il est construit par un
+            seul laboratoire, lui-même établi dans un seul pays. Il appartient à une
+            catégorie de robots et une seule. Les catégories sont représentées par des
+            nombres. Au cours de l'année, les caractéristiques d'un robot ne peuvent changer
+            au point de le faire passer dans une autre catégorie. Pour que son robot puisse
+            être classé, le laboratoire doit verser la somme de 5000 euros au cours de
+            l'année. Cette somme est payable en plusieurs fois, lors de l'inscription du
+            robot aux compétitions. Un laboratoire peut inscrire plusieurs robots, de même
+            catégorie ou non. Dans une compétition, il y a plusieurs épreuves pour chaque
+            catégorie de robots. On suppose que les noms des compétitions sont tous
+            différents. Les numéros d'épreuves sont tous différents dans une compétition,
+            mais pas forcément d'une compétition à l'autre. Les épreuves ont lieu sur une
+            demi-journée (matin ou après-midi). A l'issue de chaque épreuve, chaque robot
+            obtient un certain nombre de points et un gain (en euros). Le classement toutes
+            catégories confondues s'effectue en faisant la somme de tous les points obtenus
+            pour chaque robot. Les gains obtenus par un robot reviennent au laboratoire qui
+            l'a construit. Le schéma de la base est donc le suivant :</p>
+        <ul>
+            <li><b>robots</b> (nom varchar(6), labo varchar(6), pays varchar(8), cat int,
+                primary key (nom)),<br/> Le robot "nom" a été réalisé par le laboratoire
+                "labo" du pays "pays" ; il entre dans la catégorie "cat" ; </li>
+            <li><b>inscriptions</b> (nom varchar(6), compet varchar(4), montant real,
+                primary key (nom, compet)), <br/> Le robot "nom" a été inscrit à la
+                compétition "compet" ; la somme "montant" a été versée ; </li>
+            <li><b>competitions</b> (compet varchar(4) primary key, ville varchar(10), pays
+                varchar(8), datc date), <br/> La compétition "compet" a lieu dans la ville
+                "ville" du pays "pays" à la date "dat" ;</li>
+            <li><b>epreuves</b> (numep int, compet varchar(4), cat int, titre varchar(12),
+                demij char(2), primary key (numep, compet) ), <br/> L'épreuve de numéro
+                "numep" de la compétition "compet" est réservée aux robots de catégorie
+                "cat" ; elle a un "titre" et se déroule dans la demi-journée "demij" ;</li>
+            <li><b>resultats</b> (nom varchar(6), numep int, compet varchar(4), nbpts int,
+                gain real, primary key(nom, numep, compet) ), <br/> Le robot "nom" a fait un
+                score de "nbpts" à l'épreuve de numéro "numep" de la compétition "compet" et
+                il a obtenu "gain" euros pour ses résultats.</li>
+        </ul>
+    </description>
+</base_de_donnee>

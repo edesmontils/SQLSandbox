@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE base_de_donnee SYSTEM '../../config.dtd'>
+<base_de_donnee nom="tp-Lutins">
+    <fichier nom="lutins.db"/>
+    <référence/>
+    <description>
+        <p>Soit une base de données permettant au Père Noël de gérer les commandes et les livraisons qui devront être faites aux enfants en Europe en décembre 2019. Elle est décrite par les tables suivantes :</p>
+        <ul>
+            <li><b>Lutin</b> (<em>idLutin</em>, prenom, pays)<br/>
+                représente tous les lutins du Père Noël – chaque lutin est identifié par un identifiant et caractérisé par son prénom, et le pays où il réside ;</li>
+            <li><b>Livraison</b>
+                (#<em>idLutin</em>, <em>idCommande</em>)<br/>représente les livraisons que devront faire les lutins le jour de Noël ;</li>
+            <li><b>Enfant</b>
+                (<em>idEnfant</em>, prenom, ville, pays)<br/>dreprésente tous les enfants d’Europe qui vont passer des commandes au Père Noël ;</li>
+            <li><b>Commande</b>
+                (<em>idCommande</em>, #idEnfant, #idJ)<br/>représente les commandes faites par les enfants, chaque commande est identifiée par un identifiant, correspond à un jouet (idJ) pour un enfant donné. Un enfant peut passer plusieurs commandes pour ce Noël ;</li>
+            <li><b>Jouet</b>
+                (<em>idJ</em>,nom, prix)<br/>représente tous les jouets disponibles pour cette année dans la réserve du Père Noël, identifiés par un identifiant, le nom du jouet et son prix pour cette année.</li>
+        </ul>
+    </description>
+</base_de_donnee>

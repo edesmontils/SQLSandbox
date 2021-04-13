@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE base_de_donnee SYSTEM '../../config.dtd'>
+<base_de_donnee nom="tp-vols">
+    <fichier nom="vols"/>
+    <référence/>
+    <description>
+        <p>Cette base de données a été créée par Sylvie Cazalens et a été principalement
+            utilisée pour les L3 informatique à la faculté des Sciences et Techniques de
+            Nantes. Elle est actuellement utilisée pour les TPs de L3 math-eco. Cette BD
+            gère les réservations de vols sur différentes compagnies aériennes et les
+            employés (notamment les pilotes). Le schéma de la base de données est le suivant
+            :</p>
+        <ul>
+            <li><b>vols</b> (<em>nov</em> char(6), origin varchar2(10), destin varchar2(10),
+                distance number, hdep number(4,2), harr number(4,2), prixbase number) <br/>
+                Un vol est identifié par un numéro dont les 2 premières lettres indiquent la
+                compagnie, une ville d'origine et une de destination, les heures de départ
+                et d'arrivée ainsi que le prix de base. Les heures sont données sous forme
+                de décimal comportant au plus 2 chiffres après la virgule. Nous supposerons
+                que la différence ’harr-hdep’ représente toujours la durée du vol.</li>
+            <li><b>varprix</b> (<em>class</em> number(1), coeff number(4,2))<br/> Le prix du
+                vol sera obtenu en multipliant le prix de base se trouvant dans la relation
+                vols par le coefficient ’coeff’ en fonction de la classe.</li>
+            <li><b>employes</b> (<em>noe</em> number(5), nome varchar2(10), naiss date,
+                embauche date, derpromo date, salaire number, indem number)</li>
+            <li><b>qualif</b> (<em>noe</em> number(5), <em>noav</em> number(4)) <br/> Cette
+                relation indique sur quels avions les employés pilotes sont habilités. Tout
+                pilote apparaît au moins une fois dans cette relation ; aucun employé non
+                pilote n’y figure.</li>
+            <li><b>avions</b> (<em>noav</em> number(4), type varchar2(10), distmax
+                number)<br/> Un avion est identifié par son numéro, possède un type et une
+                distance maximale sur laquelle il peut voler.</li>
+            <li><b>clients</b> (<em>nocl</em> number(5), nomcl varchar2(10), prenomcl
+                varchar2(10), nomsoc varchar2(10))<br/> Les clients ont un numéro qui leur
+                est propre. Ils possèdent un nom, un prénom et le nom de la société pour
+                laquelle ils travaillent.</li>
+            <li><b>reservs</b> (<em>nocl</em> number(5), <em>nov</em> char(6), <em>jour</em> date,
+                class number(1)) <br/> Une réservation est faite un jour donné pour un vol
+                et un client. Il ne peut donc pas y avoir plus d'une réservation par jour
+                pour un même client sur le même vol.</li>
+        </ul>
+    </description>
+</base_de_donnee>
