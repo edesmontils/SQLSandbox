@@ -22,9 +22,16 @@
 	auteur CDATA "E. Desmontils" 
 	date CDATA #REQUIRED >
 	
-<!--  Définition d'une base de donnée : soit en local soit dans un autre document ("config-bd") qui pour racine "base_de_donnee" -->
-<!ELEMENT listeBases (base_de_donnee)*>
-<!ELEMENT base_de_donnee ( (fichier,référence,description, (liste-TP, liste-exercices)? ) | config-bd)>
+<!--  Définition d'une base de donnée : soit en local soit dans un autre document ("configBD", le fichier doit s'appeler "config.xml") qui pour racine "base_de_donnee" -->
+<!ELEMENT listeBases (base_de_donnee | configBD)*>
+
+<!-- si la description de la base est externe, "localisation" indique le répertoire et "fichier" le fichier de configuration -->
+<!ELEMENT configBD EMPTY >
+<!ATTLIST configBD 
+    localisation CDATA #REQUIRED 
+    fichier CDATA "config.xml">
+
+<!ELEMENT base_de_donnee (fichier,référence,description, (liste-TP, liste-exercices)? )>
 <!ATTLIST base_de_donnee nom NMTOKEN #REQUIRED>
 
 <!ELEMENT fichier EMPTY>
@@ -95,5 +102,3 @@
 <!ELEMENT Text (#PCDATA) >
 <!ELEMENT vide EMPTY > <!-- Utile pour les requêtes à trou dans le From -->
 
-<!ELEMENT config-bd EMPTY >
-<!ATTLIST config-bd fichier CDATA #REQUIRED >

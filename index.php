@@ -35,6 +35,8 @@ try {
 	
 	//Gestion des bases
 	$listeBase = array();
+
+	//Définitions dans le fichier de config principal
 	foreach($config->listeBases->base_de_donnee as $base) {
 		$listeBase[(string)$base['nom']] = array(
 			'fichier' => (string)$base->fichier['nom'],
@@ -45,6 +47,23 @@ try {
 		);
 		if ($debug) echo "<p>Description de ".$listeBase[(string)$base['nom']]['fichier']."</p>";
 	}
+
+	// Définitions dans un fichier de config spécialisé/dédié
+	foreach($config->listeBases->configBD as $configBD) {
+		$BD = new SimpleXMLElement($configBD['localisation'].'/'.$configBD['fichier'],
+                                   LIBXML_DTDATTR|LIBXML_DTDLOAD|LIBXML_DTDVALID
+                                   |LIBXML_NOBLANKS|LIBXML_NOCDATA,
+                                   true);
+		$listeBase[(string)$BD['nom']] = array(
+			'fichier' => $configBD['localisation'].'/'.(string)$BD->fichier['nom'],
+			'prefixe' => (string)$BD->fichier['prefixe'],
+			'référence' => (string)$BD->référence,
+			'description' => (string)$BD->description->asXML(),
+			'tables' => array() //$tables
+		);
+		if ($debug) echo "<p>Description de ".$listeBase[(string)$BD['nom']]['fichier']."</p>";
+	}
+
 	$listeNoms = array_keys($listeBase);
 } catch(Exception $e) {
   echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()

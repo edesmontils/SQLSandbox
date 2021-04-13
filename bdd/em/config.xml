@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE base_de_donnee SYSTEM '../../config.dtd'>
+<base_de_donnee nom="tp-em">
+    <fichier nom="em.db"/>
+    <référence/>
+    <description>
+        <p>Soit une base de données géographique orientée sur les fleuves et espaces maritimes du continent européen. Elle est décrite par les tables suivantes :</p>
+        <ul>
+            <li><b>Pays</b> (<em>id_p</em>,nom_p, superficie, nbhab)<br/>
+                représente tous les pays – chaque pays est identifié par un identifiant et caractérisé par son nom, sa surface et le nombre d'habitants;</li>
+            <li><b>EspaceMaritime</b>
+                (<em>id_em</em>, nom_e, type)<br/>représente les espaces maritimes - chaque espace est identifié par un identifiant et est caractérisé par son nom et son type ("mer" ou "océan") ;</li>
+            <li><b>Fleuve</b>
+                (<em>id_f</em>, nom_f, longueur, #id_p, #id_em)<br/>représente les fleuves d’Europe - chaque fleuve est identifié par un identifiant et caractérisé par son nom, sa longueur, le pays dans lequel il prend sa source et l'espace maritime dans lequel il se jette;</li>
+            <li><b>Cotoie</b>
+                (#<em>id_p</em>, #<em>id_em</em>)<br/>représente la proximité entre un pays et un espace maritime ;</li>
+            <li><b>Parcourt</b>
+                (#<em>id_p</em>,#<em>id_f</em>)<br/>représente les pays parcourus par un fleuve.</li>
+        </ul>
+    </description>
+    <liste-TP>
+        <TP nom="tp-em-01">
+            <objectif-pédagogique><p>Quelques requête simples.</p></objectif-pédagogique>
+            <ref-exercice exo="tr-em-01"/>
+            <ref-exercice exo="re-em-01"/>
+            <ref-exercice exo="int-em-01"/>
+            <ref-exercice exo="cmp-em-01"/>
+        </TP>
+        <TP nom="tp-em-02">
+            <objectif-pédagogique></objectif-pédagogique>
+            <ref-exercice exo="tp-em-02"/>
+            <ref-exercice exo="re-em-02"/>
+        </TP>
+    </liste-TP>
+    <liste-exercices>
+        <rq-résultat code="re-em-01">
+            <concerne><projection/><sélection-simple/></concerne>
+            <intention>On recherche les fleuves de longueur supérieure à 1000 Km.</intention>
+            <SQL>
+                <Select>nom-f</Select>
+                <From><Table>Fleuve</Table></From>
+                <Where>longueur>1000</Where>
+            </SQL>
+        </rq-résultat>
+        <rq-résultat code="re-em-02">
+            <concerne><projection/><sélection-simple/><jointure-simple/></concerne>
+            <intention></intention>
+            <SQL>
+                <Select>nom-f</Select>
+                <From><Natural-Join>
+                    <Table>Fleuve</Table>
+                    <Table>Espace-Maritime</Table>
+                </Natural-Join></From>
+                <Where>type='mer'</Where>
+            </SQL>
+        </rq-résultat>
+        <rq-trou code="tr-em-01">
+            <concerne><projection/></concerne>
+            <intention>On recherche les fleuves de longueur supérieure à 1000 Km.</intention>
+            <SQL>
+                <Select>nom-f</Select>
+                <From><Table>Fleuve</Table></From>
+                <Where>longueur>1000</Where>
+            </SQL>
+            <SQL>
+                <Select></Select>
+                <From><Table>Fleuve</Table></From>
+                <Where>longueur>1000</Where>
+            </SQL>
+        </rq-trou>
+        <rq-trou code="tr-em-02">
+            <concerne><projection/><sélection-simple/></concerne>
+            <intention></intention>
+            <SQL>
+                <Select>nom-f</Select>
+                <From><Natural-Join>
+                    <Table>Fleuve</Table>
+                    <Table>Espace-Maritime</Table>
+                </Natural-Join></From>
+                <Where>type='mer'</Where>
+            </SQL>
+            <SQL>
+                <Select></Select>
+                <From><vide/></From>
+                <Where>type='mer'</Where>
+            </SQL>
+            <résultat/>
+        </rq-trou>
+        <rq-intention code="int-em-01">
+            <concerne></concerne>
+            <intention>Le nom des fleuves qui se jettent dans une mer.</intention>
+            <SQL>
+                <Select>nom-f</Select>
+                <From><Natural-Join>
+                    <Table>Fleuve</Table>
+                    <Table>Espace-Maritime</Table>
+                </Natural-Join></From>
+                <Where>type='mer'</Where>
+            </SQL>
+        </rq-intention>
+        <rq-complète code="cmp-em-01">
+            <concerne><projection/><sélection-simple/><jointure-simple/></concerne>
+            <intention>Les fleuves qui se jettent dans une mer.</intention>
+            <SQL>
+                <Select>nom-f</Select>
+                <From><Natural-Join>
+                    <Table>Fleuve</Table>
+                    <Table>Espace-Maritime</Table>
+                </Natural-Join></From>
+                <Where>type='mer'</Where>
+            </SQL>
+        </rq-complète>
+    </liste-exercices>
+</base_de_donnee>
