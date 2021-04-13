@@ -4,7 +4,7 @@
 <!ENTITY seuil '10800'>
 ]>
 
-<mab version="4.8.0" debug="false" name="SQL Sandbox">
+<mab version="4.9.0" debug="false" name="SQL Sandbox">
 	<!-- numéro de version de l'application -->
 	<!-- durée limite de vie d'une copie de base : 60*60*3 = 3 heures -->
 	<seuil>&seuil;</seuil>
@@ -166,7 +166,7 @@
 	<!-- bases de données manipulées -->
 	<listeBases>
 		<base_de_donnee nom="cours">
-			<fichier nom="cours" prefixe="bcour"/>
+			<fichier nom="bdd/cours/cours" prefixe="bcour"/>
 			<référence/>
 			<description>
 				<p>M. Tiron, responsable de la société de formation "Info-Dev Formation" (IDF),
@@ -194,7 +194,7 @@
 			</description>
 		</base_de_donnee>
 		<base_de_donnee nom="tp-robots">
-			<fichier nom="robots"/>
+			<fichier nom="bdd/robots/robots"/>
 			<référence/>
 			<description>
 				<p>Cette base de données suivante a été définie par une association pour gérer un
@@ -259,7 +259,7 @@
 			</description>
 		</base_de_donnee-->
 		<base_de_donnee nom="tp-cinema">
-			<fichier nom="cinema"/>
+			<fichier nom="bdd/cinema/cinema"/>
 			<référence>http://miage.univ-nantes.fr/miage/DVD-MIAGEv2/BD.html</référence>
 			<description>
 				<p>La base de données Programme-Cinéma qui décrit les films qui
@@ -289,7 +289,7 @@
 			</description>
 		</base_de_donnee>
 		<base_de_donnee nom="tp-vols">
-			<fichier nom="vols"/>
+			<fichier nom="bdd/aeroport/vols"/>
 			<référence/>
 			<description>
 				<p>Cette base de données a été créée par Sylvie Cazalens et a été principalement
@@ -330,7 +330,7 @@
 			</description>
 		</base_de_donnee>
 		<base_de_donnee nom="tp-Lutins">
-			<fichier nom="lutins.db"/>
+			<fichier nom="bdd/lutins/lutins.db"/>
 			<référence/>
 			<description>
 				<p>Soit une base de données permettant au Père Noël de gérer les commandes et les livraisons qui devront être faites aux enfants en Europe en décembre 2019. Elle est décrite par les tables suivantes :</p>
@@ -349,7 +349,7 @@
 			</description>
 		</base_de_donnee>
 		<base_de_donnee nom="tp-em">
-			<fichier nom="em.db"/>
+			<fichier nom="bdd/em/em.db"/>
 			<référence/>
 			<description>
 				<p>Soit une base de données géographique orientée sur les fleuves et espaces maritimes du continent européen. Elle est décrite par les tables suivantes :</p>

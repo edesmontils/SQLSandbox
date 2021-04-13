@@ -23,7 +23,7 @@
 	date CDATA #REQUIRED >
 	
 <!ELEMENT listeBases (base_de_donnee)*>
-<!ELEMENT base_de_donnee (fichier,référence,description)>
+<!ELEMENT base_de_donnee ( (fichier,référence,description, (liste-TP, liste-exercices)? ) | config-bd)>
 <!ATTLIST base_de_donnee nom NMTOKEN #REQUIRED>
 
 <!ELEMENT fichier EMPTY>
@@ -33,3 +33,31 @@
 
 <!ELEMENT référence (#PCDATA)>
 <!ELEMENT description (%Block;)*>
+
+<!ELEMENT liste-TP (TP*) >
+<!ELEMENT TP (objectif-pédagogique, ref-exercice*) >
+<!ATTLIST TP nom ID #REQUIRED niveau CDATA #IMPLIED >
+
+<!ELEMENT ref-exercice EMPTY >
+<!ATTLIST ref-exercice exo IDREF #REQUIRED >
+
+<!ENTITY % exo-contenu "commentaire-ok-élève?, commentaire-ko-élève?, concerne" >
+<!ENTITY % exo-att "code ID #REQUIRED" >
+
+<!ELEMENT commentaire-ok-élève (%Block;)* >
+<!ELEMENT commentaire-ko-élève (%Block;)* >
+<!ELEMENT concerne (projection?, agrégation?, selection?, (jointure-simple|jointures-multiples)?, tri?) >
+
+<!ELEMENT projection EMPTY > <!ATTLIST projection poids CDATA #FIXED '1' >
+<!ELEMENT agrégation EMPTY > <!ATTLIST agrégation poids CDATA #FIXED '2' >
+<!ELEMENT selection EMPTY > <!ATTLIST selection poids CDATA #FIXED '3' >
+<!ELEMENT jointure-simple EMPTY > <!ATTLIST jointure-simple poids CDATA #FIXED '4' >
+<!ELEMENT jointures-multiples EMPTY > <!ATTLIST jointures-multiples poids CDATA #FIXED '6' >
+<!ELEMENT tri EMPTY > <!ATTLIST tri poids CDATA #FIXED '1' >
+
+<!ELEMENT liste-exercices (résultat|trou|intention|requête)* >
+<!ELEMENT résultat (%exo-contenu;) >
+<!ATTLIST résultat %exo-att; >
+
+<!ELEMENT config-bd EMPTY >
+<!ATTLIST config-bd fichier CDATA #REQUIRED >
