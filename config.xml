@@ -366,7 +366,20 @@
 						(#<em>id_p</em>,#<em>id_f</em>)<br/>représente les pays parcourus par un fleuve.</li>
 				</ul>
 			</description>
-			<liste-TP></liste-TP>
+			<liste-TP>
+				<TP nom="tp-em-01">
+					<objectif-pédagogique><p>Quelques requête simples.</p></objectif-pédagogique>
+					<ref-exercice exo="tr-em-01"/>
+					<ref-exercice exo="re-em-01"/>
+					<ref-exercice exo="int-em-01"/>
+					<ref-exercice exo="cmp-em-01"/>
+				</TP>
+				<TP nom="tp-em-02">
+					<objectif-pédagogique></objectif-pédagogique>
+					<ref-exercice exo="tp-em-02"/>
+					<ref-exercice exo="re-em-02"/>
+				</TP>
+			</liste-TP>
 			<liste-exercices>
 				<rq-résultat code="re-em-01">
 					<concerne><projection/><sélection-simple/></concerne>

@@ -37,7 +37,7 @@
 <!ELEMENT liste-TP (TP*) >
 <!ELEMENT TP (objectif-pédagogique, ref-exercice*) >
 <!ATTLIST TP nom ID #REQUIRED niveau CDATA #IMPLIED >
-
+<!ELEMENT objectif-pédagogique (%Block;)* >
 <!ELEMENT ref-exercice EMPTY >
 <!ATTLIST ref-exercice exo IDREF #REQUIRED >
 
