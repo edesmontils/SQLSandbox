@@ -4,7 +4,7 @@
 <!ENTITY seuil '10800'>
 ]>
 
-<mab version="4.9.0" debug="false" name="SQL Sandbox">
+<mab version="4.9.1" debug="false" name="SQL Sandbox">
 	<!-- numéro de version de l'application -->
 	<!-- durée limite de vie d'une copie de base : 60*60*3 = 3 heures -->
 	<seuil>&seuil;</seuil>
@@ -366,6 +366,86 @@
 						(#<em>id_p</em>,#<em>id_f</em>)<br/>représente les pays parcourus par un fleuve.</li>
 				</ul>
 			</description>
+			<liste-TP></liste-TP>
+			<liste-exercices>
+				<rq-résultat code="re-em-01">
+					<concerne><projection/><sélection-simple/></concerne>
+					<intention>On recherche les fleuves de longueur supérieure à 1000 Km.</intention>
+					<SQL>
+						<Select>nom-f</Select>
+						<From><Table>Fleuve</Table></From>
+						<Where>longueur>1000</Where>
+					</SQL>
+				</rq-résultat>
+				<rq-résultat code="re-em-02">
+					<concerne><projection/><sélection-simple/><jointure-simple/></concerne>
+					<intention></intention>
+					<SQL>
+						<Select>nom-f</Select>
+						<From><Natural-Join>
+							<Table>Fleuve</Table>
+							<Table>Espace-Maritime</Table>
+						</Natural-Join></From>
+						<Where>type='mer'</Where>
+					</SQL>
+				</rq-résultat>
+				<rq-trou code="tr-em-01">
+					<concerne><projection/></concerne>
+					<intention>On recherche les fleuves de longueur supérieure à 1000 Km.</intention>
+					<SQL>
+						<Select>nom-f</Select>
+						<From><Table>Fleuve</Table></From>
+						<Where>longueur>1000</Where>
+					</SQL>
+					<SQL>
+						<Select></Select>
+						<From><Table>Fleuve</Table></From>
+						<Where>longueur>1000</Where>
+					</SQL>
+				</rq-trou>
+				<rq-trou code="tr-em-02">
+					<concerne><projection/><sélection-simple/></concerne>
+					<intention></intention>
+					<SQL>
+						<Select>nom-f</Select>
+						<From><Natural-Join>
+							<Table>Fleuve</Table>
+							<Table>Espace-Maritime</Table>
+						</Natural-Join></From>
+						<Where>type='mer'</Where>
+					</SQL>
+					<SQL>
+						<Select></Select>
+						<From><vide/></From>
+						<Where>type='mer'</Where>
+					</SQL>
+					<résultat/>
+				</rq-trou>
+				<rq-intention code="int-em-01">
+					<concerne></concerne>
+					<intention>Le nom des fleuves qui se jettent dans une mer.</intention>
+					<SQL>
+						<Select>nom-f</Select>
+						<From><Natural-Join>
+							<Table>Fleuve</Table>
+							<Table>Espace-Maritime</Table>
+						</Natural-Join></From>
+						<Where>type='mer'</Where>
+					</SQL>
+				</rq-intention>
+				<rq-complète code="cmp-em-01">
+					<concerne><projection/><sélection-simple/><jointure-simple/></concerne>
+					<intention>Les fleuves qui se jettent dans une mer.</intention>
+					<SQL>
+						<Select>nom-f</Select>
+						<From><Natural-Join>
+							<Table>Fleuve</Table>
+							<Table>Espace-Maritime</Table>
+						</Natural-Join></From>
+						<Where>type='mer'</Where>
+					</SQL>
+				</rq-complète>
+			</liste-exercices>
 		</base_de_donnee>
 	</listeBases>
 </mab>

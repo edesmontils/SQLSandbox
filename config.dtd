@@ -41,23 +41,51 @@
 <!ELEMENT ref-exercice EMPTY >
 <!ATTLIST ref-exercice exo IDREF #REQUIRED >
 
-<!ENTITY % exo-contenu "commentaire-ok-élève?, commentaire-ko-élève?, concerne" >
+<!ENTITY % exo-contenu "commentaire-ok-élève?, commentaire-ko-élève?, concerne, intention, SQL" >
 <!ENTITY % exo-att "code ID #REQUIRED" >
 
 <!ELEMENT commentaire-ok-élève (%Block;)* >
 <!ELEMENT commentaire-ko-élève (%Block;)* >
-<!ELEMENT concerne (projection?, agrégation?, selection?, (jointure-simple|jointures-multiples)?, tri?) >
+<!ELEMENT concerne (projection?, distinct?, agrégation?, (sélection-simple|sélection-complexe)?, (jointure-simple|jointures-multiples)?, tri?) >
 
 <!ELEMENT projection EMPTY > <!ATTLIST projection poids CDATA #FIXED '1' >
-<!ELEMENT agrégation EMPTY > <!ATTLIST agrégation poids CDATA #FIXED '2' >
-<!ELEMENT selection EMPTY > <!ATTLIST selection poids CDATA #FIXED '3' >
+<!ELEMENT distinct EMPTY > <!ATTLIST distinct poids CDATA #FIXED '2' >
+<!ELEMENT agrégation EMPTY > <!ATTLIST agrégation poids CDATA #FIXED '3' >
+<!ELEMENT sélection-simple EMPTY > <!ATTLIST sélection-simple poids CDATA #FIXED '3' >
+<!ELEMENT sélection-complexe EMPTY > <!ATTLIST sélection-complexe poids CDATA #FIXED '5' >
 <!ELEMENT jointure-simple EMPTY > <!ATTLIST jointure-simple poids CDATA #FIXED '4' >
 <!ELEMENT jointures-multiples EMPTY > <!ATTLIST jointures-multiples poids CDATA #FIXED '6' >
 <!ELEMENT tri EMPTY > <!ATTLIST tri poids CDATA #FIXED '1' >
 
-<!ELEMENT liste-exercices (résultat|trou|intention|requête)* >
-<!ELEMENT résultat (%exo-contenu;) >
-<!ATTLIST résultat %exo-att; >
+<!ELEMENT liste-exercices (rq-résultat|rq-trou|rq-intention|rq-complète)* >
+
+<!ELEMENT rq-résultat (%exo-contenu;) >
+<!ATTLIST rq-résultat %exo-att; >
+
+<!ELEMENT rq-trou (%exo-contenu; , SQL, résultat?) >
+<!ATTLIST rq-trou %exo-att; >
+
+<!ELEMENT rq-intention (%exo-contenu;, résultat?) >
+<!ATTLIST rq-intention %exo-att; >
+
+<!ELEMENT rq-complète (%exo-contenu;, résultat?) >
+<!ATTLIST rq-complète %exo-att; >
+
+<!ELEMENT résultat EMPTY >
+<!ELEMENT intention (#PCDATA) >
+
+<!ELEMENT SQL ((Select, From, Where?, Order-by?)|Text) >
+<!ELEMENT Select (#PCDATA) >
+<!ATTLIST Select Distinct (Vrai|Faux) 'Faux'>
+<!ELEMENT From (vide | Table | (Join|Natural-Join)) >
+<!ELEMENT Join ( Table, (Table | (Join|Natural-Join)), On ) >
+<!ELEMENT Natural-Join ( Table, (Table | (Join|Natural-Join)) ) >
+<!ELEMENT On (#PCDATA) >
+<!ELEMENT Where (#PCDATA) >
+<!ELEMENT Order-by (#PCDATA) >
+<!ELEMENT Table (#PCDATA) >
+<!ELEMENT Text (#PCDATA) >
+<!ELEMENT vide EMPTY >
 
 <!ELEMENT config-bd EMPTY >
 <!ATTLIST config-bd fichier CDATA #REQUIRED >
