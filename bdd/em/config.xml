@@ -81,7 +81,7 @@
             </SQL>
             <SQL>
                 <Select></Select>
-                <From><vide/></From>
+                <From></From>
                 <Where>type='mer'</Where>
             </SQL>
             <résultat/>

@@ -54,12 +54,14 @@
 <!-- des commentaires en cas de réussite ou d'échec de l'élève -->
 <!-- les éléments de la requêtes qui sont visés par l'exercice, pour écvaluer la complexité. -->
 <!-- l'intention de la requête cible et la requête cible -->
-<!ENTITY % exo-contenu "commentaire-ok-élève?, commentaire-ko-élève?, concerne, intention, SQL" >
+<!--  il est possible aussi d'ajouter un texte d'aide pour les élèves qui ton le plus de difficultés -->
+<!ENTITY % exo-contenu "commentaire-ok-élève?, commentaire-ko-élève?, concerne, intention, SQL, aide?" >
 <!ENTITY % exo-att "code ID #REQUIRED" >
 
 <!ELEMENT commentaire-ok-élève (%Block;)* >
 <!ELEMENT commentaire-ko-élève (%Block;)* >
 <!ELEMENT concerne (projection?, distinct?, agrégation?, (sélection-simple|sélection-complexe)?, (jointure-simple|jointures-multiples)?, tri?) >
+<!ELEMENT aide (%Block;)* >
 
 <!ELEMENT projection EMPTY > <!ATTLIST projection poids CDATA #FIXED '1' >
 <!ELEMENT distinct EMPTY > <!ATTLIST distinct poids CDATA #FIXED '2' >
@@ -89,16 +91,17 @@
 <!ELEMENT intention (#PCDATA) >
 
 <!-- Une requête SQL soit le texte directe (Text) soit sa structure -->
-<!ELEMENT SQL ((Select, From, Where?, Order-by?)|Text) >
+<!ELEMENT SQL ((Select, From, Where?, (Group-by, Having?)?, Order-by?)|Text) >
 <!ELEMENT Select (#PCDATA) >
 <!ATTLIST Select Distinct (Vrai|Faux) 'Faux'>
-<!ELEMENT From (vide | Table | (Join|Natural-Join)) >
+<!ELEMENT From (Table | (Join|Natural-Join))? >
 <!ELEMENT Join ( Table, (Table | (Join|Natural-Join)), On ) >
 <!ELEMENT Natural-Join ( Table, (Table | (Join|Natural-Join)) ) >
 <!ELEMENT On (#PCDATA) >
 <!ELEMENT Where (#PCDATA) >
+<!ELEMENT Group-by (#PCDATA) >
+<!ELEMENT Having (#PCDATA) >
 <!ELEMENT Order-by (#PCDATA) >
 <!ELEMENT Table (#PCDATA) >
 <!ELEMENT Text (#PCDATA) >
-<!ELEMENT vide EMPTY > <!-- Utile pour les requêtes à trou dans le From -->
 
