@@ -45,7 +45,15 @@
 <!-- Liste des TP. Un TP est un objectif pédogogique et une liste d'exercices -->
 <!ELEMENT liste-TP (TP*) >
 <!ELEMENT TP (objectif-pédagogique, ref-exercice*) > 
-<!ATTLIST TP nom ID #REQUIRED niveau CDATA #IMPLIED >
+<!--  niveau : classe/année de formation
+      statut : TP ouvert avec solution et aide ou TP évalué ?
+      datedébut/datefin : créneau ou le TP est disponible (dateTime) -->
+<!ATTLIST TP 
+    nom ID #REQUIRED 
+    niveau CDATA #IMPLIED 
+    statut (libre|évaluation) "libre"
+    datedébut CDATA #IMPLIED
+    datefin CDATA #IMPLIED >
 <!ELEMENT objectif-pédagogique (%Block;)* >
 <!ELEMENT ref-exercice EMPTY >
 <!ATTLIST ref-exercice exo IDREF #REQUIRED >
@@ -56,7 +64,8 @@
 <!-- l'intention de la requête cible et la requête cible -->
 <!--  il est possible aussi d'ajouter un texte d'aide pour les élèves qui ton le plus de difficultés -->
 <!ENTITY % exo-contenu "commentaire-ok-élève?, commentaire-ko-élève?, concerne, intention, SQL, aide?" >
-<!ENTITY % exo-att "code ID #REQUIRED" >
+<!ENTITY % exo-att "code ID #REQUIRED accessibilité (ouvert|TP) 'TP'" >
+<!-- accessibilité : exercice uniquement pour un TP ou visible aussi pour un travail thématique ? -->
 
 <!ELEMENT commentaire-ok-élève (%Block;)* >
 <!ELEMENT commentaire-ko-élève (%Block;)* >
