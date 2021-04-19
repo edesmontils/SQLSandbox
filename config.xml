@@ -171,6 +171,6 @@
 		<configBD localisation="bdd/cinema"/>
 		<configBD localisation="bdd/aeroport"/>
 		<configBD localisation="bdd/lutins"/>
-		<configBD localisation="bdd/em"/>
+		<!--configBD localisation="bdd/em"/-->
 	</listeBases>
 </mab>

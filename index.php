@@ -64,6 +64,36 @@ try {
 		if ($debug) echo "<p>Description de ".$listeBase[(string)$BD['nom']]['fichier']."</p>";
 	}
 
+	// Scan du répertoire BDD, on récupère uniquement ceux qui ont un fichier config.xml
+	$rep = "./bdd" ;
+	if (is_dir($rep)) {
+		if ($iter = opendir($rep)) {
+			while (($fichier = readdir($iter)) !== false)  {  
+				if($fichier != "." && $fichier != ".." && $fichier != "Thumbs.db")  {  
+					if (is_dir($rep.'/'.$fichier)) {
+						$conf = $rep.'/'.$fichier.'/config.xml';
+						if (file_exists($conf)) {						
+							//echo '<a href="'.$rep.$fichier.'" target="_blank" >'.$fichier.'</a><br />'."\n";
+							$BD = new SimpleXMLElement($conf,
+					                                   LIBXML_DTDATTR|LIBXML_DTDLOAD|LIBXML_DTDVALID
+					                                   |LIBXML_NOBLANKS|LIBXML_NOCDATA,
+					                                   true);
+							$listeBase[(string)$BD['nom']] = array(
+								'fichier' => $rep.'/'.$fichier.'/'.(string)$BD->fichier['nom'],
+								'prefixe' => (string)$BD->fichier['prefixe'],
+								'référence' => (string)$BD->référence,
+								'description' => (string)$BD->description->asXML(),
+								'tables' => array() //$tables
+							);
+							if ($debug) echo "<p>Description de ".$listeBase[(string)$BD['nom']]['fichier']."</p>";
+						}
+					}  
+				}  
+			} 
+			closedir($iter);  
+		}
+	}
+
 	$listeNoms = array_keys($listeBase);
 } catch(Exception $e) {
   echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()
