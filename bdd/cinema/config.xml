@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE base_de_donnee SYSTEM '../../config.dtd'>
+<base_de_donnee nom="tp-cinema">
+    <fichier nom="cinema"/>
+    <référence>http://miage.univ-nantes.fr/miage/DVD-MIAGEv2/BD.html</référence>
+    <description>
+        <p>La base de données Programme-Cinéma qui décrit les films qui
+            passent dans les cinémas de Loire Atlantique. Elle est décrite par les tables
+            suivantes :</p>
+        <ul>
+            <li><b>Acteur</b> (<em>id_act</em>, nom, prenom, age)<br/>
+                un acteur est identifié par un identifiant et possède les caractéristiques suivantes : nom,
+                prénom, age ;</li>
+            <li><b>Jouer</b>
+                (<em>id_act</em>, <em>id_film</em>, role)<br/>décrit les acteurs jouant dans les films, la relation est identifiée
+                par le numéro du film et le numéro de l'acteur et on précise le rôle de l'acteur (personnage
+                joué).</li>
+            <li><b>Film</b>
+                (<em>id</em>, titre, genre, année)<br/>décrit un film (son titre, son genre (Drame /
+                Comédie / Epouvante / Western /  Policier / Autres) et
+                l'année de sa sortie – un film est identifié par un identifiant</li>
+            <li><b>Projection</b>
+                (<em>id_cine</em>, <em>id_film</em>, <em>date</em>)<br/>décrit les films passant dans un cinéma à une date donnée
+                – la projection est identifiée par l'identifiant du film, du cinéma et de sa date de projection
+                (JJ/MM/AAAA)</li>
+            <li><b>Cinema</b>
+                (<em>id_cine</em>, Nom, Ville) : décrit les cinémas de Nantes. Un cinéma de Nantes est
+                identifié par un identifiant et possède un nom et la ville où
+                il se situe.</li>
+        </ul>
+    </description>
+</base_de_donnee>

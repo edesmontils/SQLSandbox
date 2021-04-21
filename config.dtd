@@ -3,14 +3,14 @@
 <!ENTITY % html SYSTEM "./xhtml1-strict.dtd">
 %html;
 
-<!ELEMENT mab (seuil,aPropos,mentions,aides,listeMessages,listeBases)>
+<!ELEMENT mab (seuil,dossierBdD, aPropos,mentions,aides,listeMessages,listeBases?)>
 <!ATTLIST mab 
   version CDATA #REQUIRED
   name CDATA #REQUIRED
   debug (true|false) 'false'>
 
 <!ELEMENT seuil (#PCDATA)>
-
+<!ELEMENT dossierBdD (#PCDATA) >
 <!ELEMENT aPropos (%Block;)>
 <!ELEMENT mentions (%Block;)>
 <!ELEMENT aides (%Block;)>
@@ -22,8 +22,16 @@
 	auteur CDATA "E. Desmontils" 
 	date CDATA #REQUIRED >
 	
-<!ELEMENT listeBases (base_de_donnee)*>
-<!ELEMENT base_de_donnee (fichier,référence,description)>
+<!--  Définition d'une base de donnée : soit en local soit dans un autre document ("configBD", le fichier doit s'appeler "config.xml") qui pour racine "base_de_donnee" -->
+<!ELEMENT listeBases (base_de_donnee | configBD)*>
+
+<!-- si la description de la base est externe, "localisation" indique le répertoire et "fichier" le fichier de configuration -->
+<!ELEMENT configBD EMPTY >
+<!ATTLIST configBD 
+    localisation CDATA #REQUIRED 
+    fichier CDATA "config.xml">
+
+<!ELEMENT base_de_donnee (fichier,référence,description, (liste-enseignants, liste-TP, liste-questions)? )>
 <!ATTLIST base_de_donnee nom NMTOKEN #REQUIRED>
 
 <!ELEMENT fichier EMPTY>
@@ -33,3 +41,85 @@
 
 <!ELEMENT référence (#PCDATA)>
 <!ELEMENT description (%Block;)*>
+
+<!ELEMENT liste-enseignants (enseignant*) >
+<!ELEMENT enseignant EMPTY >
+<!ATTLIST enseignant
+    nom CDATA #REQUIRED
+    prénom CDATA #REQUIRED
+    courriel CDATA #REQUIRED
+    xml:id ID #REQUIRED >
+
+<!-- Liste des TP. Un TP est un objectif pédogogique et une liste d'exercices -->
+<!ELEMENT liste-TP (TP*) >
+<!ELEMENT TP (objectif-pédagogique, ref-question*) > 
+<!--  niveau : classe/année de formation
+      statut : TP ouvert avec solution et aide ou TP évalué ?
+      datedébut/datefin : créneau ou le TP est disponible (dateTime) -->
+<!ATTLIST TP 
+    nom ID #REQUIRED 
+    niveau CDATA #IMPLIED 
+    statut (libre|noté) "libre"
+    datedébut CDATA #IMPLIED
+    datefin CDATA #IMPLIED
+    enseignant IDREF #IMPLIED >
+<!ELEMENT objectif-pédagogique (%Block;)* >
+<!ELEMENT ref-question EMPTY >
+<!ATTLIST ref-question question IDREF #REQUIRED >
+
+<!-- Liste des questions disponibles pour les TP. Les questions ont des contenus communs -->
+<!-- des commentaires en cas de réussite ou d'échec de l'élève -->
+<!-- les éléments de la requêtes qui sont visés par l'exercice, pour écvaluer la complexité. -->
+<!-- l'intention de la requête cible et la requête cible -->
+<!--  il est possible aussi d'ajouter un texte d'aide pour les élèves qui ton le plus de difficultés -->
+<!ENTITY % question-contenu "commentaire-ok-élève?, commentaire-ko-élève?, theme, intention, SQL, aide?" >
+<!ENTITY % question-att "xml:id ID #REQUIRED accessibilité (ouvert|TP) 'TP' enseignant IDREF #IMPLIED" >
+<!-- accessibilité : exercice uniquement pour un TP ou visible aussi pour un travail thématique ? -->
+
+<!ELEMENT commentaire-ok-élève (%Block;)* >
+<!ELEMENT commentaire-ko-élève (%Block;)* >
+<!ELEMENT theme (projection?, distinct?, agrégation?, (sélection-simple|sélection-complexe)?, (jointure-simple|jointures-multiples)?, tri?) >
+<!ELEMENT aide (%Block;)* >
+
+<!ELEMENT projection EMPTY > <!ATTLIST projection poids CDATA #FIXED '1' >
+<!ELEMENT distinct EMPTY > <!ATTLIST distinct poids CDATA #FIXED '2' >
+<!ELEMENT agrégation EMPTY > <!ATTLIST agrégation poids CDATA #FIXED '3' >
+<!ELEMENT sélection-simple EMPTY > <!ATTLIST sélection-simple poids CDATA #FIXED '3' >
+<!ELEMENT sélection-complexe EMPTY > <!ATTLIST sélection-complexe poids CDATA #FIXED '5' >
+<!ELEMENT jointure-simple EMPTY > <!ATTLIST jointure-simple poids CDATA #FIXED '4' >
+<!ELEMENT jointures-multiples EMPTY > <!ATTLIST jointures-multiples poids CDATA #FIXED '6' >
+<!ELEMENT tri EMPTY > <!ATTLIST tri poids CDATA #FIXED '1' >
+
+<!ELEMENT liste-questions (rq-résultat|rq-trou|rq-intention|rq-complète)* >
+
+<!ELEMENT rq-résultat (%question-contenu;) >
+<!ATTLIST rq-résultat %question-att; >
+
+<!-- SQL est la requête à trou support et résultat est présent si la table résultat doit être présentée. -->
+<!ELEMENT rq-trou (%question-contenu; , SQL, résultat?) >
+<!ATTLIST rq-trou %question-att; >
+
+<!ELEMENT rq-intention (%question-contenu;, résultat?) >
+<!ATTLIST rq-intention %question-att; >
+
+<!ELEMENT rq-complète (%question-contenu;, résultat?) >
+<!ATTLIST rq-complète %question-att; >
+
+<!ELEMENT résultat EMPTY >
+<!ELEMENT intention (#PCDATA) >
+
+<!-- Une requête SQL soit le texte directe (Text) soit sa structure -->
+<!ELEMENT SQL ((Select, From, Where?, (Group-by, Having?)?, Order-by?)|Text) >
+<!ELEMENT Select (#PCDATA) >
+<!ATTLIST Select Distinct (Vrai|Faux) 'Faux'>
+<!ELEMENT From (Table | (Join|Natural-Join))? >
+<!ELEMENT Join ( Table, (Table | (Join|Natural-Join)), On ) >
+<!ELEMENT Natural-Join ( Table, (Table | (Join|Natural-Join)) ) >
+<!ELEMENT On (#PCDATA) >
+<!ELEMENT Where (#PCDATA) >
+<!ELEMENT Group-by (#PCDATA) >
+<!ELEMENT Having (#PCDATA) >
+<!ELEMENT Order-by (#PCDATA) >
+<!ELEMENT Table (#PCDATA) >
+<!ELEMENT Text (#PCDATA) >
+

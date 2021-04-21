@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE base_de_donnee SYSTEM '../../config.dtd'>
+<base_de_donnee nom="tp-mondial">
+    <fichier nom="mondial.db"/>
+    <référence>http://www.dbis.informatik.uni-goettingen.de/Mondial/</référence>
+    <description>
+        <p>La base de données MONDIAL a été construite à partir des sources de données
+            géographiques Web : le CIA World Factbook (<a
+                href="https://www.cia.gov/library/publications/the-world-factbook/"
+                >https://www.cia.gov/library/publications/the-world-factbook/</a>), un
+            prédécesseur de Global Satistics (http://www.geohive.com/) qui a été collectée
+            par Johan van der Heijden, d'autres sources textuelles pour les coordonnées,
+            l'International Atlas de Kümmerly &amp; Frey, Rand McNally, et Westermann et des
+            données géographiques de la base de Karlsruhe TERRA. Cette base peut être testée
+            dans sa version la plus récente sur <a
+                href="http://www.semwebtech.org/sqlfrontend/"
+                >http://www.semwebtech.org/sqlfrontend/</a>.</p>
+    </description>
+</base_de_donnee>

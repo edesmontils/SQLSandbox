@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE base_de_donnee SYSTEM '../../config.dtd'>
+<base_de_donnee nom="cours">
+    <fichier nom="cours" prefixe="bcour"/>
+    <référence/>
+    <description>
+        <p>M. Tiron, responsable de la société de formation "Info-Dev Formation" (IDF),
+            souhaite mettre en place une base de données permettant de faire le suivi
+            pédagogique de ses étudiants. Les étudiants, seront identifiés par un numéro, le
+            nom et leur prénom. Les enseignements sont composés de matières (dont on connaît
+            le code et le titre) qui appartiennent à une formation (un diplôme) et qui sont
+            dispensées par un seul enseignant (repéré par son numéro). Les étudiants, dans
+            chaque matière, passent un contrôle continu et un examen. Le schéma de la base
+            est donc le suivant : </p>
+        <ul>
+            <li><b>etudiants</b>( noetu varchar(6) not null, nom varchar(10) not null,
+                prenom varchar(10) not null, primary key (noetu)) ;</li>
+            <li><b>matieres</b>( codemat varchar(8) not null primary key, titre varchar(10),
+                responsable varchar(4), diplome varchar(20)) ;</li>
+            <li><b>notes</b>( noe varchar(6), codemat varchar(8) , noteex numeric check
+                (noteex between 0 and 20), notecc numeric check (notecc between 0 and 20),
+                primary key (noe, codemat), CONSTRAINT FK_noe FOREIGN KEY (noe) REFERENCES
+                etudiants (noetu), CONSTRAINT FK_codemat FOREIGN KEY (codemat) REFERENCES
+                matieres (codemat)).</li>
+        </ul>
+        <p>Cette base de données est volontairement très simple, car elle est utilisée pour
+            présenter les concepts de base des bases de données relationnelles durant le CM
+            en faculté des sciences et des techniques (université de Nantes).</p>
+    </description>
+</base_de_donnee>
