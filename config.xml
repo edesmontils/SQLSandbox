@@ -8,7 +8,9 @@
 	<!-- numéro de version de l'application -->
 	<!-- durée limite de vie d'une copie de base : 60*60*3 = 3 heures -->
 	<seuil>&seuil;</seuil>
-
+	
+	<dossierBdD>./bdd</dossierBdD>
+	
 	<aPropos>
 		<div class="post">
 			<h2 class="title">A propos de SQL et du SGBD utilisé</h2>
@@ -163,14 +165,4 @@
 		</message>
 	</listeMessages>
 
-	<!-- bases de données manipulées -->
-	<listeBases>
-		<configBD localisation="bdd/cours"/>
-		<configBD localisation="bdd/robots"/>
-		<!--configBD localisation="bdd/mondial"/-->
-		<configBD localisation="bdd/cinema"/>
-		<configBD localisation="bdd/aeroport"/>
-		<configBD localisation="bdd/lutins"/>
-		<!--configBD localisation="bdd/em"/-->
-	</listeBases>
 </mab>

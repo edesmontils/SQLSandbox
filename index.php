@@ -37,7 +37,7 @@ try {
 	$listeBase = array();
 
 	//Définitions dans le fichier de config principal
-	foreach($config->listeBases->base_de_donnee as $base) {
+	foreach($config->listeBases->base_de_donnee as $base) { 
 		$listeBase[(string)$base['nom']] = array(
 			'fichier' => (string)$base->fichier['nom'],
 			'prefixe' => (string)$base->fichier['prefixe'],
@@ -65,7 +65,7 @@ try {
 	}
 
 	// Scan du répertoire BDD, on récupère uniquement ceux qui ont un fichier config.xml
-	$rep = "./bdd" ;
+	$rep = $config->dossierBdD ; // "./bdd" ;
 	if (is_dir($rep)) {
 		if ($iter = opendir($rep)) {
 			while (($fichier = readdir($iter)) !== false)  {  
