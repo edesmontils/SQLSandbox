@@ -144,4 +144,91 @@ function liste_base($base) {
 		echo '</div></div>';
 	}
 }
+
+function verifFich($base){
+	$config = new SimpleXMLElement('./config.xml',
+        LIBXML_DTDATTR|LIBXML_DTDLOAD|LIBXML_DTDVALID
+        |LIBXML_NOBLANKS|LIBXML_NOCDATA,
+        true);
+	$rep = $config->dossierBdD ;
+	if($base == "tp-vols"){
+		$fich = "aeroport";
+	}
+	else if($base == "tp-cinema"){
+		$fich = "cinema";
+	}
+	else if($base == "cours"){
+		$fich = "cours";
+	}
+	else if($base == "tp-em"){
+		$fich = "em";
+	}
+	else if($base == "tp-Lutins"){
+		$fich = "lutins";
+	}
+	else if($base == "tp-robots"){
+		$fich = "robots";
+	}
+	if (is_dir($rep)) {
+		if ($iter = opendir($rep)) {
+			while (($fichier = readdir($iter)) !== false)  {  
+				if($fichier != "." && $fichier != ".." && $fichier != "Thumbs.db")  {  
+					if (is_dir($rep.'/'.$fichier)) {
+						$conf = $rep.'/'.$fichier.'/config.xml';
+						if (file_exists($conf)) {
+							if($fichier == $fich){
+								return $xml = simplexml_load_file($conf);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+function liste_TP($base){
+	
+	$xml = verifFich($base);
+	$listeTP = 'liste-TP';
+	$objectif = 'objectif-pédagogique';
+	$listeTp = ($xml->$listeTP);
+	echo "<a id='matiere'></a>";
+	echo "<div class='post'><h2 class='title'>Travaux pratiques</h2>";
+	echo "<ul>";
+	foreach ($listeTp->TP as $tp){
+		echo "<li>";
+		echo "<img src='images/down_64.png' height='16' width='16' /> ";
+		echo $tp->name;
+		echo "</a>";
+		echo "</li>";
+	}
+	echo "</ul>";
+	echo "</div>";
+}
+
+function liste_question($base){
+
+	$xml = verifFich($base);
+	$listeQUEST = 'liste-questions';
+	$listeQuestion = ($xml->$listeQUEST);
+	echo "<a id='matiere'></a>";
+	echo "<div class='post'><h2 class='title'>Questions</h2>";
+	foreach ($listeQuestion->children() as $Quest){
+		$i=$i+1;
+		echo "Question ".$i;
+		echo "<li>";
+		echo "Intention :";
+		echo $Quest->intention;
+		echo "</li>";
+		echo "<li>";
+		echo "Aide :";
+		echo $Quest->aide;
+		echo "</li>";
+		echo "<br>"."</br>";
+	}
+	echo "</div>";
+		
+}
+
 ?>

@@ -23,6 +23,7 @@
     </liste-enseignants>
     <liste-TP>
         <TP nom="tp-em-01" enseignant="eED">
+            <name>tp-em-01</name>
             <objectif-pédagogique><p>Quelques requête simples.</p></objectif-pédagogique>
             <ref-question question="tr-em-01"/>
             <ref-question question="re-em-01"/>
@@ -30,7 +31,8 @@
             <ref-question question="cmp-em-01"/>
         </TP>
         <TP nom="tp-em-02">
-            <objectif-pédagogique></objectif-pédagogique>
+            <name>tp-em-02</name>
+            <objectif-pédagogique>Test</objectif-pédagogique>
             <ref-question question="tp-em-02"/>
             <ref-question question="re-em-02"/>
         </TP>

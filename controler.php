@@ -111,9 +111,71 @@ if (isset($_SESSION['debug']) && $session_ok) {
   			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
 		}	
 	}
+	else if ($Soumettre == "tp"){
+		try {
+			echo "test";
+			$config = new SimpleXMLElement('./config.xml',
+        		LIBXML_DTDATTR|LIBXML_DTDLOAD|LIBXML_DTDVALID
+        		|LIBXML_NOBLANKS|LIBXML_NOCDATA,
+        		true);
+			$rep = $config->dossierBdD ;
+			if($base == "tp-vols"){
+				$fich = "aeroport";
+			}
+			else if($base == "tp-cinema"){
+				$fich = "cinema";
+			}
+			else if($base == "cours"){
+				$fich = "cours";
+			}
+			else if($base == "tp-em"){
+				$fich = "em";
+			}
+			else if($base == "tp-Lutins"){
+				$fich = "lutins";
+			}
+			else if($base == "tp-robots"){
+				$fich = "robots";
+			}
+			if (is_dir($rep)) {
+				if ($iter = opendir($rep)) {
+					while (($fichier = readdir($iter)) !== false)  {  
+						if($fichier != "." && $fichier != ".." && $fichier != "Thumbs.db")  {  
+							if (is_dir($rep.'/'.$fichier)) {
+								$conf = $rep.'/'.$fichier.'/config.xml';
+								if (file_exists($conf)) {
+									if($fichier == $fich){
+										$xml = simplexml_load_file($conf);
+										$listeTP = 'liste-TP';
+										$objectif = 'objectif-pédagogique';
+										$listeTp = ($xml->$listeTP);
+										echo "<a id='matiere'></a>";
+										echo "<div class='post'><h2 class='title'>Travaux pratiques</h2>";
+										echo "<ul>";
+										foreach ($listeTp->TP as $tp){
+											echo "<li>";
+											echo "<img src='images/down_64.png' height='16' width='16' /> ";
+											echo $tp->name;
+											echo "</a>";
+											echo "</li>";
+										}
+										echo "</ul>";
+										echo "</div>";
+									}
+								}
+							}
+						}
+					}
+				}
+			}										
+		} catch(Exception $e) {
+  			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
+		}
+	}
 	//======================================================
 	else {//echo "<p>liste base $Soumettre</p>";
 		liste_base($Soumettre);
+		liste_TP($Soumettre);
 	}
 } else {//Envoyer sur index.php5 ?
 	echo "<div class='post'><h2 class='title'>Problème d'initialisation ou de session</h2><h3 class='posted'>E. Desmontils</h3><div class='story'>";

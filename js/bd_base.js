@@ -224,7 +224,10 @@ function db(nom) {
 		      +$ta+"</a></li>";
 	}
 	t = t +  '</ul></div></div>';
-	
+    t = t +  '<a id="matiere"></a><div class="post"><h2 class="title">Questions Thématiques</h2>';
+    t = t + '	<img src="images/pencil_64.png" name="Soumettre" alt="Soumettre" title="Soumettre" width="32" ';
+    t = t + '		onClick="tp(); return false;" style="cursor:pointer"/>';
+    
 	 $('posts').hide();
      $('posts').update(t);
      $('posts').show();
@@ -239,6 +242,24 @@ function db(nom) {
         },
         onFailure: function () {
             alert('db: Impossible d\'obtenir la rubrique !')
+        }
+    });
+}
+
+function tp() {
+    new Ajax.Request('controler.php', {
+        method: 'get',
+        parameters: {
+            Soumettre: 'tp'
+        },
+        onSuccess: function (trs) {
+            messages = trs.responseText;
+            $('posts').hide();
+            $('posts').update(messages);
+            $('posts').appear();
+        },
+        onFailure: function () {
+            alert('messages: Impossible d\'obtenir la rubrique !')
         }
     });
 }

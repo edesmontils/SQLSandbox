@@ -72,7 +72,7 @@ try {
 				if($fichier != "." && $fichier != ".." && $fichier != "Thumbs.db")  {  
 					if (is_dir($rep.'/'.$fichier)) {
 						$conf = $rep.'/'.$fichier.'/config.xml';
-						if (file_exists($conf)) {						
+						if (file_exists($conf)) {
 							//echo '<a href="'.$rep.$fichier.'" target="_blank" >'.$fichier.'</a><br />'."\n";
 							$BD = new SimpleXMLElement($conf,
 					                                   LIBXML_DTDATTR|LIBXML_DTDLOAD|LIBXML_DTDVALID

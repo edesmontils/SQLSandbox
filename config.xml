@@ -34,7 +34,7 @@
 				<p>Attention, certaines versions de SQLite (dont celle utilisée à ce jour par OVH)
 					n’acceptent pas les «distinct» dans une fonction de calcul. Il faut alors
 					trouver d’autres solutions. Par exemple : <br/> "Select count(X) From (select
-					distinct X From Table Where ...)"  <br/>=  <br/>"Select count(distinct X) From
+					distinct X From Table Where ...)" <br/>= <br/>"Select count(distinct X) From
 					Table Where ..." </p>
 				<h3>Parenthèses et jointures dans SQLite</h3>
 				<p>Attention, dans le "from", SQLite (version actuelle) "t1 natural join t2 natural
