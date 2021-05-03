@@ -73,8 +73,8 @@
 <!-- l'intention de la requête cible et la requête cible -->
 <!--  il est possible aussi d'ajouter un texte d'aide pour les élèves qui ton le plus de difficultés -->
 <!ENTITY % question-contenu "commentaire-ok-élève?, commentaire-ko-élève?, theme, intention, SQL, aide?" >
-<!ENTITY % question-att "xml:id ID #REQUIRED accessibilité (ouvert|TP) 'TP' enseignant IDREF #IMPLIED" >
-<!-- accessibilité : exercice uniquement pour un TP ou visible aussi pour un travail thématique ? -->
+<!ENTITY % question-att "xml:id ID #REQUIRED disponibilité (ouvert|TP) 'TP' enseignant IDREF #IMPLIED" >
+<!-- disponibilité : exercice uniquement pour un TP ou visible aussi pour un travail thématique ? -->
 
 <!ELEMENT commentaire-ok-élève (%Block;)* >
 <!ELEMENT commentaire-ko-élève (%Block;)* >
