@@ -59,7 +59,7 @@
                 <Where>type='mer'</Where>
             </SQL>
         </rq-résultat>
-        <rq-trou xml:id="tr-em-01" enseignant="eED">
+        <rq-trou xml:id="tr-em-01" enseignant="eED" disponibilité="ouvert">
             <theme><projection/></theme>
             <intention>On recherche les fleuves de longueur supérieure à 1000 Km.</intention>
             <SQL>
@@ -91,7 +91,7 @@
             </SQL>
             <résultat/>
         </rq-trou>
-        <rq-intention xml:id="int-em-01" enseignant="eED">
+        <rq-intention xml:id="int-em-01" enseignant="eED" disponibilité="ouvert">
             <theme></theme>
             <intention>Le nom des fleuves qui se jettent dans une mer.</intention>
             <SQL>
