@@ -189,6 +189,7 @@ function verifFich($base){
 
 function liste_TP($base){
 	
+	$tpDispo = false;
 	$xml = verifFich($base);
 	$listeTP = 'liste-TP';
 	$objectif = 'objectif-pédagogique';
@@ -197,7 +198,8 @@ function liste_TP($base){
 	echo "<div class='post'><h2 class='title'>Travaux pratiques</h2>";
 	echo "<ul>";
 	foreach ($listeTp->TP as $tp){
-		echo "<a href='#' onClick='questions(\"$base\");return false;' style='cursor:pointer'>";
+		$tpDispo = true;
+		echo "<a href='#' onClick='questions(\"$base\", \"$tp->name\");return false;' style='cursor:pointer'>";
 		echo "<li>";
 		echo "<img src='images/down_64.png' height='16' width='16' /> ";
 		echo $tp->name;
@@ -206,30 +208,53 @@ function liste_TP($base){
 	}
 	echo "</ul>";
 	echo "</div>";
+	if($tpDispo == false){
+		echo "<h2 class='title'>Aucun TP disponible actuellement</h2>";
+	}
 }
 
-function liste_question($base){
+function liste_question($base, $tp_name){
 
 	$xml = verifFich($base);
 	$listeQUEST = 'liste-questions';
 	$listeQuestion = ($xml->$listeQUEST);
+
+	$listeTP = 'liste-TP';
+	$objectif = 'objectif-pédagogique';
+	$listeTp = ($xml->$listeTP);
+	$refQuest = 'ref-question';
+
+	$questionDispo = false;
+
 	echo "<a id='matiere'></a>";
-	echo "<div class='post'><h2 class='title'>Questions</h2>";
-	foreach ($listeQuestion->children() as $Quest){
-		$i=$i+1;
-		echo "Question ".$i;
-		echo "<li>";
-		echo "Intention :";
-		echo $Quest->intention;
-		echo "</li>";
-		echo "<li>";
-		echo "Aide :";
-		echo $Quest->aide;
-		echo "</li>";
-		echo "<br>"."</br>";
+	echo "<div class='post'><h2 class='title'>Questions du TP $tp_name</h2>";
+	foreach($listeTp->TP as $tp){
+		if($tp->name == $tp_name){
+			foreach($tp->$refQuest as $refQuestion){
+				foreach ($listeQuestion->children() as $Quest){
+					if((string)$refQuestion->name_question == (string)$Quest->name_quest){
+						$questionDispo = true;
+						$i=$i+1;
+						echo "Question ".$i;
+						echo "<li>";
+						echo "Intention :";
+						echo $Quest->intention;
+						echo "</li>";
+						echo "<li>";
+						echo "Aide :";
+						echo $Quest->aide;
+						echo "</li>";
+						echo "<br>"."</br>";
+					}
+				}
+			}
+		}
 	}
 	echo "</div>";
-		
+	if($questionDispo == false){
+		echo "<h2 class='title'>Aucun question n'est disponible actuellement</h2>";
+	}		
+
 }
 
 ?>

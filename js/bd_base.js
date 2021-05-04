@@ -268,11 +268,11 @@ function tp(nom) {
     });
 }
 
-function questions(nom) {
+function questions(nom, tpName) {
     new Ajax.Request('controler.php', {
         method: 'get',
         parameters: {
-            Soumettre: 'questions', nom_base: nom 
+            Soumettre: 'questions', nom_base: nom, tp_name: tpName 
         },
         onSuccess: function (trs) {
             messages = trs.responseText;

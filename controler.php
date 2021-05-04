@@ -121,8 +121,9 @@ if (isset($_SESSION['debug']) && $session_ok) {
 	}
 	else if($Soumettre == "questions"){
 		try {
+			$tp_name = $_REQUEST['tp_name'];
 			$nom_base = $_REQUEST['nom_base'];
-			liste_question($nom_base);								
+			liste_question($nom_base, $tp_name);								
 		} catch(Exception $e) {
   			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
 		}
