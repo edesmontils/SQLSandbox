@@ -197,6 +197,7 @@ function liste_TP($base){
 	echo "<div class='post'><h2 class='title'>Travaux pratiques</h2>";
 	echo "<ul>";
 	foreach ($listeTp->TP as $tp){
+		echo "<a href='#' onClick='questions(\"$base\");return false;' style='cursor:pointer'>";
 		echo "<li>";
 		echo "<img src='images/down_64.png' height='16' width='16' /> ";
 		echo $tp->name;

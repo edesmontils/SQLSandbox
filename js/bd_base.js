@@ -206,6 +206,10 @@ function new_query() {
 }
 
 function db(nom) {
+    //console.log(nom);
+    //if(nom == 'tp-em'){
+        //$name = 'em';
+    //}
 	t = '<a id="matiere"></a><div class="post">';
 	t = t + '	<h2 class="title">Description de la base '+nom+'</h2>';
 	t = t + '    <div class="story">';
@@ -224,9 +228,9 @@ function db(nom) {
 		      +$ta+"</a></li>";
 	}
 	t = t +  '</ul></div></div>';
-    t = t +  '<a id="matiere"></a><div class="post"><h2 class="title">Questions Thématiques</h2>';
-    t = t + '	<img src="images/pencil_64.png" name="Soumettre" alt="Soumettre" title="Soumettre" width="32" ';
-    t = t + '		onClick="tp(); return false;" style="cursor:pointer"/>';
+    t = t +  '<a id="matiere"></a><div class="post"><h2 class="title">Travaux pratiques</h2>';
+    t = t + '	<img src="images/pencil_64.png" name="Liste des TP" alt="Liste des TP" title="Liste des TP" width="32" ';
+    t = t + '		onClick="tp(\''+nom+'\'); return false;" style="cursor:pointer"/>';
     
 	 $('posts').hide();
      $('posts').update(t);
@@ -246,11 +250,29 @@ function db(nom) {
     });
 }
 
-function tp() {
+function tp(nom) {
     new Ajax.Request('controler.php', {
         method: 'get',
         parameters: {
-            Soumettre: 'tp'
+            Soumettre: 'tp', nom_base: nom 
+        },
+        onSuccess: function (trs) {
+            messages = trs.responseText;
+            $('posts').hide();
+            $('posts').update(messages);
+            $('posts').appear();
+        },
+        onFailure: function () {
+            alert('messages: Impossible d\'obtenir la rubrique !')
+        }
+    });
+}
+
+function questions(nom) {
+    new Ajax.Request('controler.php', {
+        method: 'get',
+        parameters: {
+            Soumettre: 'questions', nom_base: nom 
         },
         onSuccess: function (trs) {
             messages = trs.responseText;
