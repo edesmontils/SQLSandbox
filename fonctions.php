@@ -213,6 +213,54 @@ function liste_TP($base){
 	}
 }
 
+function liste_question_thema($base){
+	
+	$liste_them = array();
+	$xml = verifFich($base);
+	$listeQUEST = 'liste-questions';
+	$listeQuestionThema = ($xml->$listeQUEST);
+	$questionDispo = false;
+	echo "<a id='matiere'></a>";
+	echo "<div class='post'><h2 class='title'>Questions à thèmes</h2>";
+	echo "<ul>";
+	foreach ($listeQuestionThema->children() as $theme){
+		$present = false;
+		$thema = explode("-", (string)$theme->name_quest);
+		if($thema[0] == "re"){
+			$nomTheme = "Requêtes simples";
+		}
+		else if($thema[0] == "tr"){
+			$nomTheme = "Requêtes à trous";
+		}
+		else if($thema[0] == "int"){
+			$nomTheme = "Recherches de l'intention";
+		}
+		else if($thema[0] == "cmp"){
+			$nomTheme = "Requêtes complètes";
+		}
+		foreach($liste_them as $value){
+			if($value == $nomTheme){
+				$present = true;
+			}
+		}
+		if($present == false){
+			$questionDispo = true;
+			array_push($liste_them, $nomTheme);
+			echo "<a href='#' style='cursor:pointer'>";
+			echo "<li>";
+			echo "<img src='images/down_64.png' height='16' width='16' /> ";
+			echo $nomTheme;
+			echo "</a>";
+			echo "</li>";
+		}
+	}
+	echo "</ul>";
+	echo "</div>";
+	if($questionDispo == false){
+		echo "<h2 class='title'>Aucune question n'est disponible actuellement</h2>";
+	}	
+}
+
 function liste_question($base, $tp_name){
 
 	$xml = verifFich($base);
@@ -225,6 +273,8 @@ function liste_question($base, $tp_name){
 	$refQuest = 'ref-question';
 
 	$questionDispo = false;
+
+	$findQuest = null;
 
 	echo "<a id='matiere'></a>";
 	echo "<div class='post'><h2 class='title'>Questions du TP $tp_name</h2>";
@@ -240,10 +290,14 @@ function liste_question($base, $tp_name){
 						echo "Intention :";
 						echo $Quest->intention;
 						echo "</li>";
-						echo "<li>";
-						echo "Aide :";
-						echo $Quest->aide;
-						echo "</li>";
+						$findQuest = $Quest->aide;
+						if($findQuest != ""){
+							echo "<li>";
+							echo "<button id='btnPopup' class='btnPopup' onclick='popUp(\"$Quest->aide\")'>";
+							echo "Aide";
+							echo "</button>";
+							echo "</li>";
+						}
 						echo "<br>"."</br>";
 					}
 				}
@@ -252,7 +306,7 @@ function liste_question($base, $tp_name){
 	}
 	echo "</div>";
 	if($questionDispo == false){
-		echo "<h2 class='title'>Aucun question n'est disponible actuellement</h2>";
+		echo "<h2 class='title'>Aucune question n'est disponible actuellement</h2>";
 	}		
 
 }

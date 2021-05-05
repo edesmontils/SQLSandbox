@@ -227,10 +227,16 @@ function db(nom) {
 		      +$ta+"' width='16'/>&nbsp;&nbsp;"
 		      +$ta+"</a></li>";
 	}
+
 	t = t +  '</ul></div></div>';
     t = t +  '<a id="matiere"></a><div class="post"><h2 class="title">Travaux pratiques</h2>';
     t = t + '	<img src="images/pencil_64.png" name="Liste des TP" alt="Liste des TP" title="Liste des TP" width="32" ';
     t = t + '		onClick="tp(\''+nom+'\'); return false;" style="cursor:pointer"/>';
+    t = t +  '</ul></div></div>';
+
+    t = t +  '<a id="matiere"></a><div class="post"><h2 class="title">Questions thématiques</h2>';
+    t = t + '	<img src="images/pencil_64.png" name="Liste des questions" alt="Liste des questions" title="Liste des questions" width="32" ';
+    t = t + '		onClick="questions_thema(\''+nom+'\'); return false;" style="cursor:pointer"/>';
     
 	 $('posts').hide();
      $('posts').update(t);
@@ -268,6 +274,24 @@ function tp(nom) {
     });
 }
 
+function questions_thema(nom) {
+    new Ajax.Request('controler.php', {
+        method: 'get',
+        parameters: {
+            Soumettre: 'questions_thema', nom_base: nom 
+        },
+        onSuccess: function (trs) {
+            messages = trs.responseText;
+            $('posts').hide();
+            $('posts').update(messages);
+            $('posts').appear();
+        },
+        onFailure: function () {
+            alert('messages: Impossible d\'obtenir la rubrique !')
+        }
+    });
+}
+
 function questions(nom, tpName) {
     new Ajax.Request('controler.php', {
         method: 'get',
@@ -284,6 +308,10 @@ function questions(nom, tpName) {
             alert('messages: Impossible d\'obtenir la rubrique !')
         }
     });
+}
+
+function popUp(aide){
+    alert(aide);
 }
 
 function news() {

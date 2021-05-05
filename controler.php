@@ -119,6 +119,15 @@ if (isset($_SESSION['debug']) && $session_ok) {
   			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
 		}
 	}
+	else if ($Soumettre == "questions_thema"){
+		try {
+			$nom_base = $_REQUEST['nom_base'];
+			liste_question_thema($nom_base);								
+		} catch(Exception $e) {
+  			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
+		}
+	}
+
 	else if($Soumettre == "questions"){
 		try {
 			$tp_name = $_REQUEST['tp_name'];

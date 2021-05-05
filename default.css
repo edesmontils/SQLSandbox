@@ -164,3 +164,12 @@ a:hover {
 #footer a {
 	color: #8A8E99;
 }
+
+.btnPopup{
+	background-color: beige;
+	cursor: pointer;
+}
+
+.btnPopup:hover{
+	background-color: bisque;
+}
