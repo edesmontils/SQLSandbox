@@ -224,39 +224,31 @@ function liste_question_thema($base){
 	echo "<div class='post'><h2 class='title'>Questions à thèmes</h2>";
 	echo "<ul>";
 	foreach ($listeQuestionThema->children() as $theme){
+		foreach($theme->theme->children() as $thematique){
+			$nomTheme = $thematique->getName()." ";
+		}
 		$present = false;
-		$thema = explode("-", (string)$theme->name_quest);
-		if($thema[0] == "re"){
-			$nomTheme = "Requêtes simples";
-		}
-		else if($thema[0] == "tr"){
-			$nomTheme = "Requêtes à trous";
-		}
-		else if($thema[0] == "int"){
-			$nomTheme = "Recherches de l'intention";
-		}
-		else if($thema[0] == "cmp"){
-			$nomTheme = "Requêtes complètes";
-		}
 		foreach($liste_them as $value){
 			if($value == $nomTheme){
 				$present = true;
 			}
 		}
-		if($present == false){
+
+		if(!$present){
 			$questionDispo = true;
 			array_push($liste_them, $nomTheme);
 			echo "<a href='#' style='cursor:pointer'>";
 			echo "<li>";
 			echo "<img src='images/down_64.png' height='16' width='16' /> ";
-			echo $nomTheme;
+			$nomTheme = str_replace('-',' ', $nomTheme);
+			echo ucfirst($nomTheme);
 			echo "</a>";
 			echo "</li>";
 		}
 	}
 	echo "</ul>";
 	echo "</div>";
-	if($questionDispo == false){
+	if(!$questionDispo){
 		echo "<h2 class='title'>Aucune question n'est disponible actuellement</h2>";
 	}	
 }
@@ -268,13 +260,11 @@ function liste_question($base, $tp_name){
 	$listeQuestion = ($xml->$listeQUEST);
 
 	$listeTP = 'liste-TP';
-	$objectif = 'objectif-pédagogique';
+	$objectif = 'objectif-pÃ©dagogique';
 	$listeTp = ($xml->$listeTP);
 	$refQuest = 'ref-question';
 
 	$questionDispo = false;
-
-	$findQuest = null;
 
 	echo "<a id='matiere'></a>";
 	echo "<div class='post'><h2 class='title'>Questions du TP $tp_name</h2>";
@@ -285,11 +275,9 @@ function liste_question($base, $tp_name){
 					if((string)$refQuestion->name_question == (string)$Quest->name_quest){
 						$questionDispo = true;
 						$i=$i+1;
-						echo "Question ".$i;
-						echo "<li>";
-						echo "Intention :";
-						echo $Quest->intention;
-						echo "</li>";
+						echo "<a>Question $i</a>";
+						echo "<br>";
+						type_question($Quest);
 						$findQuest = $Quest->aide;
 						if($findQuest != ""){
 							echo "<li>";
@@ -298,6 +286,8 @@ function liste_question($base, $tp_name){
 							echo "</button>";
 							echo "</li>";
 						}
+						echo "<br>";
+						echo '<INPUT TYPE="SUBMIT" NAME="bouton" value="Valider">';
 						echo "<br>"."</br>";
 					}
 				}
@@ -305,10 +295,50 @@ function liste_question($base, $tp_name){
 		}
 	}
 	echo "</div>";
-	if($questionDispo == false){
-		echo "<h2 class='title'>Aucune question n'est disponible actuellement</h2>";
+	if(!$questionDispo){
+		echo "<h2 class='title'>Aucun question n'est disponible actuellement</h2>";
 	}		
+}
 
+function type_question($Quest){
+	if($Quest->getName() == 'rq-intention'){
+		echo "<li>";
+		echo "Veuillez donner l'intention de la requète suivante :"."<br>";
+		echo "</li>";
+		if($Quest->SQL->Select->children()->getName()=='Distinct'){
+			$t = $t.'<b>Select </b>'.'<b>'.$Quest->SQL->Select->children()->getName().'</b>'.' '.$Quest->SQL->Select->Distinct.'<br>';
+		}else{
+			$t = $t.'<b>Select </b>'.' '.$Quest->SQL->Select.'<br>';
+		}
+		$t = $t.'<b>From </b>';
+		$i=0;
+		if($Quest->SQL->From->children()->getName() != 'Table'){
+			foreach($Quest->SQL->From->children()->children() as $Table){
+				if($i==0){
+					$t = $t.$Table.' ';
+				}else{
+					$t = $t.$Quest->SQL->From->children()->getName().' '.$Table.' ';
+				}
+				$i=$i+1;
+			}
+		}else{
+			$t = $t.$Quest->SQL->From->children();
+		}
+		$t = $t.'<br>';
+		$t = $t.'<b>Where </b>'.$Quest->SQL->Where.'<br>';
+		echo $t;
+		echo '<INPUT NAME="Intention-Quest" size="78">'."<br>";
+	}else if($Quest->getName() == 'rq-trou'){
+		echo "<li>";
+		echo $Quest->intention;
+		echo "</li>";	
+		echo '<textarea NAME="param5" rows="10" cols="80">Question à trou</textarea>'."<br>";
+	}else{
+		echo "<li>";
+		echo $Quest->intention;
+		echo "</li>";
+		echo '<textarea name="SQL-Quest" rows="10" cols="80"></textarea>'."<br>";
+	}
 }
 
 ?>
