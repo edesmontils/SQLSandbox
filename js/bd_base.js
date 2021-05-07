@@ -236,7 +236,7 @@ function db(nom) {
 
     t = t +  '<a id="matiere"></a><div class="post"><h2 class="title">Questions thématiques</h2>';
     t = t + '	<img src="images/pencil_64.png" name="Liste des questions" alt="Liste des questions" title="Liste des questions" width="32" ';
-    t = t + '		onClick="questions_thema(\''+nom+'\'); return false;" style="cursor:pointer"/>';
+    t = t + '		onClick="themes_dispo(\''+nom+'\'); return false;" style="cursor:pointer"/>';
     
 	 $('posts').hide();
      $('posts').update(t);
@@ -274,11 +274,29 @@ function tp(nom) {
     });
 }
 
-function questions_thema(nom) {
+function themes_dispo(nom) {
     new Ajax.Request('controler.php', {
         method: 'get',
         parameters: {
-            Soumettre: 'questions_thema', nom_base: nom 
+            Soumettre: 'themes_dispo', nom_base: nom 
+        },
+        onSuccess: function (trs) {
+            messages = trs.responseText;
+            $('posts').hide();
+            $('posts').update(messages);
+            $('posts').appear();
+        },
+        onFailure: function () {
+            alert('messages: Impossible d\'obtenir la rubrique !')
+        }
+    });
+}
+
+function liste_quest_thema(nom, themes){
+    new Ajax.Request('controler.php', {
+        method: 'get',
+        parameters: {
+            Soumettre: 'liste_quest_thema', nom_base: nom, theme_questions: themes
         },
         onSuccess: function (trs) {
             messages = trs.responseText;

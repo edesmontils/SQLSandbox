@@ -187,6 +187,7 @@ function verifFich($base){
 	}
 }
 
+//Retourne la liste des TP d'une base de donnée
 function liste_TP($base){
 	
 	$tpDispo = false;
@@ -213,7 +214,7 @@ function liste_TP($base){
 	}
 }
 
-function liste_question_thema($base){
+function themes_dispo($base){
 	
 	$liste_them = array();
 	$xml = verifFich($base);
@@ -237,20 +238,24 @@ function liste_question_thema($base){
 		if(!$present){
 			$questionDispo = true;
 			array_push($liste_them, $nomTheme);
-			echo "<a href='#' style='cursor:pointer'>";
+			echo "<a href='#' onClick='liste_quest_thema(\"$base\", \"$nomTheme\");return false;' style='cursor:pointer'>";
 			echo "<li>";
 			echo "<img src='images/down_64.png' height='16' width='16' /> ";
 			$nomTheme = str_replace('-',' ', $nomTheme);
-			echo ucfirst($nomTheme);
+			echo "<b>".ucfirst($nomTheme)."</b>";
 			echo "</a>";
 			echo "</li>";
 		}
 	}
+
 	echo "</ul>";
 	echo "</div>";
 	if(!$questionDispo){
 		echo "<h2 class='title'>Aucune question n'est disponible actuellement</h2>";
-	}	
+	}
+	else{
+		valeurQuestion($liste_them);
+	}
 }
 
 function liste_question($base, $tp_name){
@@ -260,7 +265,7 @@ function liste_question($base, $tp_name){
 	$listeQuestion = ($xml->$listeQUEST);
 
 	$listeTP = 'liste-TP';
-	$objectif = 'objectif-pÃ©dagogique';
+	$objectif = 'objectif-pédagogique';
 	$listeTp = ($xml->$listeTP);
 	$refQuest = 'ref-question';
 
@@ -297,7 +302,37 @@ function liste_question($base, $tp_name){
 	echo "</div>";
 	if(!$questionDispo){
 		echo "<h2 class='title'>Aucun question n'est disponible actuellement</h2>";
-	}		
+	}	
+}
+
+function liste_question_thema($base, $theme){
+
+	$xml = verifFich($base);
+	$listeQUEST = 'liste-questions';
+	$listeQuestionThema = ($xml->$listeQUEST);
+	$themeTest = str_replace(' ', '', $theme);
+
+	foreach ($listeQuestionThema->children() as $themeBase){
+		foreach($themeBase->theme->children() as $thematique){
+			if($thematique->getName() == $themeTest){
+				$i=$i+1;
+				echo "<a>Question $i</a>";
+				echo "<br>";
+				type_question($themeBase);
+				$findQuest = $themeBase->aide;
+				if($findQuest != ""){
+					echo "<li>";
+					echo "<button id='btnPopup' class='btnPopup' onclick='popUp(\"$themeBase->aide\")'>";
+					echo "Aide";
+					echo "</button>";
+					echo "</li>";
+				}
+				echo "<br>";
+				echo '<INPUT TYPE="SUBMIT" NAME="bouton" value="Valider">';
+				echo "<br>"."</br>";
+			}
+		}
+	}
 }
 
 function type_question($Quest){
@@ -338,6 +373,50 @@ function type_question($Quest){
 		echo $Quest->intention;
 		echo "</li>";
 		echo '<textarea name="SQL-Quest" rows="10" cols="80"></textarea>'."<br>";
+	}
+}
+
+function valeurQuestion($tableau){
+	echo "<b><u> Difficulté des questions proposées</u></b>";
+	echo "<br>";
+	foreach($tableau as $value){
+		//echo (string)$value;
+		if($value == "projection "){
+			$value = str_replace('-',' ', $value);
+			echo ucfirst($value). " : 1/6";
+		}
+		else if($value == "distinct "){
+			$value = str_replace('-',' ', $value);
+			echo ucfirst($value). " : 2/6";
+		}
+		else if($value == "agrégation "){
+			$value = str_replace('-',' ', $value);
+			echo ucfirst($value). " : 3/6";
+		}
+		else if($value == "sélection-simple "){
+			$value = str_replace('-',' ', $value);
+			echo ucfirst($value). " : 3/6";
+		}
+		else if($value == "sélection-complexe "){
+			$value = str_replace('-',' ', $value);
+			echo ucfirst($value). " : 5/6";
+		}
+		else if($value == "jointure-simple "){
+			$value = str_replace('-',' ', $value);
+			echo ucfirst($value). " : 4/6";
+
+		}
+		else if($value == "jointures-multiples "){
+			$value = str_replace('-',' ', $value);
+			echo ucfirst($value). " : 6/6";
+
+		}
+		else if($value == "tri "){
+			$value = str_replace('-',' ', $value);
+			echo ucfirst($value). " : 1/6";
+
+		}
+		echo "<br>";
 	}
 }
 

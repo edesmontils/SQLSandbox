@@ -119,10 +119,19 @@ if (isset($_SESSION['debug']) && $session_ok) {
   			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
 		}
 	}
-	else if ($Soumettre == "questions_thema"){
+	else if ($Soumettre == "themes_dispo"){
 		try {
 			$nom_base = $_REQUEST['nom_base'];
-			liste_question_thema($nom_base);								
+			themes_dispo($nom_base);								
+		} catch(Exception $e) {
+  			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
+		}
+	}
+	else if ($Soumettre == "liste_quest_thema"){
+		try {
+			$nom_base = $_REQUEST['nom_base'];
+			$theme_questions = $_REQUEST['theme_questions'];
+			liste_question_thema($nom_base, $theme_questions);								
 		} catch(Exception $e) {
   			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
 		}
