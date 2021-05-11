@@ -214,6 +214,7 @@ function liste_TP($base){
 	}
 }
 
+// Affiche les thèmes disponibles pour une bdd
 function themes_dispo($base){
 	
 	$liste_them = array();
@@ -258,6 +259,7 @@ function themes_dispo($base){
 	}
 }
 
+// Affiche la liste des questions d'un TP
 function liste_question($base, $tp_name){
 
 	$xml = verifFich($base);
@@ -268,11 +270,22 @@ function liste_question($base, $tp_name){
 	$objectif = 'objectif-pédagogique';
 	$listeTp = ($xml->$listeTP);
 	$refQuest = 'ref-question';
+	$description = ($xml->description);
 
 	$questionDispo = false;
 
 	echo "<a id='matiere'></a>";
+
 	echo "<div class='post'><h2 class='title'>Questions du TP $tp_name</h2>";
+	echo "<br>"."</br>";
+
+	echo "<h2 class='title'>Temps restant : <p id='countdown'/></p></h2>";
+
+	echo "<br>"."</br>";
+	echo "<button>";
+	echo "<a href='dbListe.php?var1=@$base' target='_blank'>Liste des bases</a>";
+	echo "</button>";
+	echo "<br>"."</br>";
 	foreach($listeTp->TP as $tp){
 		if($tp->name == $tp_name){
 			foreach($tp->$refQuest as $refQuestion){
@@ -302,19 +315,27 @@ function liste_question($base, $tp_name){
 	echo "</div>";
 	if(!$questionDispo){
 		echo "<h2 class='title'>Aucun question n'est disponible actuellement</h2>";
-	}	
+	}
 }
 
+// Affiche la liste des questions pour un thème
 function liste_question_thema($base, $theme){
 
 	$xml = verifFich($base);
 	$listeQUEST = 'liste-questions';
 	$listeQuestionThema = ($xml->$listeQUEST);
-	$themeTest = str_replace(' ', '', $theme);
+	$themeVerif = str_replace(' ', '', $theme);
+	$nomTheme = str_replace('-',' ', $themeVerif);
 
+	echo "<div class='post'><h2 class='title'>Thème : $nomTheme </h2>";
+	echo "<br>"."</br>";
+	echo "<button>";
+	echo "<a href='dbListe.php?var1=@$base' target='_blank'>Liste des bases</a>";
+	echo "</button>";
+	echo "<br>"."</br>";
 	foreach ($listeQuestionThema->children() as $themeBase){
 		foreach($themeBase->theme->children() as $thematique){
-			if($thematique->getName() == $themeTest){
+			if($thematique->getName() == $themeVerif){
 				$i=$i+1;
 				echo "<a>Question $i</a>";
 				echo "<br>";
@@ -335,6 +356,7 @@ function liste_question_thema($base, $theme){
 	}
 }
 
+// Affiche la zone de texte d'une question en fonction de son type
 function type_question($Quest){
 	if($Quest->getName() == 'rq-intention'){
 		echo "<li>";
@@ -376,6 +398,7 @@ function type_question($Quest){
 	}
 }
 
+// Affiche la difficulté en fonction du thème de la question
 function valeurQuestion($tableau){
 	echo "<b><u> Difficulté des questions proposées</u></b>";
 	echo "<br>";
@@ -421,3 +444,19 @@ function valeurQuestion($tableau){
 }
 
 ?>
+<script>
+	const startingMinutes = 60;
+	let time = startingMinutes * 60;
+	
+	const countdownEl = document.getElementById('countdown');
+
+	setInterval(updateCountDown, 1000);
+	function updateCountDown(){
+		const minutes = Math.floor(time/60);
+		let seconds = time % 60;
+
+		countdownEl.innerHTML = `${minutes}: ${seconds}`;
+		time--;
+	}
+	
+</script>

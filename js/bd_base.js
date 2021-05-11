@@ -293,6 +293,17 @@ function themes_dispo(nom) {
 }
 
 function liste_quest_thema(nom, themes){
+    /*
+    t = '<a id="matiere"></a><div class="post">';
+	t = t + '	<h2 class="title">Description de la base '+nom+'</h2>';
+	t = t + '    <div class="story">';
+  	t = t + '<p>'+listeBases[nom]['description']+'</p>';
+  	t = t + '<p>Référence : <a href="'+listeBases[nom]['référence']+'">'+listeBases[nom]['référence']+'</a></p>';
+	t = t + '</div></div>';
+    $('posts').hide();
+     $('posts').update(t);
+     $('posts').show();
+     */
     new Ajax.Request('controler.php', {
         method: 'get',
         parameters: {
