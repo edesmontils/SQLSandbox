@@ -205,6 +205,10 @@ function new_query() {
     $('posts').appear();
 }
 
+function db_tables(nom){
+    window.open('dbListe.php?var1=@\''+nom+'\'');
+}
+
 function db(nom) {
     //console.log(nom);
     //if(nom == 'tp-em'){
@@ -217,8 +221,11 @@ function db(nom) {
   	t = t + '<p>Référence : <a href="'+listeBases[nom]['référence']+'">'+listeBases[nom]['référence']+'</a></p>';
 	t = t + '</div></div>';
 	
-	t = t +  '<a id="matiere"></a><div class="post"><h2 class="title">Sommaire</h2>';
+	t = t +  '<a id="matiere"></a><div class="post"><h2 class="title">Liste des tables</h2>';
 	t = t +  '    <div class="story"><ul>';
+    t = t + '	<img src="images/Database.png" name="Liste des tables" alt="Liste des tables" title="Liste des tables" width="32" ';
+    t = t + '		onClick="db_tables(\''+nom+'\'); return false;" style="cursor:pointer"/>';
+    /*
 	for(var i = 0; i < listeBases[nom]['tables'].length;i++) {
 		$ta = listeBases[nom]['tables'][i];
 		t = t +  "<li><a href='#"
@@ -227,33 +234,23 @@ function db(nom) {
 		      +$ta+"' width='16'/>&nbsp;&nbsp;"
 		      +$ta+"</a></li>";
 	}
+    */
 
 	t = t +  '</ul></div></div>';
     t = t +  '<a id="matiere"></a><div class="post"><h2 class="title">Travaux pratiques</h2>';
+    t = t +  '    <div class="story"><ul>';
     t = t + '	<img src="images/pencil_64.png" name="Liste des TP" alt="Liste des TP" title="Liste des TP" width="32" ';
     t = t + '		onClick="tp(\''+nom+'\'); return false;" style="cursor:pointer"/>';
     t = t +  '</ul></div></div>';
 
     t = t +  '<a id="matiere"></a><div class="post"><h2 class="title">Questions thématiques</h2>';
+    t = t +  '    <div class="story"><ul>';
     t = t + '	<img src="images/pencil_64.png" name="Liste des questions" alt="Liste des questions" title="Liste des questions" width="32" ';
     t = t + '		onClick="themes_dispo(\''+nom+'\'); return false;" style="cursor:pointer"/>';
     
 	 $('posts').hide();
      $('posts').update(t);
      $('posts').show();
-
-    new Ajax.Request('controler.php', {
-        method: 'get',
-        parameters: {
-            Soumettre: nom
-        },
-        onSuccess: function (trs) {
-            $('posts').insert(trs.responseText);
-        },
-        onFailure: function () {
-            alert('db: Impossible d\'obtenir la rubrique !')
-        }
-    });
 }
 
 function tp(nom) {

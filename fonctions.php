@@ -132,6 +132,11 @@ function get_tables($base) {
 }
 
 function liste_base($base) {
+	echo "<a id='matiere'></a><div class='post'><h2 class='title'>Sommaire</h2>";
+	echo "<div class='story'><ul>";
+	sommaire($base);
+	echo "</div>";
+	echo "<br>"."</br>";
 	$tables = get_tables($base);	
 	//echo "<p>Ds lb</p>";
 	//var_dump($tables);
@@ -143,6 +148,18 @@ function liste_base($base) {
 		echo "<p><a href='#matiere'><img src='images/up_64.png' alt='Sommaire' title='Sommaire' width='32'/></a></p>";
 		echo '</div></div>';
 	}
+}
+
+function sommaire($base){
+	$tables = get_tables($base);
+	echo "<div class='story'><ul>";
+	foreach($tables as $ta){
+		echo "<li><a href='#'>";
+		echo "<img src='images/down_64.png' alt='' title='' width='16'/>";
+		echo $ta;
+		echo "</a></li>";
+	}
+	echo "</ul></div>";
 }
 
 function verifFich($base){
@@ -283,7 +300,7 @@ function liste_question($base, $tp_name){
 
 	echo "<br>"."</br>";
 	echo "<button>";
-	echo "<a href='dbListe.php?var1=@$base' target='_blank'>Liste des bases</a>";
+	echo "<a href='dbListe.php?var1=@$base' target='_blank'>Liste des tables</a>";
 	echo "</button>";
 	echo "<br>"."</br>";
 	foreach($listeTp->TP as $tp){
@@ -330,7 +347,7 @@ function liste_question_thema($base, $theme){
 	echo "<div class='post'><h2 class='title'>Thème : $nomTheme </h2>";
 	echo "<br>"."</br>";
 	echo "<button>";
-	echo "<a href='dbListe.php?var1=@$base' target='_blank'>Liste des bases</a>";
+	echo "<a href='dbListe.php?var1=@$base' target='_blank'>Liste des tables</a>";
 	echo "</button>";
 	echo "<br>"."</br>";
 	foreach ($listeQuestionThema->children() as $themeBase){

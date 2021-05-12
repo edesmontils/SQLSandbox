@@ -46,8 +46,10 @@ Released for free under a Creative Commons Attribution 2.5 License
 <div id="content">
   <div id="posts">
     <?php
+    
       $param = $_GET['var1'];
       $split = explode('@', $param);
+      $split = str_replace("'", "", $split);
       $db_name = $split[1];
       liste_base($db_name);
     ?>
