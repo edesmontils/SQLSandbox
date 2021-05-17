@@ -209,6 +209,19 @@ function db_tables(nom){
     window.open('dbListe.php?var1=@\''+nom+'\'');
 }
 
+function description(nom){
+    t = '<a id="matiere"></a><div class="post">';
+	t = t + '	<h2 class="title">Description de la base '+nom+'</h2>';
+	t = t + '    <div class="story">';
+  	t = t + '<p>'+listeBases[nom]['description']+'</p>';
+  	t = t + '<p>Référence : <a href="'+listeBases[nom]['référence']+'">'+listeBases[nom]['référence']+'</a></p>';
+	t = t + '</div></div>';
+
+    $('posts').hide();
+    $('posts').update(t);
+    $('posts').show();
+}
+
 function db(nom) {
     //console.log(nom);
     //if(nom == 'tp-em'){
@@ -225,16 +238,6 @@ function db(nom) {
 	t = t +  '    <div class="story"><ul>';
     t = t + '	<img src="images/Database.png" name="Liste des tables" alt="Liste des tables" title="Liste des tables" width="32" ';
     t = t + '		onClick="db_tables(\''+nom+'\'); return false;" style="cursor:pointer"/>';
-    /*
-	for(var i = 0; i < listeBases[nom]['tables'].length;i++) {
-		$ta = listeBases[nom]['tables'][i];
-		t = t +  "<li><a href='#"
-		      +$ta+"'><img src='images/down_64.png' alt='"
-		      +$ta+"' title='"
-		      +$ta+"' width='16'/>&nbsp;&nbsp;"
-		      +$ta+"</a></li>";
-	}
-    */
 
 	t = t +  '</ul></div></div>';
     t = t +  '<a id="matiere"></a><div class="post"><h2 class="title">Travaux pratiques</h2>';
@@ -290,7 +293,7 @@ function themes_dispo(nom) {
 }
 
 function liste_quest_thema(nom, themes){
-    /*
+
     t = '<a id="matiere"></a><div class="post">';
 	t = t + '	<h2 class="title">Description de la base '+nom+'</h2>';
 	t = t + '    <div class="story">';
@@ -300,17 +303,14 @@ function liste_quest_thema(nom, themes){
     $('posts').hide();
      $('posts').update(t);
      $('posts').show();
-     */
+
     new Ajax.Request('controler.php', {
         method: 'get',
         parameters: {
             Soumettre: 'liste_quest_thema', nom_base: nom, theme_questions: themes
         },
         onSuccess: function (trs) {
-            messages = trs.responseText;
-            $('posts').hide();
-            $('posts').update(messages);
-            $('posts').appear();
+            $('posts').insert(trs.responseText);
         },
         onFailure: function () {
             alert('messages: Impossible d\'obtenir la rubrique !')
@@ -319,16 +319,23 @@ function liste_quest_thema(nom, themes){
 }
 
 function questions(nom, tpName) {
+    t = '<a id="matiere"></a><div class="post">';
+	t = t + '	<h2 class="title">Description de la base '+nom+'</h2>';
+	t = t + '    <div class="story">';
+  	t = t + '<p>'+listeBases[nom]['description']+'</p>';
+  	t = t + '<p>Référence : <a href="'+listeBases[nom]['référence']+'">'+listeBases[nom]['référence']+'</a></p>';
+	t = t + '</div></div>';
+    $('posts').hide();
+     $('posts').update(t);
+     $('posts').show();
+
     new Ajax.Request('controler.php', {
         method: 'get',
         parameters: {
             Soumettre: 'questions', nom_base: nom, tp_name: tpName 
         },
         onSuccess: function (trs) {
-            messages = trs.responseText;
-            $('posts').hide();
-            $('posts').update(messages);
-            $('posts').appear();
+            $('posts').insert(trs.responseText);
         },
         onFailure: function () {
             alert('messages: Impossible d\'obtenir la rubrique !')

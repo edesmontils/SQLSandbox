@@ -204,6 +204,11 @@ function verifFich($base){
 	}
 }
 
+//Affiche la page d'acceuil d'un TP 
+function pageInitial($base, $tpname){
+	
+}
+
 //Retourne la liste des TP d'une base de donnée
 function liste_TP($base){
 	
@@ -287,7 +292,6 @@ function liste_question($base, $tp_name){
 	$objectif = 'objectif-pédagogique';
 	$listeTp = ($xml->$listeTP);
 	$refQuest = 'ref-question';
-	$description = ($xml->description);
 
 	$questionDispo = false;
 
