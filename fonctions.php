@@ -135,7 +135,6 @@ function liste_base($base) {
 	echo "<a id='matiere'></a><div class='post'><h2 class='title'>Sommaire</h2>";
 	echo "<div class='story'><ul>";
 	sommaire($base);
-	echo "</div>";
 	echo "<br>"."</br>";
 	$tables = get_tables($base);	
 	//echo "<p>Ds lb</p>";
@@ -146,7 +145,7 @@ function liste_base($base) {
 		echo '    <div class="story">';
 		$t = get("select * from ".$ta." order by 1",$base);
 		echo "<p><a href='#matiere'><img src='images/up_64.png' alt='Sommaire' title='Sommaire' width='32'/></a></p>";
-		echo '</div></div>';
+		echo '</ul></div></div>';
 	}
 }
 
@@ -154,7 +153,7 @@ function sommaire($base){
 	$tables = get_tables($base);
 	echo "<div class='story'><ul>";
 	foreach($tables as $ta){
-		echo "<li><a href='#'>";
+		echo "<li><a href='#$ta'>";
 		echo "<img src='images/down_64.png' alt='' title='' width='16'/>";
 		echo $ta;
 		echo "</a></li>";
@@ -206,7 +205,19 @@ function verifFich($base){
 
 //Affiche la page d'acceuil d'un TP 
 function pageInitial($base, $tpname){
-	
+	echo "<div class='post' style='text-align:center'><h2 class='title'>$tpname</h2>";
+	echo "<ul>";
+	echo "<li>";
+	echo "Temps limité : "; //ajouter variable temps;
+	echo "</li>";
+	echo "</ul>";
+	echo "<button>";
+	//echo "<a href='#' onClick='questions(\"$base\", \"$tpname\");return false;' style='cursor:pointer'>";
+	echo "<a href='tp.php?var1=@$base@&var2=@$tpname' target='_blank'>";
+	echo "Commencer";
+	echo "</a>";
+	echo "</button>";
+	echo "</div>";
 }
 
 //Retourne la liste des TP d'une base de donnée
@@ -222,7 +233,7 @@ function liste_TP($base){
 	echo "<ul>";
 	foreach ($listeTp->TP as $tp){
 		$tpDispo = true;
-		echo "<a href='#' onClick='questions(\"$base\", \"$tp->name\");return false;' style='cursor:pointer'>";
+		echo "<a href='#' onClick='pageInitial(\"$base\", \"$tp->name\");return false;' style='cursor:pointer'>";
 		echo "<li>";
 		echo "<img src='images/down_64.png' height='16' width='16' /> ";
 		echo $tp->name;
@@ -231,7 +242,7 @@ function liste_TP($base){
 	}
 	echo "</ul>";
 	echo "</div>";
-	if($tpDispo == false){
+	if(!$tpDispo){
 		echo "<h2 class='title'>Aucun TP disponible actuellement</h2>";
 	}
 }
@@ -301,7 +312,25 @@ function liste_question($base, $tp_name){
 	echo "<br>"."</br>";
 
 	echo "<h2 class='title'>Temps restant : <p id='countdown'/></p></h2>";
+	?>
 
+	<script>
+	const startingMinutes = 60;
+	let time = startingMinutes * 60;
+	
+	const countdownEl = document.getElementById('countdown');
+
+	setInterval(updateCountDown, 1000);
+	function updateCountDown(){
+		const minutes = Math.floor(time/60);
+		let seconds = time % 60;
+
+		countdownEl.innerHTML = `${minutes}: ${seconds}`;
+		time--;
+	}
+	</script>	
+
+	<?php
 	echo "<br>"."</br>";
 	echo "<button>";
 	echo "<a href='dbListe.php?var1=@$base' target='_blank'>Liste des tables</a>";
@@ -465,19 +494,3 @@ function valeurQuestion($tableau){
 }
 
 ?>
-<script>
-	const startingMinutes = 60;
-	let time = startingMinutes * 60;
-	
-	const countdownEl = document.getElementById('countdown');
-
-	setInterval(updateCountDown, 1000);
-	function updateCountDown(){
-		const minutes = Math.floor(time/60);
-		let seconds = time % 60;
-
-		countdownEl.innerHTML = `${minutes}: ${seconds}`;
-		time--;
-	}
-	
-</script>

@@ -146,6 +146,16 @@ if (isset($_SESSION['debug']) && $session_ok) {
   			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
 		}
 	}
+
+	else if($Soumettre == "pageIni"){
+		try {
+			$tp_name = $_REQUEST['tp_name'];
+			$nom_base = $_REQUEST['nom_base'];
+			pageInitial($nom_base, $tp_name);								
+		} catch(Exception $e) {
+  			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
+		}
+	}
 	//======================================================
 	else {//echo "<p>liste base $Soumettre</p>";
 		liste_base($Soumettre);

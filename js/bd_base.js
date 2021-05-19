@@ -223,21 +223,15 @@ function description(nom){
 }
 
 function db(nom) {
-    //console.log(nom);
-    //if(nom == 'tp-em'){
-        //$name = 'em';
-    //}
 	t = '<a id="matiere"></a><div class="post">';
-	t = t + '	<h2 class="title">Description de la base '+nom+'</h2>';
+	t = t + '	<h2 class="title">Description de la base '+nom;
+    t = t + '	<img src="images/Database.png" name="Liste des tables" alt="Liste des tables" title="Liste des tables" width="32" ';
+    t = t + '		onClick="db_tables(\''+nom+'\'); return false;" style="cursor:pointer"/>';
+    t = t + '</h2>';
 	t = t + '    <div class="story">';
   	t = t + '<p>'+listeBases[nom]['description']+'</p>';
   	t = t + '<p>Référence : <a href="'+listeBases[nom]['référence']+'">'+listeBases[nom]['référence']+'</a></p>';
 	t = t + '</div></div>';
-	
-	t = t +  '<a id="matiere"></a><div class="post"><h2 class="title">Liste des tables</h2>';
-	t = t +  '    <div class="story"><ul>';
-    t = t + '	<img src="images/Database.png" name="Liste des tables" alt="Liste des tables" title="Liste des tables" width="32" ';
-    t = t + '		onClick="db_tables(\''+nom+'\'); return false;" style="cursor:pointer"/>';
 
 	t = t +  '</ul></div></div>';
     t = t +  '<a id="matiere"></a><div class="post"><h2 class="title">Travaux pratiques</h2>';
@@ -311,6 +305,25 @@ function liste_quest_thema(nom, themes){
         },
         onSuccess: function (trs) {
             $('posts').insert(trs.responseText);
+        },
+        onFailure: function () {
+            alert('messages: Impossible d\'obtenir la rubrique !')
+        }
+    });
+}
+
+function pageInitial(nom, tpName) {
+
+    new Ajax.Request('controler.php', {
+        method: 'get',
+        parameters: {
+            Soumettre: 'pageIni', nom_base: nom, tp_name: tpName 
+        },
+        onSuccess: function (trs) {
+            messages = trs.responseText;
+            $('posts').hide();
+            $('posts').update(messages);
+            $('posts').appear();
         },
         onFailure: function () {
             alert('messages: Impossible d\'obtenir la rubrique !')
