@@ -161,6 +161,7 @@ function sommaire($base){
 	echo "</ul></div>";
 }
 
+/*
 function verifFich($base){
 	$config = new SimpleXMLElement('./config.xml',
         LIBXML_DTDATTR|LIBXML_DTDLOAD|LIBXML_DTDVALID
@@ -202,9 +203,35 @@ function verifFich($base){
 		}
 	}
 }
+*/
+
+function xmlFile($db_name){
+	$config = new SimpleXMLElement('./config.xml',
+        LIBXML_DTDATTR|LIBXML_DTDLOAD|LIBXML_DTDVALID
+        |LIBXML_NOBLANKS|LIBXML_NOCDATA,
+        true);
+	$rep = $config->dossierBdD ;
+	if (is_dir($rep)) {
+		if ($iter = opendir($rep)) {
+			while (($fichier = readdir($iter)) !== false)  {  
+				if($fichier != "." && $fichier != ".." && $fichier != "Thumbs.db")  {  
+					if (is_dir($rep.'/'.$fichier)) {
+						$conf = $rep.'/'.$fichier.'/config.xml';
+						if (file_exists($conf)) {
+							if($fichier == $db_name){
+								return $xml = simplexml_load_file($conf);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
 
 //Affiche la page d'acceuil d'un TP 
-function pageInitial($base, $tpname){
+function pageInitial($base, $tpname, $descr){
+	$_SESSION['descr'] = $descr;
 	echo "<div class='post' style='text-align:center'><h2 class='title'>$tpname</h2>";
 	echo "<ul>";
 	echo "<li>";
@@ -221,13 +248,16 @@ function pageInitial($base, $tpname){
 }
 
 //Retourne la liste des TP d'une base de donnée
-function liste_TP($base){
-	
+function liste_TP($base, $db_name){
+
+
 	$tpDispo = false;
-	$xml = verifFich($base);
+	$xml = xmlFile($db_name);
+
 	$listeTP = 'liste-TP';
 	$objectif = 'objectif-pédagogique';
 	$listeTp = ($xml->$listeTP);
+
 	echo "<a id='matiere'></a>";
 	echo "<div class='post'><h2 class='title'>Travaux pratiques</h2>";
 	echo "<ul>";
@@ -248,13 +278,16 @@ function liste_TP($base){
 }
 
 // Affiche les thèmes disponibles pour une bdd
-function themes_dispo($base){
+function themes_dispo($base, $descr, $db_name){
 	
 	$liste_them = array();
-	$xml = verifFich($base);
+	$xml = xmlFile($db_name);
+	
 	$listeQUEST = 'liste-questions';
 	$listeQuestionThema = ($xml->$listeQUEST);
 	$questionDispo = false;
+	$_SESSION['descr'] = $descr;
+
 	echo "<a id='matiere'></a>";
 	echo "<div class='post'><h2 class='title'>Questions à thèmes</h2>";
 	echo "<ul>";
@@ -272,7 +305,8 @@ function themes_dispo($base){
 		if(!$present){
 			$questionDispo = true;
 			array_push($liste_them, $nomTheme);
-			echo "<a href='#' onClick='liste_quest_thema(\"$base\", \"$nomTheme\");return false;' style='cursor:pointer'>";
+			//echo "<a href='#' onClick='liste_quest_thema(\"$base\", \"$nomTheme\");return false;' style='cursor:pointer'>";
+			echo "<a href='questionsThem.php?var1=@$base@&var2=@$nomTheme' target='_blank'>";
 			echo "<li>";
 			echo "<img src='images/down_64.png' height='16' width='16' /> ";
 			$nomTheme = str_replace('-',' ', $nomTheme);
@@ -293,9 +327,9 @@ function themes_dispo($base){
 }
 
 // Affiche la liste des questions d'un TP
-function liste_question($base, $tp_name){
+function liste_question($base, $tp_name, $db_name){
 
-	$xml = verifFich($base);
+	$xml = xmlFile($db_name);
 	$listeQUEST = 'liste-questions';
 	$listeQuestion = ($xml->$listeQUEST);
 
@@ -306,12 +340,14 @@ function liste_question($base, $tp_name){
 
 	$questionDispo = false;
 
+	echo $_SESSION['descr'];
+
 	echo "<a id='matiere'></a>";
 
 	echo "<div class='post'><h2 class='title'>Questions du TP $tp_name</h2>";
 	echo "<br>"."</br>";
 
-	echo "<h2 class='title'>Temps restant : <p id='countdown'/></p></h2>";
+	echo "<h3 class='timer'>Temps restant : <p id='countdown'/></p></h3>";
 	?>
 
 	<script>
@@ -369,14 +405,15 @@ function liste_question($base, $tp_name){
 }
 
 // Affiche la liste des questions pour un thème
-function liste_question_thema($base, $theme){
+function liste_question_thema($base, $theme, $db_name){
 
-	$xml = verifFich($base);
+	$xml = xmlFile($db_name);
 	$listeQUEST = 'liste-questions';
 	$listeQuestionThema = ($xml->$listeQUEST);
 	$themeVerif = str_replace(' ', '', $theme);
 	$nomTheme = str_replace('-',' ', $themeVerif);
-
+	
+	echo $_SESSION['descr'];
 	echo "<div class='post'><h2 class='title'>Thème : $nomTheme </h2>";
 	echo "<br>"."</br>";
 	echo "<button>";

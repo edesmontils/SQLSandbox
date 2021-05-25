@@ -80,6 +80,7 @@ try {
 					                                   true);
 							$listeBase[(string)$BD['nom']] = array(
 								'fichier' => $rep.'/'.$fichier.'/'.(string)$BD->fichier['nom'],
+								'dbName' => $fichier,
 								'prefixe' => (string)$BD->fichier['prefixe'],
 								'référence' => (string)$BD->référence,
 								'description' => (string)$BD->description->asXML(),

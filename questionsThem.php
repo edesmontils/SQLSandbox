@@ -49,7 +49,8 @@ Released for free under a Creative Commons Attribution 2.5 License
 
   $param2 = $_GET['var2'];
   $split2 = explode('@', $param2);
-  $tp_name = $split2[1];
+  $split2 = str_replace("'", "", $split2);
+  $theme = $split2[1];
 
   $split3 = explode('-', $base);
   $db_name = $split3[1];
@@ -59,7 +60,7 @@ Released for free under a Creative Commons Attribution 2.5 License
 <div id="content">
   <div id="posts">
     <?php
-        liste_question($base, $tp_name, $db_name);
+        liste_question_thema($base, $theme, $db_name);
     ?>
   </div>
 </div>

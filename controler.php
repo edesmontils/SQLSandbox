@@ -114,15 +114,18 @@ if (isset($_SESSION['debug']) && $session_ok) {
 	else if ($Soumettre == "tp"){
 		try {
 			$nom_base = $_REQUEST['nom_base'];
-			liste_TP($nom_base);									
+			$db_name = $_REQUEST['db_name'];
+			liste_TP($nom_base, $db_name);									
 		} catch(Exception $e) {
   			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
 		}
 	}
 	else if ($Soumettre == "themes_dispo"){
 		try {
+			$descr = $_REQUEST['descr'];
 			$nom_base = $_REQUEST['nom_base'];
-			themes_dispo($nom_base);								
+			$db_name = $_REQUEST['db_name'];
+			themes_dispo($nom_base, $descr, $db_name);								
 		} catch(Exception $e) {
   			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
 		}
@@ -141,7 +144,8 @@ if (isset($_SESSION['debug']) && $session_ok) {
 		try {
 			$tp_name = $_REQUEST['tp_name'];
 			$nom_base = $_REQUEST['nom_base'];
-			liste_question($nom_base, $tp_name);								
+			$db_name = $_REQUEST['db_name'];
+			liste_question($nom_base, $tp_name, $db_name);								
 		} catch(Exception $e) {
   			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
 		}
@@ -151,7 +155,8 @@ if (isset($_SESSION['debug']) && $session_ok) {
 		try {
 			$tp_name = $_REQUEST['tp_name'];
 			$nom_base = $_REQUEST['nom_base'];
-			pageInitial($nom_base, $tp_name);								
+			$descr = $_REQUEST['descr'];
+			pageInitial($nom_base, $tp_name, $descr);								
 		} catch(Exception $e) {
   			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
 		}

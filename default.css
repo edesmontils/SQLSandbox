@@ -112,6 +112,10 @@ a:hover {
 	border-bottom: 1px dotted #8A8E99;
 }
 
+.timer {
+	color: rgb(51, 50, 50);
+}
+
 .title {
 	margin: 0;
 	font-size: 1.8em;

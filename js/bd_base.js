@@ -244,7 +244,7 @@ function db(nom) {
     t = t +  '    <div class="story"><ul>';
     t = t + '	<img src="images/pencil_64.png" name="Liste des questions" alt="Liste des questions" title="Liste des questions" width="32" ';
     t = t + '		onClick="themes_dispo(\''+nom+'\'); return false;" style="cursor:pointer"/>';
-    
+    console.log(listeBases[nom]['dbName']);
 	 $('posts').hide();
      $('posts').update(t);
      $('posts').show();
@@ -254,7 +254,7 @@ function tp(nom) {
     new Ajax.Request('controler.php', {
         method: 'get',
         parameters: {
-            Soumettre: 'tp', nom_base: nom 
+            Soumettre: 'tp', nom_base: nom, db_name: listeBases[nom]['dbName']  
         },
         onSuccess: function (trs) {
             messages = trs.responseText;
@@ -269,10 +269,18 @@ function tp(nom) {
 }
 
 function themes_dispo(nom) {
+
+    t = '<a id="matiere"></a><div class="post">';
+	t = t + '	<h2 class="title">Description de la base '+nom+'</h2>';
+	t = t + '    <div class="story">';
+  	t = t + '<p>'+listeBases[nom]['description']+'</p>';
+  	t = t + '<p>Référence : <a href="'+listeBases[nom]['référence']+'">'+listeBases[nom]['référence']+'</a></p>';
+	t = t + '</div></div>';
+
     new Ajax.Request('controler.php', {
         method: 'get',
         parameters: {
-            Soumettre: 'themes_dispo', nom_base: nom 
+            Soumettre: 'themes_dispo', nom_base: nom, descr: t, db_name: listeBases[nom]['dbName']
         },
         onSuccess: function (trs) {
             messages = trs.responseText;
@@ -314,10 +322,17 @@ function liste_quest_thema(nom, themes){
 
 function pageInitial(nom, tpName) {
 
+    t = '<a id="matiere"></a><div class="post">';
+	t = t + '	<h2 class="title">Description de la base '+nom+'</h2>';
+	t = t + '    <div class="story">';
+  	t = t + '<p>'+listeBases[nom]['description']+'</p>';
+  	t = t + '<p>Référence : <a href="'+listeBases[nom]['référence']+'">'+listeBases[nom]['référence']+'</a></p>';
+	t = t + '</div></div>';
+
     new Ajax.Request('controler.php', {
         method: 'get',
         parameters: {
-            Soumettre: 'pageIni', nom_base: nom, tp_name: tpName 
+            Soumettre: 'pageIni', nom_base: nom, tp_name: tpName, descr: t
         },
         onSuccess: function (trs) {
             messages = trs.responseText;
@@ -331,6 +346,7 @@ function pageInitial(nom, tpName) {
     });
 }
 
+/*
 function questions(nom, tpName) {
     t = '<a id="matiere"></a><div class="post">';
 	t = t + '	<h2 class="title">Description de la base '+nom+'</h2>';
@@ -345,7 +361,7 @@ function questions(nom, tpName) {
     new Ajax.Request('controler.php', {
         method: 'get',
         parameters: {
-            Soumettre: 'questions', nom_base: nom, tp_name: tpName 
+            Soumettre: 'questions', nom_base: nom, tp_name: tpName, db_name: listeBases[nom]['dbName']
         },
         onSuccess: function (trs) {
             $('posts').insert(trs.responseText);
@@ -355,6 +371,7 @@ function questions(nom, tpName) {
         }
     });
 }
+*/
 
 function popUp(aide){
     alert(aide);
