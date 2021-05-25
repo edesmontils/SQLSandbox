@@ -39,6 +39,7 @@ try {
 	//Définitions dans le fichier de config principal
 	foreach($config->listeBases->base_de_donnee as $base) { 
 		$listeBase[(string)$base['nom']] = array(
+			'config' => './config.xml',
 			'fichier' => (string)$base->fichier['nom'],
 			'prefixe' => (string)$base->fichier['prefixe'],
 			'référence' => (string)$base->référence,
@@ -55,6 +56,7 @@ try {
                                    |LIBXML_NOBLANKS|LIBXML_NOCDATA,
                                    true);
 		$listeBase[(string)$BD['nom']] = array(
+			'config' => $configBD['localisation'].'/'.$configBD['fichier'],
 			'fichier' => $configBD['localisation'].'/'.(string)$BD->fichier['nom'],
 			'prefixe' => (string)$BD->fichier['prefixe'],
 			'référence' => (string)$BD->référence,
@@ -79,6 +81,7 @@ try {
 					                                   |LIBXML_NOBLANKS|LIBXML_NOCDATA,
 					                                   true);
 							$listeBase[(string)$BD['nom']] = array(
+								'config' => $conf,
 								'fichier' => $rep.'/'.$fichier.'/'.(string)$BD->fichier['nom'],
 								'prefixe' => (string)$BD->fichier['prefixe'],
 								'référence' => (string)$BD->référence,
@@ -93,7 +96,7 @@ try {
 			closedir($iter);  
 		}
 	}
-	ksort($listeBase);
+	ksort($listeBase,SORT_NATURAL || SORT_FLAG_CASE);
 	$listeNoms = array_keys($listeBase);
 } catch(Exception $e) {
   echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()
