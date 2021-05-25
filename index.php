@@ -96,7 +96,7 @@ try {
 			closedir($iter);  
 		}
 	}
-	ksort($listeBase,SORT_NATURAL || SORT_FLAG_CASE);
+	ksort($listeBase,SORT_NATURAL | SORT_FLAG_CASE);
 	$listeNoms = array_keys($listeBase);
 } catch(Exception $e) {
   echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()
