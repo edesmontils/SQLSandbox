@@ -38,7 +38,7 @@ if (isset($_SESSION['debug']) && $session_ok) {
 		if (isset($requete) && isset($base)){
 		    $requete = stripslashes($requete);	
 			$t=get($requete,$base);  
-			echo ($ok ? "<img src='images/tick_64.png'  width='32' alt='ok' title='ok'/>"
+			echo (!is_null($t) ? "<img src='images/tick_64.png'  width='32' alt='ok' title='ok'/>"
 			           :"<img src='images/block_64.png' width='32' alt='ko' title='ko'/>");
 			           
 			if ($mode == '1') 

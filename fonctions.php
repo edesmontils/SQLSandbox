@@ -49,7 +49,7 @@ function purge_db() {
 function get($requete,$base) {
 	$fic=$_SESSION["copie_$base"];
 	$db=new SQLite3($fic);
-	$table = array();
+	$table = NULL;
 	$requete = $db->escapeString($requete); //$db->escapeString(utf8_decode($requete));	
 	//echo '<p>Get</p>';
 	if ($db) {//Connexion réussie !
@@ -57,6 +57,7 @@ function get($requete,$base) {
 		$erreur='';//echo '<p>Connexion ok</p>';
 		$result=$db->query($requete);
 		if ($result) {
+			$table = array();
 			//Exploitation des résultats
 			    $ligne = $result->fetchArray(SQLITE3_ASSOC);
 				$titre = array_keys($ligne); ?>
@@ -86,7 +87,7 @@ function get($requete,$base) {
 			echo '<p>Problème dans la requête</p>';
 			$no_err = $db->lastErrorCode();
 			$erreur2 = $db->lastErrorMsg();
-			echo("<script language='javascript'>result_type='ko';</script><p>$erreur2 ($no_err) </p>");
+			echo("<script language='javascript'>result_type='ko';</script><p>$erreur2 ($no_err) </p> <div id='type-res' value='ko'/>");
 		} 
 		//Fermeture de la connection à la base
 		$db->close();
