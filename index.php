@@ -93,7 +93,7 @@ try {
 			closedir($iter);  
 		}
 	}
-
+	ksort($listeBase);
 	$listeNoms = array_keys($listeBase);
 } catch(Exception $e) {
   echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()
