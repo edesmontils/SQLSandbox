@@ -89,7 +89,7 @@
                 <From><Table>Fleuve</Table></From>
                 <Where>longueur>1000</Where>
             </SQL>
-            <aide>Test 1 pour aide question</aide>
+            <aide><p>Test 1 pour aide question</p></aide>
         </rq-trou>
         <rq-trou xml:id="tr-em-02">
             <name_quest>tr-em-02</name_quest>
