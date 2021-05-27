@@ -382,10 +382,10 @@ function liste_question($base, $tp_name, $db_name){
 						echo "<a>Question $i</a>";
 						echo "<br>";
 						type_question($Quest);
-						$findQuest = $Quest->aide;
-						if($findQuest != ""){
+						$aide = $Quest->aide->asXML();
+						if(!empty($aide)){
 							echo "<li>";
-							echo "<button id='btnPopup' class='btnPopup' onclick='popUp(\"$Quest->aide\")'>";
+							echo "<button id='btnPopup' class='btnPopup' onclick='popUp(\"$aide\")'>";
 							echo "Aide";
 							echo "</button>";
 							echo "</li>";
@@ -427,10 +427,10 @@ function liste_question_thema($base, $theme, $db_name){
 				echo "<a>Question $i</a>";
 				echo "<br>";
 				type_question($themeBase);
-				$findQuest = $themeBase->aide;
-				if($findQuest != ""){
+				$aide= $themeBase->aide->asXML();
+				if(!empty($aide)){
 					echo "<li>";
-					echo "<button id='btnPopup' class='btnPopup' onclick='popUp(\"$themeBase->aide\")'>";
+					echo "<button id='btnPopup' class='btnPopup' onclick='popUp(\"$aide\")'>";
 					echo "Aide";
 					echo "</button>";
 					echo "</li>";
