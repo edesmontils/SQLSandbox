@@ -43,23 +43,29 @@ Released for free under a Creative Commons Attribution 2.5 License
 </head>
 
 <?php
+
+  // récupère le nom de la base de l'URL
   $param1 = $_GET['var1'];
   $split1 = explode('@', $param1);
   $base = $split1[1];
 
+  // récupère le nom du TP de l'URL
   $param2 = $_GET['var2'];
   $split2 = explode('@', $param2);
   $tp_name = $split2[1];
 
+  // récupère le nom raccourci de la base 
   $split3 = explode('-', $base);
   $db_name = $split3[1];
 ?>
 
-<body onunload="end()" onreload="end()">
+<body>
 <div id="content">
   <div id="posts">
     <?php
-        liste_question($base, $tp_name, $db_name);
+    
+      // affiche la liste des questions du TP
+      liste_question($base, $tp_name, $db_name);
     ?>
   </div>
 </div>

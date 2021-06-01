@@ -111,6 +111,7 @@ if (isset($_SESSION['debug']) && $session_ok) {
   			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
 		}	
 	}
+	//======================================================
 	else if ($Soumettre == "tp"){
 		try {
 			$nom_base = $_REQUEST['nom_base'];
@@ -120,6 +121,7 @@ if (isset($_SESSION['debug']) && $session_ok) {
   			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
 		}
 	}
+	//======================================================
 	else if ($Soumettre == "themes_dispo"){
 		try {
 			$descr = $_REQUEST['descr'];
@@ -130,27 +132,7 @@ if (isset($_SESSION['debug']) && $session_ok) {
   			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
 		}
 	}
-	else if ($Soumettre == "liste_quest_thema"){
-		try {
-			$nom_base = $_REQUEST['nom_base'];
-			$theme_questions = $_REQUEST['theme_questions'];
-			liste_question_thema($nom_base, $theme_questions);								
-		} catch(Exception $e) {
-  			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
-		}
-	}
-
-	else if($Soumettre == "questions"){
-		try {
-			$tp_name = $_REQUEST['tp_name'];
-			$nom_base = $_REQUEST['nom_base'];
-			$db_name = $_REQUEST['db_name'];
-			liste_question($nom_base, $tp_name, $db_name);								
-		} catch(Exception $e) {
-  			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
-		}
-	}
-
+	//======================================================
 	else if($Soumettre == "pageIni"){
 		try {
 			$tp_name = $_REQUEST['tp_name'];

@@ -100,22 +100,19 @@ function get($requete,$base) {
 function get_tables($base) {
 	$requete = 'SELECT * FROM sqlite_master WHERE type="table" order by lower(name)';
 	$fic = $_SESSION["copie_$base"] ;
-	//echo "<p>recup tables : $fic</p>";
 	$db=new SQLite3($fic);
 	$table = array();
 
 	if ($db) {//Connection réussie !
-		//echo "<p>connexion réussie</p>";
+		
 		//Soumission de la requête à la base
 		$result = $db->query($requete);
 		if ($result) {
-			//echo "<p>requête réussie</p>";
+
 			while($ligne = $result->fetchArray(SQLITE3_NUM)) {
-				//var_dump($ligne);
 				$table[] = $ligne[1];
-				//echo "<p>$ligne[1]</p>";
 			}
-			//echo "<p>fin parcours requete</p>";
+			$result->finalize();
 		} else {
 			echo "<p>Problème dans la lecture de la structure de la base $base</p>";
 			$erreur1 = $db->lastErrorCode();
@@ -131,14 +128,13 @@ function get_tables($base) {
 	return $table;
 }
 
+//Affiche les tables d'une base de données
 function liste_base($base) {
 	echo "<a id='matiere'></a><div class='post'><h2 class='title'>Sommaire</h2>";
 	echo "<div class='story'><ul>";
-	sommaire($base);
+	$tables = get_tables($base);
+	sommaire($base, $tables);//Affiche le sommaire des tables
 	echo "<br>"."</br>";
-	$tables = get_tables($base);	
-	//echo "<p>Ds lb</p>";
-	//var_dump($tables);
 	foreach($tables as $ta) {
 		echo "<a id='$ta'></a><div class='post'>";
 		echo '	<h2 class="title">'."Table $ta".'</h2>';
@@ -149,8 +145,8 @@ function liste_base($base) {
 	}
 }
 
-function sommaire($base){
-	$tables = get_tables($base);
+//Sommaire des tables de la base de données
+function sommaire($base, $tables){
 	echo "<div class='story'><ul>";
 	foreach($tables as $ta){
 		echo "<li><a href='#$ta'>";
@@ -161,50 +157,7 @@ function sommaire($base){
 	echo "</ul></div>";
 }
 
-/*
-function verifFich($base){
-	$config = new SimpleXMLElement('./config.xml',
-        LIBXML_DTDATTR|LIBXML_DTDLOAD|LIBXML_DTDVALID
-        |LIBXML_NOBLANKS|LIBXML_NOCDATA,
-        true);
-	$rep = $config->dossierBdD ;
-	if($base == "tp-vols"){
-		$fich = "aeroport";
-	}
-	else if($base == "tp-cinema"){
-		$fich = "cinema";
-	}
-	else if($base == "cours"){
-		$fich = "cours";
-	}
-	else if($base == "tp-em"){
-		$fich = "em";
-	}
-	else if($base == "tp-Lutins"){
-		$fich = "lutins";
-	}
-	else if($base == "tp-robots"){
-		$fich = "robots";
-	}
-	if (is_dir($rep)) {
-		if ($iter = opendir($rep)) {
-			while (($fichier = readdir($iter)) !== false)  {  
-				if($fichier != "." && $fichier != ".." && $fichier != "Thumbs.db")  {  
-					if (is_dir($rep.'/'.$fichier)) {
-						$conf = $rep.'/'.$fichier.'/config.xml';
-						if (file_exists($conf)) {
-							if($fichier == $fich){
-								return $xml = simplexml_load_file($conf);
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-}
-*/
-
+//Récupère le fichier de config xml de la base de données
 function xmlFile($db_name){
 	$config = new SimpleXMLElement('./config.xml',
         LIBXML_DTDATTR|LIBXML_DTDLOAD|LIBXML_DTDVALID
@@ -232,14 +185,13 @@ function xmlFile($db_name){
 //Affiche la page d'acceuil d'un TP 
 function pageInitial($base, $tpname, $descr){
 	$_SESSION['descr'] = $descr;
-	echo "<div class='post' style='text-align:center'><h2 class='title'>$tpname</h2>";
+	echo "<div class='post'><h2 class='title'>$tpname</h2>";
 	echo "<ul>";
 	echo "<li>";
 	echo "Temps limité : "; //ajouter variable temps;
 	echo "</li>";
 	echo "</ul>";
 	echo "<button>";
-	//echo "<a href='#' onClick='questions(\"$base\", \"$tpname\");return false;' style='cursor:pointer'>";
 	echo "<a href='tp.php?var1=@$base@&var2=@$tpname' target='_blank'>";
 	echo "Commencer";
 	echo "</a>";
@@ -256,7 +208,7 @@ function liste_TP($base, $db_name){
 
 	$listeTP = 'liste-TP';
 	$objectif = 'objectif-pédagogique';
-	$listeTp = ($xml->$listeTP);
+	$listeTp = ($xml->$listeTP);//Récupère la liste des TP depuis le fichier de config
 
 	echo "<a id='matiere'></a>";
 	echo "<div class='post'><h2 class='title'>Travaux pratiques</h2>";
@@ -305,7 +257,6 @@ function themes_dispo($base, $descr, $db_name){
 		if(!$present){
 			$questionDispo = true;
 			array_push($liste_them, $nomTheme);
-			//echo "<a href='#' onClick='liste_quest_thema(\"$base\", \"$nomTheme\");return false;' style='cursor:pointer'>";
 			echo "<a href='questionsThem.php?var1=@$base@&var2=@$nomTheme' target='_blank'>";
 			echo "<li>";
 			echo "<img src='images/down_64.png' height='16' width='16' /> ";
@@ -322,6 +273,7 @@ function themes_dispo($base, $descr, $db_name){
 		echo "<h2 class='title'>Aucune question n'est disponible actuellement</h2>";
 	}
 	else{
+		//Affiche la difficuté des thèmes proposés
 		valeurQuestion($liste_them);
 	}
 }
@@ -340,6 +292,7 @@ function liste_question($base, $tp_name, $db_name){
 
 	$questionDispo = false;
 
+	//Affiche la description de la base de données
 	echo $_SESSION['descr'];
 
 	echo "<a id='matiere'></a>";
@@ -351,6 +304,7 @@ function liste_question($base, $tp_name, $db_name){
 	?>
 
 	<script>
+	//Script de timer pour la durée d'un tp
 	const startingMinutes = 60;
 	let time = startingMinutes * 60;
 	
@@ -490,7 +444,6 @@ function valeurQuestion($tableau){
 	echo "<b><u> Difficulté des questions proposées</u></b>";
 	echo "<br>";
 	foreach($tableau as $value){
-		//echo (string)$value;
 		if($value == "projection "){
 			$value = str_replace('-',' ', $value);
 			echo ucfirst($value). " : 1/6";

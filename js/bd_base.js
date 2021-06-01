@@ -205,25 +205,14 @@ function new_query() {
     $('posts').appear();
 }
 
+// Affiche les tables de la base de données
 function db_tables(nom){
     window.open('dbListe.php?var1=@\''+nom+'\'');
 }
 
-function description(nom){
+// Affiche les tables d'une base de données
+function sommaire(nom){
     t = '<a id="matiere"></a><div class="post">';
-	t = t + '	<h2 class="title">Description de la base '+nom+'</h2>';
-	t = t + '    <div class="story">';
-  	t = t + '<p>'+listeBases[nom]['description']+'</p>';
-  	t = t + '<p>Référence : <a href="'+listeBases[nom]['référence']+'">'+listeBases[nom]['référence']+'</a></p>';
-	t = t + '</div></div>';
-
-    $('posts').hide();
-    $('posts').update(t);
-    $('posts').show();
-}
-
-function db(nom) {
-	t = '<a id="matiere"></a><div class="post">';
 	t = t + '	<h2 class="title">Description de la base '+nom;
     t = t + '	<img src="images/Database.png" name="Liste des tables" alt="Liste des tables" title="Liste des tables" width="32" ';
     t = t + '		onClick="db_tables(\''+nom+'\'); return false;" style="cursor:pointer"/>';
@@ -232,6 +221,15 @@ function db(nom) {
   	t = t + '<p>'+listeBases[nom]['description']+'</p>';
   	t = t + '<p>Référence : <a href="'+listeBases[nom]['référence']+'">'+listeBases[nom]['référence']+'</a></p>';
 	t = t + '</div></div>';
+    $('posts').hide();
+    $('posts').update(t);
+    $('posts').show();
+}
+
+// Menu depuis lequel sont accessibles les tp et les questions thématiques
+function db(nom) {
+    
+	sommaire(nom);
 
 	t = t +  '</ul></div></div>';
     t = t +  '<a id="matiere"></a><div class="post"><h2 class="title">Travaux pratiques</h2>';
@@ -244,23 +242,24 @@ function db(nom) {
     t = t +  '    <div class="story"><ul>';
     t = t + '	<img src="images/pencil_64.png" name="Liste des questions" alt="Liste des questions" title="Liste des questions" width="32" ';
     t = t + '		onClick="themes_dispo(\''+nom+'\'); return false;" style="cursor:pointer"/>';
-    console.log(listeBases[nom]['dbName']);
+    
 	 $('posts').hide();
      $('posts').update(t);
      $('posts').show();
 }
 
+// Affiche la liste des TP disponibles pour une bdd
 function tp(nom) {
+
+    sommaire(nom);
+
     new Ajax.Request('controler.php', {
         method: 'get',
         parameters: {
             Soumettre: 'tp', nom_base: nom, db_name: listeBases[nom]['dbName']  
         },
         onSuccess: function (trs) {
-            messages = trs.responseText;
-            $('posts').hide();
-            $('posts').update(messages);
-            $('posts').appear();
+            $('posts').insert(trs.responseText);
         },
         onFailure: function () {
             alert('messages: Impossible d\'obtenir la rubrique !')
@@ -268,14 +267,10 @@ function tp(nom) {
     });
 }
 
+// Affiche les thèmes disponibles pour une bdd
 function themes_dispo(nom) {
 
-    t = '<a id="matiere"></a><div class="post">';
-	t = t + '	<h2 class="title">Description de la base '+nom+'</h2>';
-	t = t + '    <div class="story">';
-  	t = t + '<p>'+listeBases[nom]['description']+'</p>';
-  	t = t + '<p>Référence : <a href="'+listeBases[nom]['référence']+'">'+listeBases[nom]['référence']+'</a></p>';
-	t = t + '</div></div>';
+    sommaire(nom);
 
     new Ajax.Request('controler.php', {
         method: 'get',
@@ -283,35 +278,6 @@ function themes_dispo(nom) {
             Soumettre: 'themes_dispo', nom_base: nom, descr: t, db_name: listeBases[nom]['dbName']
         },
         onSuccess: function (trs) {
-            messages = trs.responseText;
-            $('posts').hide();
-            $('posts').update(messages);
-            $('posts').appear();
-        },
-        onFailure: function () {
-            alert('messages: Impossible d\'obtenir la rubrique !')
-        }
-    });
-}
-
-function liste_quest_thema(nom, themes){
-
-    t = '<a id="matiere"></a><div class="post">';
-	t = t + '	<h2 class="title">Description de la base '+nom+'</h2>';
-	t = t + '    <div class="story">';
-  	t = t + '<p>'+listeBases[nom]['description']+'</p>';
-  	t = t + '<p>Référence : <a href="'+listeBases[nom]['référence']+'">'+listeBases[nom]['référence']+'</a></p>';
-	t = t + '</div></div>';
-    $('posts').hide();
-     $('posts').update(t);
-     $('posts').show();
-
-    new Ajax.Request('controler.php', {
-        method: 'get',
-        parameters: {
-            Soumettre: 'liste_quest_thema', nom_base: nom, theme_questions: themes
-        },
-        onSuccess: function (trs) {
             $('posts').insert(trs.responseText);
         },
         onFailure: function () {
@@ -320,14 +286,10 @@ function liste_quest_thema(nom, themes){
     });
 }
 
+
 function pageInitial(nom, tpName) {
 
-    t = '<a id="matiere"></a><div class="post">';
-	t = t + '	<h2 class="title">Description de la base '+nom+'</h2>';
-	t = t + '    <div class="story">';
-  	t = t + '<p>'+listeBases[nom]['description']+'</p>';
-  	t = t + '<p>Référence : <a href="'+listeBases[nom]['référence']+'">'+listeBases[nom]['référence']+'</a></p>';
-	t = t + '</div></div>';
+    sommaire(nom);
 
     new Ajax.Request('controler.php', {
         method: 'get',
@@ -335,35 +297,6 @@ function pageInitial(nom, tpName) {
             Soumettre: 'pageIni', nom_base: nom, tp_name: tpName, descr: t
         },
         onSuccess: function (trs) {
-            messages = trs.responseText;
-            $('posts').hide();
-            $('posts').update(messages);
-            $('posts').appear();
-        },
-        onFailure: function () {
-            alert('messages: Impossible d\'obtenir la rubrique !')
-        }
-    });
-}
-
-/*
-function questions(nom, tpName) {
-    t = '<a id="matiere"></a><div class="post">';
-	t = t + '	<h2 class="title">Description de la base '+nom+'</h2>';
-	t = t + '    <div class="story">';
-  	t = t + '<p>'+listeBases[nom]['description']+'</p>';
-  	t = t + '<p>Référence : <a href="'+listeBases[nom]['référence']+'">'+listeBases[nom]['référence']+'</a></p>';
-	t = t + '</div></div>';
-    $('posts').hide();
-     $('posts').update(t);
-     $('posts').show();
-
-    new Ajax.Request('controler.php', {
-        method: 'get',
-        parameters: {
-            Soumettre: 'questions', nom_base: nom, tp_name: tpName, db_name: listeBases[nom]['dbName']
-        },
-        onSuccess: function (trs) {
             $('posts').insert(trs.responseText);
         },
         onFailure: function () {
@@ -371,7 +304,6 @@ function questions(nom, tpName) {
         }
     });
 }
-*/
 
 function popUp(aide){
     alert(aide);

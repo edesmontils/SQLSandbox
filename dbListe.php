@@ -42,15 +42,18 @@ Released for free under a Creative Commons Attribution 2.5 License
  
 </head>
 
-<body onunload="end()" onreload="end()">
+<body>
 <div id="content">
   <div id="posts">
     <?php
     
+      // récupère le nom de la base dans l'URL
       $param = $_GET['var1'];
       $split = explode('@', $param);
       $split = str_replace("'", "", $split);
       $db_name = $split[1];
+
+      // affiche la liste des des tables d'une base
       liste_base($db_name);
     ?>
   </div>

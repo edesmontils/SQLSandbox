@@ -56,7 +56,7 @@ Released for free under a Creative Commons Attribution 2.5 License
   $db_name = $split3[1];
 ?>
 
-<body onunload="end()" onreload="end()">
+<body>
 <div id="content">
   <div id="posts">
     <?php
