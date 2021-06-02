@@ -209,7 +209,7 @@ Released for free under a Creative Commons Attribution 2.5 License
 		<h2 class="heading">Description des bases</h2>
 		<div class="content">
 			<ul>
-		<?php foreach($listeNoms as $nom) echo "<li> <a href='#' onClick='new Effect.Highlight(this); db(\"$nom\");return false;' style='cursor:pointer'><img src='images/Database.png' alt='Base $nom' title='Base $nom' width='32'/> $nom</a></li>";?>
+		<?php foreach($listeNoms as $nom) echo "<li> <a href='#' onClick='new Effect.Highlight(this); db(\"$nom\");return false;' style='cursor:pointer'> $nom</a></li>";?>
 			</ul>
 		</div>
 	</div>

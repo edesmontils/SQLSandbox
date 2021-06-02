@@ -232,14 +232,14 @@ function db(nom) {
 	t = t +  '</ul></div></div>';
     t = t +  '<a id="matiere"></a><div class="post"><h2 class="title">Travaux pratiques</h2>';
     t = t +  '    <div class="story"><ul>';
-    t = t + '	<img src="images/pencil_64.png" name="Liste des TP" alt="Liste des TP" title="Liste des TP" width="32" ';
-    t = t + '		onClick="tp(\''+nom+'\'); return false;" style="cursor:pointer"/>';
+    tp(nom);
     t = t +  '</ul></div></div>';
 
     t = t +  '<a id="matiere"></a><div class="post"><h2 class="title">Questions thématiques</h2>';
     t = t +  '    <div class="story"><ul>';
-    t = t + '	<img src="images/pencil_64.png" name="Liste des questions" alt="Liste des questions" title="Liste des questions" width="32" ';
-    t = t + '		onClick="themes_dispo(\''+nom+'\'); return false;" style="cursor:pointer"/>';
+    themes_dispo(nom);
+    t = t +  '</ul></div></div>';
+
 	 $('posts').hide();
      $('posts').update(t);
      $('posts').show();

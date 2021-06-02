@@ -114,6 +114,7 @@ if (isset($_SESSION['debug']) && $session_ok) {
 	//======================================================
 	else if ($Soumettre == "tp"){
 		try {
+			$nom_base = $_REQUEST['nom_base'];
 			$db_name = $_REQUEST['db_name'];
 			liste_TP($nom_base, $db_name);										
 		} catch(Exception $e) {
