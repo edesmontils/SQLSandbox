@@ -322,10 +322,6 @@ function liste_question($base, $tp_name, $db_name){
 
 	<?php
 	echo "<br>"."</br>";
-	echo "<button>";
-	echo "<a href='dbListe.php?var1=@$base' target='_blank'>Liste des tables</a>";
-	echo "</button>";
-	echo "<br>"."</br>";
 	foreach($listeTp->TP as $tp){
 		if($tp->name == $tp_name){
 			foreach($tp->$refQuest as $refQuestion){
@@ -369,10 +365,6 @@ function liste_question_thema($base, $theme, $db_name){
 	
 	echo $_SESSION['descr'];
 	echo "<div class='post'><h2 class='title'>Thème : $nomTheme </h2>";
-	echo "<br>"."</br>";
-	echo "<button>";
-	echo "<a href='dbListe.php?var1=@$base' target='_blank'>Liste des tables</a>";
-	echo "</button>";
 	echo "<br>"."</br>";
 	foreach ($listeQuestionThema->children() as $themeBase){
 		foreach($themeBase->theme->children() as $thematique){
