@@ -111,15 +111,16 @@ if (isset($_SESSION['debug']) && $session_ok) {
   			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
 		}	
 	}
+	//======================================================
 	else if ($Soumettre == "tp"){
 		try {
-			$nom_base = $_REQUEST['nom_base'];
 			$db_name = $_REQUEST['db_name'];
-			liste_TP($nom_base, $db_name);									
+			liste_TP($nom_base, $db_name);										
 		} catch(Exception $e) {
   			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
 		}
 	}
+	//======================================================
 	else if ($Soumettre == "themes_dispo"){
 		try {
 			$descr = $_REQUEST['descr'];
@@ -130,27 +131,7 @@ if (isset($_SESSION['debug']) && $session_ok) {
   			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
 		}
 	}
-	else if ($Soumettre == "liste_quest_thema"){
-		try {
-			$nom_base = $_REQUEST['nom_base'];
-			$theme_questions = $_REQUEST['theme_questions'];
-			liste_question_thema($nom_base, $theme_questions);								
-		} catch(Exception $e) {
-  			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
-		}
-	}
-
-	else if($Soumettre == "questions"){
-		try {
-			$tp_name = $_REQUEST['tp_name'];
-			$nom_base = $_REQUEST['nom_base'];
-			$db_name = $_REQUEST['db_name'];
-			liste_question($nom_base, $tp_name, $db_name);								
-		} catch(Exception $e) {
-  			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
-		}
-	}
-
+	//======================================================
 	else if($Soumettre == "pageIni"){
 		try {
 			$tp_name = $_REQUEST['tp_name'];
@@ -159,6 +140,18 @@ if (isset($_SESSION['debug']) && $session_ok) {
 			pageInitial($nom_base, $tp_name, $descr);								
 		} catch(Exception $e) {
   			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
+		}
+	}
+	//======================================================
+	else if ($Soumettre == "reponse") {
+		$mode = $_REQUEST['mode'];
+		if (isset($requete) && isset($base)){
+		    $requete = stripslashes($requete);	
+			$t=getReponse($requete,$base);  
+			echo ($ok ? '<input type="hidden" name="Retour aux questions" value="Envoyer"/> <img src="images/delete_64.png" alt="ok" title="Retourner au menu des questions" width="32" onClick="liste_question(\''.$base.'\',\''.$_SESSION['tp'].'\'); return false;" style="cursor:pointer" id="return">'
+			           :"<img src='images/block_64.png' width='32' alt='ko' title='ko'/>");
+		} else { 
+		   echo "<p>Pas de requête ou/et de base proposée !</p>";
 		}
 	}
 	//======================================================

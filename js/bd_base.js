@@ -205,25 +205,14 @@ function new_query() {
     $('posts').appear();
 }
 
+// Affiche les tables de la base de données
 function db_tables(nom){
     window.open('dbListe.php?var1=@\''+nom+'\'');
 }
 
-function description(nom){
+// Affiche les tables d'une base de données
+function sommaire(nom){
     t = '<a id="matiere"></a><div class="post">';
-	t = t + '	<h2 class="title">Description de la base '+nom+'</h2>';
-	t = t + '    <div class="story">';
-  	t = t + '<p>'+listeBases[nom]['description']+'</p>';
-  	t = t + '<p>Référence : <a href="'+listeBases[nom]['référence']+'">'+listeBases[nom]['référence']+'</a></p>';
-	t = t + '</div></div>';
-
-    $('posts').hide();
-    $('posts').update(t);
-    $('posts').show();
-}
-
-function db(nom) {
-	t = '<a id="matiere"></a><div class="post">';
 	t = t + '	<h2 class="title">Description de la base '+nom;
     t = t + '	<img src="images/Database.png" name="Liste des tables" alt="Liste des tables" title="Liste des tables" width="32" ';
     t = t + '		onClick="db_tables(\''+nom+'\'); return false;" style="cursor:pointer"/>';
@@ -232,6 +221,13 @@ function db(nom) {
   	t = t + '<p>'+listeBases[nom]['description']+'</p>';
   	t = t + '<p>Référence : <a href="'+listeBases[nom]['référence']+'">'+listeBases[nom]['référence']+'</a></p>';
 	t = t + '</div></div>';
+    $('posts').hide();
+    $('posts').update(t);
+    $('posts').show();
+}
+
+function db(nom) {
+	sommaire(nom);
 
 	t = t +  '</ul></div></div>';
     t = t +  '<a id="matiere"></a><div class="post"><h2 class="title">Travaux pratiques</h2>';
@@ -244,23 +240,22 @@ function db(nom) {
     t = t +  '    <div class="story"><ul>';
     t = t + '	<img src="images/pencil_64.png" name="Liste des questions" alt="Liste des questions" title="Liste des questions" width="32" ';
     t = t + '		onClick="themes_dispo(\''+nom+'\'); return false;" style="cursor:pointer"/>';
-    console.log(listeBases[nom]['dbName']);
 	 $('posts').hide();
      $('posts').update(t);
      $('posts').show();
 }
 
+// Affiche la liste des TP disponibles pour une bdd
 function tp(nom) {
+    sommaire(nom);
+
     new Ajax.Request('controler.php', {
         method: 'get',
         parameters: {
             Soumettre: 'tp', nom_base: nom, db_name: listeBases[nom]['dbName']  
         },
         onSuccess: function (trs) {
-            messages = trs.responseText;
-            $('posts').hide();
-            $('posts').update(messages);
-            $('posts').appear();
+            $('posts').insert(trs.responseText);
         },
         onFailure: function () {
             alert('messages: Impossible d\'obtenir la rubrique !')
@@ -270,46 +265,12 @@ function tp(nom) {
 
 function themes_dispo(nom) {
 
-    t = '<a id="matiere"></a><div class="post">';
-	t = t + '	<h2 class="title">Description de la base '+nom+'</h2>';
-	t = t + '    <div class="story">';
-  	t = t + '<p>'+listeBases[nom]['description']+'</p>';
-  	t = t + '<p>Référence : <a href="'+listeBases[nom]['référence']+'">'+listeBases[nom]['référence']+'</a></p>';
-	t = t + '</div></div>';
+    sommaire(nom);
 
     new Ajax.Request('controler.php', {
         method: 'get',
         parameters: {
             Soumettre: 'themes_dispo', nom_base: nom, descr: t, db_name: listeBases[nom]['dbName']
-        },
-        onSuccess: function (trs) {
-            messages = trs.responseText;
-            $('posts').hide();
-            $('posts').update(messages);
-            $('posts').appear();
-        },
-        onFailure: function () {
-            alert('messages: Impossible d\'obtenir la rubrique !')
-        }
-    });
-}
-
-function liste_quest_thema(nom, themes){
-
-    t = '<a id="matiere"></a><div class="post">';
-	t = t + '	<h2 class="title">Description de la base '+nom+'</h2>';
-	t = t + '    <div class="story">';
-  	t = t + '<p>'+listeBases[nom]['description']+'</p>';
-  	t = t + '<p>Référence : <a href="'+listeBases[nom]['référence']+'">'+listeBases[nom]['référence']+'</a></p>';
-	t = t + '</div></div>';
-    $('posts').hide();
-     $('posts').update(t);
-     $('posts').show();
-
-    new Ajax.Request('controler.php', {
-        method: 'get',
-        parameters: {
-            Soumettre: 'liste_quest_thema', nom_base: nom, theme_questions: themes
         },
         onSuccess: function (trs) {
             $('posts').insert(trs.responseText);
@@ -322,46 +283,12 @@ function liste_quest_thema(nom, themes){
 
 function pageInitial(nom, tpName) {
 
-    t = '<a id="matiere"></a><div class="post">';
-	t = t + '	<h2 class="title">Description de la base '+nom+'</h2>';
-	t = t + '    <div class="story">';
-  	t = t + '<p>'+listeBases[nom]['description']+'</p>';
-  	t = t + '<p>Référence : <a href="'+listeBases[nom]['référence']+'">'+listeBases[nom]['référence']+'</a></p>';
-	t = t + '</div></div>';
+    sommaire(nom);
 
     new Ajax.Request('controler.php', {
         method: 'get',
         parameters: {
             Soumettre: 'pageIni', nom_base: nom, tp_name: tpName, descr: t
-        },
-        onSuccess: function (trs) {
-            messages = trs.responseText;
-            $('posts').hide();
-            $('posts').update(messages);
-            $('posts').appear();
-        },
-        onFailure: function () {
-            alert('messages: Impossible d\'obtenir la rubrique !')
-        }
-    });
-}
-
-/*
-function questions(nom, tpName) {
-    t = '<a id="matiere"></a><div class="post">';
-	t = t + '	<h2 class="title">Description de la base '+nom+'</h2>';
-	t = t + '    <div class="story">';
-  	t = t + '<p>'+listeBases[nom]['description']+'</p>';
-  	t = t + '<p>Référence : <a href="'+listeBases[nom]['référence']+'">'+listeBases[nom]['référence']+'</a></p>';
-	t = t + '</div></div>';
-    $('posts').hide();
-     $('posts').update(t);
-     $('posts').show();
-
-    new Ajax.Request('controler.php', {
-        method: 'get',
-        parameters: {
-            Soumettre: 'questions', nom_base: nom, tp_name: tpName, db_name: listeBases[nom]['dbName']
         },
         onSuccess: function (trs) {
             $('posts').insert(trs.responseText);
@@ -371,7 +298,6 @@ function questions(nom, tpName) {
         }
     });
 }
-*/
 
 function popUp(aide){
     alert(aide);
@@ -474,4 +400,125 @@ function aides() {
     }
 }
 
+function new_reponse_intention($Quest,$base,$aide,$requete) {
+    console.log($Quest);
+    console.log($base);
+    t = '<div class="post">';
+    t = t + '<h2>Base \''+$base+'\'</h2>';
+    t = t + '<h2 class="title">Question \''+$Quest+'\'</h2>';
+    t = t + '   <div class="story">';
+    t = t + '   <form method="POST" id="SaisieRequete" onSubmit="reponse(); return false;">';
+    t = t + '       <p>\''+$requete+'\'<br/>';
+    t = t + '       <p>Veuillez donner l\'intention de la requète ci-dessus: <br/>';
+    t = t + '   	<textarea name="requete" rows="1" cols="80" id="requete"></textarea><br/>';
+    if($aide != ""){
+        t = t + '   	<li>';
+        t = t + '   	<button id="btnPopup" class="btnPopup" onclick="popUp(\''+$aide+'\')">';
+        t = t + '       Aide';
+        t = t + '   	</button>';
+        t = t + '   	</li>';
+    }
+    t = t + '   	<input type="hidden" name="Soumettre" value="Reponse"/>';
+    t = t + '   	<img src="images/gear_64.png" name="Soumettre" alt="Soumettre" title="Soumettre" width="32" ';
+    t = t + '   		onClick="reponse(\''+$base+'\'); return false;" style="cursor:pointer" id="send_new"/>';
+    t = t + '   </form></p>';
+    t = t + '   <div id="results"></div>';
+    t = t + '</div>';
+    t = t + '</div>';
+   
+    $('posts').hide();
+    $('posts').update(t);
+    
+    $('requete').setValue(current_request);
+
+    $('posts').appear();
+}
+
+function new_reponse_trou($Quest,$base,$aide,$intention) {
+    console.log($Quest);
+    console.log($base);
+    t = '<div class="post">';
+    t = t + '<h2>Base \''+$base+'\'</h2>';
+    t = t + '<h2 class="title">Question \''+$Quest+'\'</h2>';
+    t = t + '   <div class="story">';
+    t = t + '   <form method="POST" id="SaisieRequete" onSubmit="reponse(); return false;">';
+    t = t + '       <p>\''+$intention+'\'<br/>';
+    t = t + '       <p>Veuillez compléter la requete suivante: <br/>';
+    t = t + '   	<textarea name="requete" rows="10" cols="80" id="requete"></textarea><br/>';
+    if($aide != ""){
+        t = t + '   	<li>';
+        t = t + '   	<button id="btnPopup" class="btnPopup" onclick="popUp(\''+$aide+'\')">';
+        t = t + '       Aide';
+        t = t + '   	</button>';
+        t = t + '   	</li>';
+    }
+    t = t + '   	<input type="hidden" name="Soumettre" value="Reponse"/>';
+    t = t + '   	<img src="images/gear_64.png" name="Soumettre" alt="Soumettre" title="Executer la requete" width="32" ';
+    t = t + '   		onClick="reponse(\''+$base+'\'); return false;" style="cursor:pointer" id="send_new"/>';
+    t = t + '   </form></p>';
+    t = t + '   <div id="results"></div>';
+    t = t + '</div>';
+    t = t + '</div>';
+   
+    $('posts').hide();
+    $('posts').update(t);
+    
+    //$('requete').setValue(current_request);
+
+    $('posts').appear();
+}
+
+function new_reponse_requete($Quest,$base,$aide,$intention) {
+    console.log($Quest);
+    console.log($base);
+    t = '<div class="post">';
+    t = t + '<h2>Base \''+$base+'\'</h2>';
+    t = t + '<h2 class="title">Question \''+$Quest+'\'</h2>';
+    t = t + '   <div class="story">';
+    t = t + '   <form method="POST" id="SaisieRequete" onSubmit="reponse(); return false;">';
+    t = t + '       <p>\''+$intention+'\'<br/>';
+    t = t + '       <p>Veuillez donner la requete : <br/>';
+    t = t + '   	<textarea name="requete" rows="10" cols="80" id="requete"></textarea><br/>';
+    if($aide != ""){
+        t = t + '   	<li>';
+        t = t + '   	<button id="btnPopup" class="btnPopup" onclick="popUp(\''+$aide+'\')">';
+        t = t + '       Aide';
+        t = t + '   	</button>';
+        t = t + '   	</li>';
+    }
+    t = t + '   	<input type="hidden" name="Soumettre" value="Reponse"/>';
+    t = t + '   	<img src="images/gear_64.png" name="Soumettre" alt="Soumettre" title="Soumettre" width="32" ';
+    t = t + '   		onClick="reponse(\''+$base+'\'); return false;" style="cursor:pointer" id="send_new"/>';
+    t = t + '   </form></p>';
+    t = t + '   <div id="results"></div>';
+    t = t + '</div>';
+    t = t + '</div>';
+   
+    $('posts').hide();
+    $('posts').update(t);
+
+    $('requete').setValue(current_request);
+    
+    $('posts').appear();
+}
+
+function reponse($base) {
+    current_request = $('requete').getValue();
+    current_base = $base
+    new Ajax.Request('controler.php', {
+        method: 'post',
+        parameters: {
+            Soumettre: 'reponse', requete: $('requete').getValue(), base: $base, mode: 1
+        },
+        onSuccess: function (trs) {
+            current_result = trs.responseText;
+            $('results').hide();
+            $('results').update(current_result);
+            $('results').appear();
+        },
+        onFailure: function () {
+            alert('new_query: Impossible d\'obtenir la rubrique !')
+        }
+    });
+}
 //</script>

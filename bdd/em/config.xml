@@ -59,6 +59,7 @@
                 <From><Table>Fleuve</Table></From>
                 <Where>longueur>1000</Where>
             </SQL>
+            <aide></aide>
         </rq-résultat>
         <rq-résultat xml:id="re-em-02">
             <name_quest>re-em-02</name_quest>

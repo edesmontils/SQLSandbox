@@ -100,22 +100,19 @@ function get($requete,$base) {
 function get_tables($base) {
 	$requete = 'SELECT * FROM sqlite_master WHERE type="table" order by lower(name)';
 	$fic = $_SESSION["copie_$base"] ;
-	//echo "<p>recup tables : $fic</p>";
 	$db=new SQLite3($fic);
 	$table = array();
 
 	if ($db) {//Connection réussie !
-		//echo "<p>connexion réussie</p>";
+
 		//Soumission de la requête à la base
 		$result = $db->query($requete);
 		if ($result) {
-			//echo "<p>requête réussie</p>";
+
 			while($ligne = $result->fetchArray(SQLITE3_NUM)) {
-				//var_dump($ligne);
-				$table[] = $ligne[1];
-				//echo "<p>$ligne[1]</p>";
+				$table[] = $ligne[1];	
 			}
-			//echo "<p>fin parcours requete</p>";
+			$result->finalize();
 		} else {
 			echo "<p>Problème dans la lecture de la structure de la base $base</p>";
 			$erreur1 = $db->lastErrorCode();
@@ -131,14 +128,13 @@ function get_tables($base) {
 	return $table;
 }
 
+//Affiche les tables d'une base de données
 function liste_base($base) {
 	echo "<a id='matiere'></a><div class='post'><h2 class='title'>Sommaire</h2>";
 	echo "<div class='story'><ul>";
-	sommaire($base);
+	$tables = get_tables($base);
+	sommaire($base, $tables);//Affiche le sommaire des tables
 	echo "<br>"."</br>";
-	$tables = get_tables($base);	
-	//echo "<p>Ds lb</p>";
-	//var_dump($tables);
 	foreach($tables as $ta) {
 		echo "<a id='$ta'></a><div class='post'>";
 		echo '	<h2 class="title">'."Table $ta".'</h2>';
@@ -149,8 +145,8 @@ function liste_base($base) {
 	}
 }
 
-function sommaire($base){
-	$tables = get_tables($base);
+//Sommaire des tables de la base de données
+function sommaire($base, $tables){
 	echo "<div class='story'><ul>";
 	foreach($tables as $ta){
 		echo "<li><a href='#$ta'>";
@@ -160,50 +156,6 @@ function sommaire($base){
 	}
 	echo "</ul></div>";
 }
-
-/*
-function verifFich($base){
-	$config = new SimpleXMLElement('./config.xml',
-        LIBXML_DTDATTR|LIBXML_DTDLOAD|LIBXML_DTDVALID
-        |LIBXML_NOBLANKS|LIBXML_NOCDATA,
-        true);
-	$rep = $config->dossierBdD ;
-	if($base == "tp-vols"){
-		$fich = "aeroport";
-	}
-	else if($base == "tp-cinema"){
-		$fich = "cinema";
-	}
-	else if($base == "cours"){
-		$fich = "cours";
-	}
-	else if($base == "tp-em"){
-		$fich = "em";
-	}
-	else if($base == "tp-Lutins"){
-		$fich = "lutins";
-	}
-	else if($base == "tp-robots"){
-		$fich = "robots";
-	}
-	if (is_dir($rep)) {
-		if ($iter = opendir($rep)) {
-			while (($fichier = readdir($iter)) !== false)  {  
-				if($fichier != "." && $fichier != ".." && $fichier != "Thumbs.db")  {  
-					if (is_dir($rep.'/'.$fichier)) {
-						$conf = $rep.'/'.$fichier.'/config.xml';
-						if (file_exists($conf)) {
-							if($fichier == $fich){
-								return $xml = simplexml_load_file($conf);
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-}
-*/
 
 function xmlFile($db_name){
 	$config = new SimpleXMLElement('./config.xml',
@@ -232,14 +184,13 @@ function xmlFile($db_name){
 //Affiche la page d'acceuil d'un TP 
 function pageInitial($base, $tpname, $descr){
 	$_SESSION['descr'] = $descr;
-	echo "<div class='post' style='text-align:center'><h2 class='title'>$tpname</h2>";
+	echo "<div class='post'><h2 class='title'>$tpname</h2>";
 	echo "<ul>";
 	echo "<li>";
 	echo "Temps limité : "; //ajouter variable temps;
 	echo "</li>";
 	echo "</ul>";
 	echo "<button>";
-	//echo "<a href='#' onClick='questions(\"$base\", \"$tpname\");return false;' style='cursor:pointer'>";
 	echo "<a href='tp.php?var1=@$base@&var2=@$tpname' target='_blank'>";
 	echo "Commencer";
 	echo "</a>";
@@ -256,7 +207,7 @@ function liste_TP($base, $db_name){
 
 	$listeTP = 'liste-TP';
 	$objectif = 'objectif-pédagogique';
-	$listeTp = ($xml->$listeTP);
+	$listeTp = ($xml->$listeTP);//Récupère la liste des TP depuis le fichier de config
 
 	echo "<a id='matiere'></a>";
 	echo "<div class='post'><h2 class='title'>Travaux pratiques</h2>";
@@ -305,7 +256,6 @@ function themes_dispo($base, $descr, $db_name){
 		if(!$present){
 			$questionDispo = true;
 			array_push($liste_them, $nomTheme);
-			//echo "<a href='#' onClick='liste_quest_thema(\"$base\", \"$nomTheme\");return false;' style='cursor:pointer'>";
 			echo "<a href='questionsThem.php?var1=@$base@&var2=@$nomTheme' target='_blank'>";
 			echo "<li>";
 			echo "<img src='images/down_64.png' height='16' width='16' /> ";
@@ -322,6 +272,7 @@ function themes_dispo($base, $descr, $db_name){
 		echo "<h2 class='title'>Aucune question n'est disponible actuellement</h2>";
 	}
 	else{
+		//Affiche la difficuté des thèmes proposés
 		valeurQuestion($liste_them);
 	}
 }
@@ -340,6 +291,7 @@ function liste_question($base, $tp_name, $db_name){
 
 	$questionDispo = false;
 
+	//Affiche la description de la base de données
 	echo $_SESSION['descr'];
 
 	echo "<a id='matiere'></a>";
@@ -351,6 +303,7 @@ function liste_question($base, $tp_name, $db_name){
 	?>
 
 	<script>
+	//Script de timer pour la durée d'un tp
 	const startingMinutes = 60;
 	let time = startingMinutes * 60;
 	
@@ -368,30 +321,19 @@ function liste_question($base, $tp_name, $db_name){
 
 	<?php
 	echo "<br>"."</br>";
-	echo "<button>";
-	echo "<a href='dbListe.php?var1=@$base' target='_blank'>Liste des tables</a>";
-	echo "</button>";
-	echo "<br>"."</br>";
 	foreach($listeTp->TP as $tp){
+		//echo (string)$value;
 		if($tp->name == $tp_name){
 			foreach($tp->$refQuest as $refQuestion){
 				foreach ($listeQuestion->children() as $Quest){
 					if((string)$refQuestion->name_question == (string)$Quest->name_quest){
 						$questionDispo = true;
 						$i=$i+1;
+						$_SESSION['tp'] = $tp_name;
 						echo "<a>Question $i</a>";
 						echo "<br>";
-						type_question($Quest);
-						$aide = $Quest->aide->asXML();
-						if(!empty($aide)){
-							echo "<li>";
-							echo "<button id='btnPopup' class='btnPopup' onclick='popUp(\"$aide\")'>";
-							echo "Aide";
-							echo "</button>";
-							echo "</li>";
-						}
+						type_question($Quest,$base,$i);
 						echo "<br>";
-						echo '<INPUT TYPE="SUBMIT" NAME="bouton" value="Valider">';
 						echo "<br>"."</br>";
 					}
 				}
@@ -416,17 +358,13 @@ function liste_question_thema($base, $theme, $db_name){
 	echo $_SESSION['descr'];
 	echo "<div class='post'><h2 class='title'>Thème : $nomTheme </h2>";
 	echo "<br>"."</br>";
-	echo "<button>";
-	echo "<a href='dbListe.php?var1=@$base' target='_blank'>Liste des tables</a>";
-	echo "</button>";
-	echo "<br>"."</br>";
 	foreach ($listeQuestionThema->children() as $themeBase){
 		foreach($themeBase->theme->children() as $thematique){
 			if($thematique->getName() == $themeVerif){
 				$i=$i+1;
 				echo "<a>Question $i</a>";
 				echo "<br>";
-				type_question($themeBase);
+				type_question($themeBase,$base,$i);
 				$aide= $themeBase->aide->asXML();
 				if(!empty($aide)){
 					echo "<li>";
@@ -444,7 +382,7 @@ function liste_question_thema($base, $theme, $db_name){
 }
 
 // Affiche la zone de texte d'une question en fonction de son type
-function type_question($Quest){
+function type_question($Quest,$base,$i){
 	if($Quest->getName() == 'rq-intention'){
 		echo "<li>";
 		echo "Veuillez donner l'intention de la requète suivante :"."<br>";
@@ -470,18 +408,22 @@ function type_question($Quest){
 		}
 		$t = $t.'<br>';
 		$t = $t.'<b>Where </b>'.$Quest->SQL->Where.'<br>';
+		echo "Toujours un problème avec le bouton"."<br>";
 		echo $t;
-		echo '<INPUT NAME="Intention-Quest" size="78">'."<br>";
+		//echo '<input type="hidden" name="Aller à la question" value="Envoyer"/>';
+        //echo '<img src="images/briefcase_64.png" name="Soumettre" alt="Soumettre" title="Soumettre" width="32" ';
+		//echo 'onClick="new_reponse_intention(\''+$i+'\',\''+$base+'\',\''+$Quest->aide+'\'); return false;" style="cursor:pointer" id="send_new"/>';
+		echo "<input type='hidden' name='Soumettre' value='Envoyer'/>";
+		echo "<img src='images/briefcase_64.png' name='Soumettre' alt='Soumettre' title='Soumettre' width='32' ";
+		echo "onClick='new_reponse_intention(\"$i\",\"$base\",\"$Quest->aide\",\"$t\"); return false;' style='cursor:pointer' id='send_new'/>";
 	}else if($Quest->getName() == 'rq-trou'){
-		echo "<li>";
-		echo $Quest->intention;
-		echo "</li>";	
-		echo '<textarea NAME="param5" rows="10" cols="80">Question à trou</textarea>'."<br>";
+		echo "<input type='hidden' name='Soumettre' value='Envoyer'/>";
+		echo "<img src='images/briefcase_64.png' name='Soumettre' alt='Soumettre' title='Soumettre' width='32' ";
+		echo "onClick='new_reponse_trou(\"$i\",\"$base\",\"$Quest->aide\",\"$Quest->intention\"); return false;' style='cursor:pointer' id='send_new'/>";
 	}else{
-		echo "<li>";
-		echo $Quest->intention;
-		echo "</li>";
-		echo '<textarea name="SQL-Quest" rows="10" cols="80"></textarea>'."<br>";
+		echo "<input type='hidden' name='Soumettre' value='Envoyer'/>";
+		echo "<img src='images/briefcase_64.png' name='Soumettre' alt='Soumettre' title='Soumettre' width='32' ";
+		echo "onClick='new_reponse_requete(\"$i\",\"$base\",\"$Quest->aide\",\"$Quest->intention\"); return false;' style='cursor:pointer' id='send_new'/>";
 	}
 }
 
@@ -530,4 +472,55 @@ function valeurQuestion($tableau){
 	}
 }
 
+function getReponse($requete,$base) {
+	$fic=$_SESSION["copie_$base"];
+	$db=new SQLite3($fic);
+	$table = array();
+	$requete = $db->escapeString($requete); //$db->escapeString(utf8_decode($requete));	
+	//echo '<p>Get</p>';
+	if ($db) {//Connexion réussie !
+		//Soumission de la requête à la base
+		$erreur='';//echo '<p>Connexion ok</p>';
+		$result=$db->query($requete);
+		if ($result) {
+			//Exploitation des résultats
+			    $ligne = $result->fetchArray(SQLITE3_ASSOC);
+				$titre = array_keys($ligne); ?>
+				<table cellspacing="5" border="2" cellpadding="2">donc l
+				<thead>
+					<tr><?php
+					for($i=0;$i<count($titre);$i=$i+1) {
+						echo "<th>$titre[$i]</th>";
+					}?></tr>
+				</thead>
+				<tbody>
+				<?php $result->reset(); //sqlite_seek($result,0);
+				 	$nbtuples = 0;
+				  while($ligne = $result->fetchArray(SQLITE3_NUM)) {
+					echo("<tr>");
+					for($j=0;$j<count($ligne);$j=$j+1) {
+					  $tu = $ligne[$j];//utf8_encode($ligne[$j]);
+						echo "<td>$tu</td>";
+					}
+					echo("</tr>\n");
+					$table[$nbtuples++] = $ligne;
+				}?>
+				</tbody>
+				</table><?php
+			echo("<script language='javascript'>result_type='ok';</script> <p> $nbtuples ligne(s) obtenue(s)</p>");
+			echo "<img src='images/tick_64.png'  width='32' alt='ok' title='Valider la réponse'/>";
+		} else {
+			echo '<p>Problème dans la requête 2</p>';
+			$no_err = $db->lastErrorCode();
+			$erreur2 = $db->lastErrorMsg();
+			echo("<script language='javascript'>result_type='ko';</script><p>$erreur2 ($no_err) </p>");
+		} 
+		//Fermeture de la connection à la base
+		$db->close();
+	} else {//Echec de la connection
+		$erreur0 = $db->lastErrorMsg();
+		echo("<script language='javascript'>result_type='ko';</script><p> Problème de connexion : $erreur0 </p> <div id='type-res' value='ko'/>");
+	}
+	return $table;
+}
 ?>
