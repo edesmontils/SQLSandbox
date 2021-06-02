@@ -220,7 +220,6 @@ function sommaire(nom){
 	t = t + '    <div class="story">';
   	t = t + '<p>'+listeBases[nom]['description']+'</p>';
   	t = t + '<p>Référence : <a href="'+listeBases[nom]['référence']+'">'+listeBases[nom]['référence']+'</a></p>';
-	t = t + '</div></div>';
     $('posts').hide();
     $('posts').update(t);
     $('posts').show();
@@ -229,13 +228,11 @@ function sommaire(nom){
 function db(nom) {
 	sommaire(nom);
 
-	t = t +  '</ul></div></div>';
-    t = t +  '<a id="matiere"></a><div class="post"><h2 class="title">Travaux pratiques</h2>';
+	t = t +  '</div></div>';
     t = t +  '    <div class="story"><ul>';
     tp(nom);
+    
     t = t +  '</ul></div></div>';
-
-    t = t +  '<a id="matiere"></a><div class="post"><h2 class="title">Questions thématiques</h2>';
     t = t +  '    <div class="story"><ul>';
     themes_dispo(nom);
     t = t +  '</ul></div></div>';
@@ -428,8 +425,6 @@ function new_reponse_intention($Quest,$base,$aide,$requete) {
    
     $('posts').hide();
     $('posts').update(t);
-    
-    $('requete').setValue(current_request);
 
     $('posts').appear();
 }
@@ -462,8 +457,6 @@ function new_reponse_trou($Quest,$base,$aide,$intention) {
    
     $('posts').hide();
     $('posts').update(t);
-    
-    //$('requete').setValue(current_request);
 
     $('posts').appear();
 }
@@ -496,8 +489,6 @@ function new_reponse_requete($Quest,$base,$aide,$intention) {
    
     $('posts').hide();
     $('posts').update(t);
-
-    $('requete').setValue(current_request);
     
     $('posts').appear();
 }

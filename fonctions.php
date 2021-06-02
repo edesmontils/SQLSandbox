@@ -222,10 +222,10 @@ function liste_TP($base, $db_name){
 		echo "</li>";
 	}
 	echo "</ul>";
-	echo "</div>";
 	if(!$tpDispo){
-		echo "<h2 class='title'>Aucun TP disponible actuellement</h2>";
+		echo "<h3 class='indisponible'>Aucun TP disponible actuellement</h2>";
 	}
+	echo "</div>";
 }
 
 // Affiche les thèmes disponibles pour une bdd
@@ -260,21 +260,21 @@ function themes_dispo($base, $descr, $db_name){
 			echo "<li>";
 			echo "<img src='images/down_64.png' height='16' width='16' /> ";
 			$nomTheme = str_replace('-',' ', $nomTheme);
-			echo "<b>".ucfirst($nomTheme)."</b>";
+			echo ucfirst($nomTheme);
 			echo "</a>";
 			echo "</li>";
 		}
 	}
-
 	echo "</ul>";
-	echo "</div>";
 	if(!$questionDispo){
-		echo "<h2 class='title'>Aucune question n'est disponible actuellement</h2>";
+		echo "<h3 class='indisponible'>Aucune question n'est disponible actuellement</h2>";
 	}
 	else{
+		echo "<br>"."</br>";
 		//Affiche la difficuté des thèmes proposés
 		valeurQuestion($liste_them);
 	}
+	echo "</div>";
 }
 
 // Affiche la liste des questions d'un TP
@@ -342,7 +342,7 @@ function liste_question($base, $tp_name, $db_name){
 	}
 	echo "</div>";
 	if(!$questionDispo){
-		echo "<h2 class='title'>Aucun question n'est disponible actuellement</h2>";
+		echo "<h3 class='indisponible'>Aucun question n'est disponible actuellement</h2>";
 	}
 }
 
@@ -359,26 +359,17 @@ function liste_question_thema($base, $theme, $db_name){
 	echo "<div class='post'><h2 class='title'>Thème : $nomTheme </h2>";
 	echo "<br>"."</br>";
 	foreach ($listeQuestionThema->children() as $themeBase){
-		foreach($themeBase->theme->children() as $thematique){
-			if($thematique->getName() == $themeVerif){
-				$i=$i+1;
-				echo "<a>Question $i</a>";
-				echo "<br>";
-				type_question($themeBase,$base,$i);
-				$aide= $themeBase->aide->asXML();
-				if(!empty($aide)){
-					echo "<li>";
-					echo "<button id='btnPopup' class='btnPopup' onclick='popUp(\"$aide\")'>";
-					echo "Aide";
-					echo "</button>";
-					echo "</li>";
-				}
-				echo "<br>";
-				echo '<INPUT TYPE="SUBMIT" NAME="bouton" value="Valider">';
-				echo "<br>"."</br>";
-			}
-		}
-	}
+        foreach($themeBase->theme->children() as $thematique){
+            if($thematique->getName() == $themeVerif){
+                $i=$i+1;
+                echo "<a>Question $i</a>";
+                echo "<br>";
+                type_question($themeBase,$base,$i);
+                echo "<br>";
+                echo "<br>"."</br>";
+            }
+        }
+    }
 }
 
 // Affiche la zone de texte d'une question en fonction de son type
@@ -414,15 +405,15 @@ function type_question($Quest,$base,$i){
         //echo '<img src="images/briefcase_64.png" name="Soumettre" alt="Soumettre" title="Soumettre" width="32" ';
 		//echo 'onClick="new_reponse_intention(\''+$i+'\',\''+$base+'\',\''+$Quest->aide+'\'); return false;" style="cursor:pointer" id="send_new"/>';
 		echo "<input type='hidden' name='Soumettre' value='Envoyer'/>";
-		echo "<img src='images/briefcase_64.png' name='Soumettre' alt='Soumettre' title='Soumettre' width='32' ";
+		echo "<img src='images/pencil_64.png' name='Soumettre' alt='Soumettre' title='Soumettre' width='32' ";
 		echo "onClick='new_reponse_intention(\"$i\",\"$base\",\"$Quest->aide\",\"$t\"); return false;' style='cursor:pointer' id='send_new'/>";
 	}else if($Quest->getName() == 'rq-trou'){
 		echo "<input type='hidden' name='Soumettre' value='Envoyer'/>";
-		echo "<img src='images/briefcase_64.png' name='Soumettre' alt='Soumettre' title='Soumettre' width='32' ";
+		echo "<img src='images/pencil_64.png' name='Soumettre' alt='Soumettre' title='Soumettre' width='32' ";
 		echo "onClick='new_reponse_trou(\"$i\",\"$base\",\"$Quest->aide\",\"$Quest->intention\"); return false;' style='cursor:pointer' id='send_new'/>";
 	}else{
 		echo "<input type='hidden' name='Soumettre' value='Envoyer'/>";
-		echo "<img src='images/briefcase_64.png' name='Soumettre' alt='Soumettre' title='Soumettre' width='32' ";
+		echo "<img src='images/pencil_64.png' name='Soumettre' alt='Soumettre' title='Soumettre' width='32' ";
 		echo "onClick='new_reponse_requete(\"$i\",\"$base\",\"$Quest->aide\",\"$Quest->intention\"); return false;' style='cursor:pointer' id='send_new'/>";
 	}
 }

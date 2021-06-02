@@ -116,6 +116,10 @@ a:hover {
 	color: rgb(51, 50, 50);
 }
 
+.indisponible {
+	color: #8A8E99;
+}
+
 .title {
 	margin: 0;
 	font-size: 1.8em;
