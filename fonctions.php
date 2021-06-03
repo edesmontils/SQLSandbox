@@ -185,16 +185,18 @@ function xmlFile($db_name){
 function pageInitial($base, $tpname, $descr){
 	$_SESSION['descr'] = $descr;
 	echo "<div class='post'><h2 class='title'>$tpname</h2>";
-	echo "<ul>";
-	echo "<li>";
-	echo "Temps limité : "; //ajouter variable temps;
-	echo "</li>";
-	echo "</ul>";
+	echo "<br>";
 	echo "<button>";
 	echo "<a href='tp.php?var1=@$base@&var2=@$tpname' target='_blank'>";
 	echo "Commencer";
 	echo "</a>";
 	echo "</button>";
+	echo "</div>";
+	echo "<div class='post'><h2 class='title'>ICÔNES UTILISÉS : ";
+	echo "<a href='aides.php' target='_blank'>";
+	echo "<img src='images/help_64.png' width='20'/>";
+	echo "</a>";
+	echo "</h2>";
 	echo "</div>";
 }
 
