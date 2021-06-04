@@ -206,7 +206,7 @@ Released for free under a Creative Commons Attribution 2.5 License
 	</div>
 	
 	<div id="categories" class="boxed">
-		<h2 class="heading">Description des bases</h2>
+		<h2 class="heading">Bases disponibles</h2>
 		<div class="content">
 			<ul>
 		<?php foreach($listeNoms as $nom) echo "<li> <a href='#' onClick='new Effect.Highlight(this); db(\"$nom\");return false;' style='cursor:pointer'> $nom</a></li>";?>

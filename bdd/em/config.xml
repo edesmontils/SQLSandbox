@@ -59,7 +59,6 @@
                 <From><Table>Fleuve</Table></From>
                 <Where>longueur>1000</Where>
             </SQL>
-            <aide></aide>
         </rq-résultat>
         <rq-résultat xml:id="re-em-02">
             <name_quest>re-em-02</name_quest>
@@ -73,7 +72,7 @@
                 </Natural-Join></From>
                 <Where>type='mer'</Where>
             </SQL>
-            <aide>Test 5 pour aide question</aide>
+            <aide><p>Test 5 pour aide question</p></aide>
         </rq-résultat>
         <rq-trou xml:id="tr-em-01" enseignant="eED" disponibilité="ouvert">
             <name_quest>tr-em-01</name_quest>

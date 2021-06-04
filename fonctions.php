@@ -376,6 +376,7 @@ function liste_question_thema($base, $theme, $db_name){
 
 // Affiche la zone de texte d'une question en fonction de son type
 function type_question($Quest,$base,$i){
+	$aidePop = $Quest->aide->asXML();
 	if($Quest->getName() == 'rq-intention'){
 		echo "<li>";
 		echo "Veuillez donner l'intention de la requète suivante :"."<br>";
@@ -408,15 +409,15 @@ function type_question($Quest,$base,$i){
 		//echo 'onClick="new_reponse_intention(\''+$i+'\',\''+$base+'\',\''+$Quest->aide+'\'); return false;" style="cursor:pointer" id="send_new"/>';
 		echo "<input type='hidden' name='Soumettre' value='Envoyer'/>";
 		echo "<img src='images/pencil_64.png' name='Soumettre' alt='Soumettre' title='Soumettre' width='32' ";
-		echo "onClick='new_reponse_intention(\"$i\",\"$base\",\"$Quest->aide\",\"$t\"); return false;' style='cursor:pointer' id='send_new'/>";
+		echo "onClick='new_reponse_intention(\"$i\",\"$base\",\"$aidePop\",\"$t\"); return false;' style='cursor:pointer' id='send_new'/>";
 	}else if($Quest->getName() == 'rq-trou'){
 		echo "<input type='hidden' name='Soumettre' value='Envoyer'/>";
 		echo "<img src='images/pencil_64.png' name='Soumettre' alt='Soumettre' title='Soumettre' width='32' ";
-		echo "onClick='new_reponse_trou(\"$i\",\"$base\",\"$Quest->aide\",\"$Quest->intention\"); return false;' style='cursor:pointer' id='send_new'/>";
+		echo "onClick='new_reponse_trou(\"$i\",\"$base\",\"$aidePop\",\"$Quest->intention\"); return false;' style='cursor:pointer' id='send_new'/>";
 	}else{
 		echo "<input type='hidden' name='Soumettre' value='Envoyer'/>";
 		echo "<img src='images/pencil_64.png' name='Soumettre' alt='Soumettre' title='Soumettre' width='32' ";
-		echo "onClick='new_reponse_requete(\"$i\",\"$base\",\"$Quest->aide\",\"$Quest->intention\"); return false;' style='cursor:pointer' id='send_new'/>";
+		echo "onClick='new_reponse_requete(\"$i\",\"$base\",\"$aidePop\",\"$Quest->intention\"); return false;' style='cursor:pointer' id='send_new'/>";
 	}
 }
 

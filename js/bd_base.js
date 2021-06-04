@@ -408,7 +408,7 @@ function new_reponse_intention($Quest,$base,$aide,$requete) {
     t = t + '       <p>\''+$requete+'\'<br/>';
     t = t + '       <p>Veuillez donner l\'intention de la requète ci-dessus: <br/>';
     t = t + '   	<textarea name="requete" rows="1" cols="80" id="requete"></textarea><br/>';
-    if($aide != ""){
+    if($aide){
         t = t + '   	<li>';
         t = t + '   	<button id="btnPopup" class="btnPopup" onclick="popUp(\''+$aide+'\')">';
         t = t + '       Aide';
@@ -440,7 +440,7 @@ function new_reponse_trou($Quest,$base,$aide,$intention) {
     t = t + '       <p>\''+$intention+'\'<br/>';
     t = t + '       <p>Veuillez compléter la requete suivante: <br/>';
     t = t + '   	<textarea name="requete" rows="10" cols="80" id="requete"></textarea><br/>';
-    if($aide != ""){
+    if($aide){
         t = t + '   	<li>';
         t = t + '   	<button id="btnPopup" class="btnPopup" onclick="popUp(\''+$aide+'\')">';
         t = t + '       Aide';
@@ -464,6 +464,7 @@ function new_reponse_trou($Quest,$base,$aide,$intention) {
 function new_reponse_requete($Quest,$base,$aide,$intention) {
     console.log($Quest);
     console.log($base);
+    console.log($aide);
     t = '<div class="post">';
     t = t + '<h2>Base \''+$base+'\'</h2>';
     t = t + '<h2 class="title">Question \''+$Quest+'\'</h2>';
@@ -472,7 +473,7 @@ function new_reponse_requete($Quest,$base,$aide,$intention) {
     t = t + '       <p>\''+$intention+'\'<br/>';
     t = t + '       <p>Veuillez donner la requete : <br/>';
     t = t + '   	<textarea name="requete" rows="10" cols="80" id="requete"></textarea><br/>';
-    if($aide != ""){
+    if($aide){
         t = t + '   	<li>';
         t = t + '   	<button id="btnPopup" class="btnPopup" onclick="popUp(\''+$aide+'\')">';
         t = t + '       Aide';
