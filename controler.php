@@ -138,7 +138,8 @@ if (isset($_SESSION['debug']) && $session_ok) {
 			$tp_name = $_REQUEST['tp_name'];
 			$nom_base = $_REQUEST['nom_base'];
 			$descr = $_REQUEST['descr'];
-			pageInitial($nom_base, $tp_name, $descr);								
+			$dbName = $_REQUEST['dbName'];
+			pageInitial($nom_base, $tp_name, $descr, $dbName);								
 		} catch(Exception $e) {
   			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
 		}

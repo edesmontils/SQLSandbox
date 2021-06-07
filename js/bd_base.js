@@ -278,14 +278,14 @@ function themes_dispo(nom) {
     });
 }
 
-function pageInitial(nom, tpName) {
+function pageInitial(nom, tpName, db_name) {
 
     sommaire(nom);
 
     new Ajax.Request('controler.php', {
         method: 'get',
         parameters: {
-            Soumettre: 'pageIni', nom_base: nom, tp_name: tpName, descr: t
+            Soumettre: 'pageIni', nom_base: nom, tp_name: tpName, descr: t, dbName: db_name
         },
         onSuccess: function (trs) {
             $('posts').insert(trs.responseText);

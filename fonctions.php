@@ -182,7 +182,7 @@ function xmlFile($db_name){
 }
 
 //Affiche la page d'acceuil d'un TP 
-function pageInitial($base, $tpname, $descr){
+function pageInitial($base, $tpname, $descr, $dbName){
 	$_SESSION['descr'] = $descr;
 	echo "<div class='post'><h2 class='title'>$tpname</h2>";
 	echo "<br>";
@@ -192,6 +192,11 @@ function pageInitial($base, $tpname, $descr){
 	echo "</a>";
 	echo "</button>";
 	echo "</div>";
+
+	echo "<div class='post'><h2 class='title'>Mots clés : ";
+	TPThemesDispo($dbName, $tpname);
+	echo "</div>";
+
 	echo "<div class='post'><h2 class='title'>ICÔNES UTILISÉS : ";
 	echo "<a href='aides.php' target='_blank'>";
 	echo "<img src='images/help_64.png' width='20'/>";
@@ -216,7 +221,7 @@ function liste_TP($base, $db_name){
 	echo "<ul>";
 	foreach ($listeTp->TP as $tp){
 		$tpDispo = true;
-		echo "<a href='#' onClick='pageInitial(\"$base\", \"$tp->name\");return false;' style='cursor:pointer'>";
+		echo "<a href='#' onClick='pageInitial(\"$base\", \"$tp->name\", \"$db_name\");return false;' style='cursor:pointer'>";
 		echo "<li>";
 		echo "<img src='images/down_64.png' height='16' width='16' /> ";
 		echo $tp->name;
@@ -225,7 +230,7 @@ function liste_TP($base, $db_name){
 	}
 	echo "</ul>";
 	if(!$tpDispo){
-		echo "<h3 class='indisponible'>Aucun TP disponible actuellement</h2>";
+		echo "<h3 class='indicateur'>Aucun TP disponible actuellement</h2>";
 	}
 	echo "</div>";
 }
@@ -269,7 +274,7 @@ function themes_dispo($base, $descr, $db_name){
 	}
 	echo "</ul>";
 	if(!$questionDispo){
-		echo "<h3 class='indisponible'>Aucune question n'est disponible actuellement</h2>";
+		echo "<h3 class='indicateur'>Aucune question n'est disponible actuellement</h2>";
 	}
 	else{
 		echo "<br>"."</br>";
@@ -301,7 +306,7 @@ function liste_question($base, $tp_name, $db_name){
 	echo "<div class='post'><h2 class='title'>Questions du TP $tp_name</h2>";
 	echo "<br>"."</br>";
 
-	echo "<h3 class='timer'>Temps restant : <p id='countdown'/></p></h3>";
+	echo "<h3 class='indicateur'>Temps restant : <p id='countdown'/></p></h3>";
 	?>
 
 	<script>
@@ -344,7 +349,7 @@ function liste_question($base, $tp_name, $db_name){
 	}
 	echo "</div>";
 	if(!$questionDispo){
-		echo "<h3 class='indisponible'>Aucun question n'est disponible actuellement</h2>";
+		echo "<h3 class='indicateur'>Aucun question n'est disponible actuellement</h2>";
 	}
 }
 
@@ -419,6 +424,46 @@ function type_question($Quest,$base,$i){
 		echo "<img src='images/pencil_64.png' name='Soumettre' alt='Soumettre' title='Soumettre' width='32' ";
 		echo "onClick='new_reponse_requete(\"$i\",\"$base\",\"$aidePop\",\"$Quest->intention\"); return false;' style='cursor:pointer' id='send_new'/>";
 	}
+}
+
+function TPThemesDispo($dbName, $tpRef){
+	$xmlFile = xmlFile($dbName);
+	$listeTP = 'liste-TP';
+	$listeTp = ($xmlFile->$listeTP);
+	$listeQUEST = 'liste-questions';
+	$listeQuestionThema = ($xmlFile->$listeQUEST);
+	$refQuest = 'ref-question';
+	$tab = array();
+
+	foreach($listeTp->TP as $tp){
+		if($tp->name == $tpRef){
+			foreach($listeTp->TP->$refQuest as $tpQuest){
+				foreach($listeQuestionThema->children() as $themeBase){
+					$tpName = str_replace(' ', '', $tpQuest->name_question);
+					$themeName = str_replace(' ', '', $themeBase->name_quest);
+					if($tpName == $themeName){
+						foreach($themeBase->theme->children() as $theme){
+							$present = false;
+							foreach($tab as $value){
+								if($value == $theme->getName()){
+									$present = true;
+								}
+							}
+							if(!$present){
+								array_push($tab, $theme->getName());
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	echo "<h3 class='indicateur'>";
+	foreach($tab as $value){
+		echo $value;
+		echo "<br>";	
+	}
+	echo "</h3>";
 }
 
 // Affiche la difficulté en fonction du thème de la question
