@@ -108,7 +108,7 @@
                 <Where>type='mer'</Where>
             </SQL>
             <résultat/>
-            <aide>Test 4 pour aide question</aide>
+            <aide><p>Test 4 pour aide question</p></aide>
         </rq-trou>
         <rq-intention xml:id="int-em-01" enseignant="eED" disponibilité="ouvert">
             <name_quest>int-em-01</name_quest>
@@ -122,7 +122,7 @@
                 </Natural-Join></From>
                 <Where>type='mer'</Where>
             </SQL>
-            <aide>Test 2 pour aide question</aide>
+            <aide><p>Test 2 pour aide question</p></aide>
         </rq-intention>
         <rq-complète xml:id="cmp-em-01" enseignant="eED">
             <name_quest>cmp-em-01</name_quest>
@@ -136,7 +136,7 @@
                 </Natural-Join></From>
                 <Where>type='mer'</Where>
             </SQL>
-            <aide>Test 3 pour aide question</aide>
+            <aide><p>Test 3 pour aide question</p></aide>
         </rq-complète>
     </liste-questions>
 </base_de_donnee>

@@ -381,7 +381,7 @@ function liste_question_thema($base, $theme, $db_name){
 
 // Affiche la zone de texte d'une question en fonction de son type
 function type_question($Quest,$base,$i){
-	$aidePop = $Quest->aide->asXML();
+	$aidePop = $Quest->aide->children();
 	if($Quest->getName() == 'rq-intention'){
 		echo "<li>";
 		echo "Veuillez donner l'intention de la requète suivante :"."<br>";
