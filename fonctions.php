@@ -211,7 +211,6 @@ function liste_TP($base, $db_name){
 
 	$tpDispo = false;
 	$xml = xmlFile($db_name);
-
 	$listeTP = 'liste-TP';
 	$objectif = 'objectif-pédagogique';
 	$listeTp = ($xml->$listeTP);//Récupère la liste des TP depuis le fichier de config
@@ -221,10 +220,11 @@ function liste_TP($base, $db_name){
 	echo "<ul>";
 	foreach ($listeTp->TP as $tp){
 		$tpDispo = true;
-		echo "<a href='#' onClick='pageInitial(\"$base\", \"$tp->name\", \"$db_name\");return false;' style='cursor:pointer'>";
+		$tpName = $tp['nom'];
+		echo "<a href='#' onClick='pageInitial(\"$base\", \"$tpName\", \"$db_name\");return false;' style='cursor:pointer'>";
 		echo "<li>";
 		echo "<img src='images/down_64.png' height='16' width='16' /> ";
-		echo $tp->name;
+		echo $tp['nom'];
 		echo "</a>";
 		echo "</li>";
 	}
@@ -295,6 +295,7 @@ function liste_question($base, $tp_name, $db_name){
 	$objectif = 'objectif-pédagogique';
 	$listeTp = ($xml->$listeTP);
 	$refQuest = 'ref-question';
+	$tpNote = false;
 
 	$questionDispo = false;
 
@@ -305,35 +306,44 @@ function liste_question($base, $tp_name, $db_name){
 
 	echo "<div class='post'><h2 class='title'>Questions du TP $tp_name</h2>";
 	echo "<br>"."</br>";
-
-	echo "<h3 class='indicateur'>Temps restant : <p id='countdown'/></p></h3>";
-	?>
-
-	<script>
-	//Script de timer pour la durée d'un tp
-	const startingMinutes = 60;
-	let time = startingMinutes * 60;
-	
-	const countdownEl = document.getElementById('countdown');
-
-	setInterval(updateCountDown, 1000);
-	function updateCountDown(){
-		const minutes = Math.floor(time/60);
-		let seconds = time % 60;
-
-		countdownEl.innerHTML = `${minutes}: ${seconds}`;
-		time--;
+	foreach($listeTp->TP as $tp){
+		if($tp['nom'] == $tp_name){
+			if($tp['statut'] == 'note'){
+				$tpNote = true;
+			}
+		}
 	}
-	</script>	
+	if($tpNote){
+		echo "<h3 class='indicateur'>Temps restant : <p id='countdown'/></p></h3>";
+		?>
 
-	<?php
+		<script>
+		//Script de timer pour la durée d'un tp
+		const startingMinutes = 60;
+		let time = startingMinutes * 60;
+		
+		const countdownEl = document.getElementById('countdown');
+
+		setInterval(updateCountDown, 1000);
+		function updateCountDown(){
+			const minutes = Math.floor(time/60);
+			let seconds = time % 60;
+
+			countdownEl.innerHTML = `${minutes}: ${seconds}`;
+			time--;
+		}
+		</script>	
+
+		<?php
+	}
 	echo "<br>"."</br>";
 	foreach($listeTp->TP as $tp){
 		//echo (string)$value;
-		if($tp->name == $tp_name){
+		//echo $tp['enseignant'];
+		if($tp['nom'] == $tp_name){
 			foreach($tp->$refQuest as $refQuestion){
 				foreach ($listeQuestion->children() as $Quest){
-					if((string)$refQuestion->name_question == (string)$Quest->name_quest){
+					if((string)$refQuestion['question'] == (string)$Quest['xml_id']){
 						$questionDispo = true;
 						$i=$i+1;
 						$_SESSION['tp'] = $tp_name;
@@ -379,9 +389,12 @@ function liste_question_thema($base, $theme, $db_name){
     }
 }
 
+
 // Affiche la zone de texte d'une question en fonction de son type
 function type_question($Quest,$base,$i){
-	$aidePop = $Quest->aide->children();
+
+	$aidePop = (string)$Quest->aide->asXML();
+	
 	if($Quest->getName() == 'rq-intention'){
 		echo "<li>";
 		echo "Veuillez donner l'intention de la requète suivante :"."<br>";
@@ -436,11 +449,11 @@ function TPThemesDispo($dbName, $tpRef){
 	$tab = array();
 
 	foreach($listeTp->TP as $tp){
-		if($tp->name == $tpRef){
+		if($tp['nom'] == $tpRef){
 			foreach($listeTp->TP->$refQuest as $tpQuest){
 				foreach($listeQuestionThema->children() as $themeBase){
-					$tpName = str_replace(' ', '', $tpQuest->name_question);
-					$themeName = str_replace(' ', '', $themeBase->name_quest);
+					$tpName = str_replace(' ', '', $tpQuest['question']);
+					$themeName = str_replace(' ', '', $themeBase['xml_id']);
 					if($tpName == $themeName){
 						foreach($themeBase->theme->children() as $theme){
 							$present = false;

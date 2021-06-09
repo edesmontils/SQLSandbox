@@ -106,6 +106,13 @@ a:hover {
 	margin: 160px 20px 0 0;
 }
 
+#div1{
+	display: none;
+	background-color: #c6d4fc;
+	color: black;
+	padding: 5px;
+}
+
 .post {
 	margin-bottom: 20px;
 	padding-bottom: 20px;

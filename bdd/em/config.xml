@@ -22,36 +22,21 @@
         <enseignant nom="Desmontils" prénom="Emmanuel" courriel="emmanuel.desmontils@univ-nantes.fr" xml:id="eED"/>
     </liste-enseignants>
     <liste-TP>
-        <TP nom="tp-em-01" enseignant="eED">
-            <name>tp-em-01</name>
+        <TP nom="tp-em-01" enseignant="eED" statut="libre">
             <objectif-pédagogique><p>Quelques requête simples.</p></objectif-pédagogique>
-            <ref-question question="tr-em-01">
-                <name_question>tr-em-01</name_question>
-            </ref-question>
-            <ref-question question="re-em-01">
-                <name_question>re-em-01</name_question>
-            </ref-question>
-            <ref-question question="int-em-01">
-                <name_question>int-em-01</name_question>
-            </ref-question>
-            <ref-question question="cmp-em-01">
-                <name_question>cmp-em-01</name_question>
-            </ref-question>
+            <ref-question question="tr-em-01"/>
+            <ref-question question="re-em-01"/>
+            <ref-question question="int-em-01"/>
+            <ref-question question="cmp-em-01"/>
         </TP>
         <TP nom="tp-em-02">
-            <name>tp-em-02</name>
             <objectif-pédagogique>Test</objectif-pédagogique>
-            <ref-question question="tr-em-02">
-                <name_question>tr-em-02</name_question>
-            </ref-question>
-            <ref-question question="re-em-02">
-                <name_question>re-em-02</name_question>
-            </ref-question>
+            <ref-question question="tr-em-02"/>
+            <ref-question question="re-em-02"/>
         </TP>
     </liste-TP>
     <liste-questions>
-        <rq-résultat xml:id="re-em-01" enseignant="eED">
-            <name_quest>re-em-01</name_quest>
+        <rq-résultat xml_id="re-em-01" enseignant="eED">
             <theme><projection/><sélection-simple/></theme>
             <intention>On recherche les fleuves de longueur supérieure à 1000 Km.</intention>
             <SQL>
@@ -60,8 +45,7 @@
                 <Where>longueur>1000</Where>
             </SQL>
         </rq-résultat>
-        <rq-résultat xml:id="re-em-02">
-            <name_quest>re-em-02</name_quest>
+        <rq-résultat xml_id="re-em-02">
             <theme><projection/><sélection-simple/><jointure-simple/></theme>
             <intention></intention>
             <SQL>
@@ -74,8 +58,7 @@
             </SQL>
             <aide><p>Test 5 pour aide question</p></aide>
         </rq-résultat>
-        <rq-trou xml:id="tr-em-01" enseignant="eED" disponibilité="ouvert">
-            <name_quest>tr-em-01</name_quest>
+        <rq-trou xml_id="tr-em-01" enseignant="eED" disponibilité="ouvert">
             <theme><projection/></theme>
             <intention>On recherche les fleuves de longueur supérieure à 1000 Km.</intention>
             <SQL>
@@ -90,8 +73,7 @@
             </SQL>
             <aide><p>Test 1 pour aide question</p></aide>
         </rq-trou>
-        <rq-trou xml:id="tr-em-02">
-            <name_quest>tr-em-02</name_quest>
+        <rq-trou xml_id="tr-em-02">
             <theme><projection/><sélection-simple/></theme>
             <intention></intention>
             <SQL>
@@ -110,8 +92,7 @@
             <résultat/>
             <aide><p>Test 4 pour aide question</p></aide>
         </rq-trou>
-        <rq-intention xml:id="int-em-01" enseignant="eED" disponibilité="ouvert">
-            <name_quest>int-em-01</name_quest>
+        <rq-intention xml_id="int-em-01" enseignant="eED" disponibilité="ouvert">
             <theme></theme>
             <intention>Le nom des fleuves qui se jettent dans une mer.</intention>
             <SQL>
@@ -124,8 +105,7 @@
             </SQL>
             <aide><p>Test 2 pour aide question</p></aide>
         </rq-intention>
-        <rq-complète xml:id="cmp-em-01" enseignant="eED">
-            <name_quest>cmp-em-01</name_quest>
+        <rq-complète xml_id="cmp-em-01" enseignant="eED">
             <theme><projection/><sélection-simple/><jointure-simple/></theme>
             <intention>Les fleuves qui se jettent dans une mer.</intention>
             <SQL>
