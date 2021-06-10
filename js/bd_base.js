@@ -413,7 +413,7 @@ function new_reponse_intention($Quest,$base,$aide,$requete) {
         t = t + '   	<div id="div1">' + $aide + '</div>';
     }
     t = t + '   <form method="POST" id="SaisieRequete" onSubmit="reponse(\''+$base+'\'); return false;">';
-    t = t + '       <p>' + $requete + '<br/>';
+    t = t + '       <p>' + "Emplacement de la requête de la question" + '<br/>';
     t = t + '       <p>Veuillez donner l\'intention de la requète ci-dessus: <br/>';
     t = t + '   	<textarea name="requete" rows="1" cols="80" id="requete"></textarea><br/>';
 
@@ -429,7 +429,7 @@ function new_reponse_intention($Quest,$base,$aide,$requete) {
    
     $('posts').hide();
     $('posts').update(t);
-    $('requete').setValue(current_request);
+
     $('posts').appear();
 }
 

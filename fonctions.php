@@ -427,24 +427,21 @@ function type_question($Quest,$base,$i){
 	$aidePop = (string)$Quest->aide->asXML();
 	
 	if($Quest->getName() == 'rq-intention'){
-		echo "<li>";
-		echo "Veuillez donner l'intention de la requète suivante :"."<br>";
-		echo "</li>";
 		if($Quest->SQL->Select->children()->getName()=='Distinct'){
 			$t = $t.'<b>Select </b>'.'<b>'.$Quest->SQL->Select->children()->getName().'</b>'.' '.$Quest->SQL->Select->Distinct.'<br>';
 		}else{
 			$t = $t.'<b>Select </b>'.' '.$Quest->SQL->Select.'<br>';
 		}
 		$t = $t.'<b>From </b>';
-		$i=0;
+		$j=0;
 		if($Quest->SQL->From->children()->getName() != 'Table'){
 			foreach($Quest->SQL->From->children()->children() as $Table){
-				if($i==0){
+				if($j==0){
 					$t = $t.$Table.' ';
 				}else{
 					$t = $t.$Quest->SQL->From->children()->getName().' '.$Table.' ';
 				}
-				$i=$i+1;
+				$j=$j+1;
 			}
 		}else{
 			$t = $t.$Quest->SQL->From->children();
@@ -452,7 +449,7 @@ function type_question($Quest,$base,$i){
 		$t = $t.'<br>';
 		$t = $t.'<b>Where </b>'.$Quest->SQL->Where.'<br>';
 		echo "Toujours un problème avec le bouton"."<br>";
-		echo $t;
+
 		echo "<input type='hidden' name='Soumettre' value='Envoyer'/>";
 		echo '<img src="images/pencil_64.png" name="Soumettre" alt="Soumettre" title="Soumettre" width="32" ';
         echo 'onClick="new_reponse_intention(\''.$i.'\',\''.$base.'\',\''.$aidePop.'\'); return false;" style="cursor:pointer" id="send_new"/>';
@@ -566,7 +563,7 @@ function getReponse($requete,$base) {
 			//Exploitation des résultats
 			    $ligne = $result->fetchArray(SQLITE3_ASSOC);
 				$titre = array_keys($ligne); ?>
-				<table cellspacing="5" border="2" cellpadding="2">donc l
+				<table cellspacing="5" border="2" cellpadding="2">
 				<thead>
 					<tr><?php
 					for($i=0;$i<count($titre);$i=$i+1) {
