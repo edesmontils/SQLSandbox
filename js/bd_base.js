@@ -296,10 +296,8 @@ function pageInitial(nom, tpName, db_name) {
 }
 
 function popUp(){
-    //alert(aide);
     var elem = document.getElementById('div1');
     elem.style.display = "block";
-    //console.log(elem);
 }
 
 function news() {
@@ -400,10 +398,10 @@ function aides() {
 }
 
 function new_reponse_intention($Quest,$base,$aide,$requete) {
-    clear;
+    clear();
     t = '<div class="post">';
-    t = t + '<h2>Base \''+$base+'\'</h2>';
-    t = t + '<h2 class="title">Question \''+$Quest+'\'</h2>';
+    t = t + '<h2>Base ' + $base + '</h2>';
+    t = t + '<h2 class="title">Question ' + $Quest + '</h2>';
     t = t + '   <div class="story">';
     if($aide){
         t = t + '   	<li>';
@@ -415,7 +413,7 @@ function new_reponse_intention($Quest,$base,$aide,$requete) {
         t = t + '   	<div id="div1">' + $aide + '</div>';
     }
     t = t + '   <form method="POST" id="SaisieRequete" onSubmit="reponse(\''+$base+'\'); return false;">';
-    t = t + '       <p>\''+$requete+'\'<br/>';
+    t = t + '       <p>' + $requete + '<br/>';
     t = t + '       <p>Veuillez donner l\'intention de la requète ci-dessus: <br/>';
     t = t + '   	<textarea name="requete" rows="1" cols="80" id="requete"></textarea><br/>';
 
@@ -431,14 +429,15 @@ function new_reponse_intention($Quest,$base,$aide,$requete) {
    
     $('posts').hide();
     $('posts').update(t);
+    $('requete').setValue(current_request);
     $('posts').appear();
 }
 
 function new_reponse_trou($Quest,$base,$aide,$intention) {
-    clear;
+    clear();
     t = '<div class="post">';
-    t = t + '<h2>Base \''+$base+'\'</h2>';
-    t = t + '<h2 class="title">Question \''+$Quest+'\'</h2>';
+    t = t + '<h2>Base ' + $base + '</h2>';
+    t = t + '<h2 class="title">Question ' + $Quest + '</h2>';
     t = t + '   <div class="story">';
     t = t + '   <br>';
     if($aide){
@@ -452,7 +451,7 @@ function new_reponse_trou($Quest,$base,$aide,$intention) {
     }
 
     t = t + '   <form method="POST" id="SaisieRequete" onSubmit="reponse(\''+$base+'\'); return false;">';
-    t = t + '       <p>\''+$intention+'\'<br/>';
+    t = t + '       <p>' + $intention+ '<br/>';
     t = t + '       <p>Veuillez compléter la requete suivante: <br/>';
     t = t + '   	<textarea name="requete" rows="10" cols="80" id="requete"></textarea><br/>';
 
@@ -468,14 +467,15 @@ function new_reponse_trou($Quest,$base,$aide,$intention) {
    
     $('posts').hide();
     $('posts').update(t);
+    $('requete').setValue(current_request);
     $('posts').appear();
 }
 
 function new_reponse_requete($Quest,$base,$aide,$intention) {
-    clear;
+    clear();
     t = '<div class="post">';
-    t = t + '<h2>Base \''+$base+'\'</h2>';
-    t = t + '<h2 class="title">Question \''+$Quest+'\'</h2>';
+    t = t + '<h2>Base ' + $base + '</h2>';
+    t = t + '<h2 class="title">Question ' + $Quest + '</h2>';
     t = t + '   <div class="story">';
     if($aide){
         t = t + '   	<li>';
@@ -487,7 +487,7 @@ function new_reponse_requete($Quest,$base,$aide,$intention) {
         t = t + '   	<div id="div1">' + $aide + '</div>';
     }
     t = t + '   <form method="POST" id="SaisieRequete" onSubmit="reponse(\''+$base+'\'); return false;">';
-    t = t + '       <p>\''+$intention+'\'<br/>';
+    t = t + '       <p>' + $intention + '<br/>';
     t = t + '       <p>Veuillez donner la requete : <br/>';
     t = t + '   	<textarea name="requete" rows="10" cols="80" id="requete"></textarea><br/>';
     t = t + '       <input type="hidden" name="Soumettre" value="Envoyer"/>';
@@ -502,6 +502,7 @@ function new_reponse_requete($Quest,$base,$aide,$intention) {
    
     $('posts').hide();
     $('posts').update(t);
+    $('requete').setValue(current_request);
     $('posts').appear();
 }
 
