@@ -150,8 +150,9 @@ if (isset($_SESSION['debug']) && $session_ok) {
 		if (isset($requete) && isset($base)){
 		    $requete = stripslashes($requete);	
 			$t=getReponse($requete,$base);  
-			echo ($ok ? '<input type="hidden" name="Retour aux questions" value="Envoyer"/> <img src="images/delete_64.png" alt="ok" title="Retourner au menu des questions" width="32" onClick="liste_question(\''.$base.'\',\''.$_SESSION['tp'].'\'); return false;" style="cursor:pointer" id="return">'
-			           :"<img src='images/block_64.png' width='32' alt='ko' title='ko'/>");
+			echo ($ok ? '<input type="hidden" name="Retour aux questions" value="Envoyer"/> <img src="images/left_64.png" alt="ok" title="Retourner au menu des questions" width="32" 
+                                onClick="liste_question(\''.$base.'\',\''.$_SESSION['tp'].'\'); return false;" style="cursor:pointer" id="return">'
+                      :    "<img src='images/block_64.png' width='32' alt='ko' title='ko'/>");
 		} else { 
 		   echo "<p>Pas de requête ou/et de base proposée !</p>";
 		}

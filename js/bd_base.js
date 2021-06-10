@@ -29,8 +29,7 @@ var RequestSet = Class.create({
         this.nb = this.nb - 1;
     },
     show: function () {
-        t = '<div class="post"><h2 class="title">Historique</h2>' + '<div class="story"><table cellspacing="5" border="1" cellpadding="2">' + '<thead><th>n°</th><th>Base</th><th>Réussite</th><th>Requête</th><th>Actions</th><th></th></thead>';
-        
+        t = '<div class="post"><h2 class="title">Historique</h2>' + '<div class="story"><table cellspacing="5" border="1" cellpadding="2">' + '<thead><th>n°</th><th>Base</th><th>n° TP</th><th>n° Question</th><th>Réussite</th><th>Requête</th><th>Actions</th><th></th></thead>';        
         for (var i = 0; i < this.nb; i++) {
             r = this.set[i];
             t = t + '<tr><td> ' + i + ' </td><td>' + r.base + '</td><td>';
@@ -401,8 +400,7 @@ function aides() {
 }
 
 function new_reponse_intention($Quest,$base,$aide,$requete) {
-    console.log($Quest);
-    console.log($base);
+    clear;
     t = '<div class="post">';
     t = t + '<h2>Base \''+$base+'\'</h2>';
     t = t + '<h2 class="title">Question \''+$Quest+'\'</h2>';
@@ -416,14 +414,16 @@ function new_reponse_intention($Quest,$base,$aide,$requete) {
         t = t + '   	<br>';
         t = t + '   	<div id="div1">' + $aide + '</div>';
     }
-    t = t + '   <form method="POST" id="SaisieRequete" onSubmit="reponse(); return false;">';
+    t = t + '   <form method="POST" id="SaisieRequete" onSubmit="reponse(\''+$base+'\'); return false;">';
     t = t + '       <p>\''+$requete+'\'<br/>';
     t = t + '       <p>Veuillez donner l\'intention de la requète ci-dessus: <br/>';
     t = t + '   	<textarea name="requete" rows="1" cols="80" id="requete"></textarea><br/>';
 
-    t = t + '   	<input type="hidden" name="Soumettre" value="Reponse"/>';
-    t = t + '   	<img src="images/gear_64.png" name="Soumettre" alt="Soumettre" title="Soumettre" width="32" ';
-    t = t + '   		onClick="reponse(\''+$base+'\'); return false;" style="cursor:pointer" id="send_new"/>';
+    t = t + '       <input type="hidden" name="Soumettre" value="Envoyer"/>';
+    t = t + '       <img src="images/gear_64.png" name="Soumettre" alt="Soumettre" title="Soumettre" width="32" ';
+    t = t + '           onClick="reponse(\''+$base+'\'); return false;" style="cursor:pointer" id="send_new"/>';
+    t = t + '       <img src="images/add_64.png" id="memoriser" name="Mémoriser" alt="Mémoriser" title="Mémoriser" width="32" ';
+    t = t + '           onClick="remember1(\''+$base+'\'); return false;" style="cursor:pointer"/>';
     t = t + '   </form></p>';
     t = t + '   <div id="results"></div>';
     t = t + '</div>';
@@ -431,13 +431,11 @@ function new_reponse_intention($Quest,$base,$aide,$requete) {
    
     $('posts').hide();
     $('posts').update(t);
-
     $('posts').appear();
 }
 
 function new_reponse_trou($Quest,$base,$aide,$intention) {
-    console.log($Quest);
-    console.log($base);
+    clear;
     t = '<div class="post">';
     t = t + '<h2>Base \''+$base+'\'</h2>';
     t = t + '<h2 class="title">Question \''+$Quest+'\'</h2>';
@@ -453,14 +451,16 @@ function new_reponse_trou($Quest,$base,$aide,$intention) {
         t = t + '   	<div id="div1">' + $aide + '</div>';
     }
 
-    t = t + '   <form method="POST" id="SaisieRequete" onSubmit="reponse(); return false;">';
+    t = t + '   <form method="POST" id="SaisieRequete" onSubmit="reponse(\''+$base+'\'); return false;">';
     t = t + '       <p>\''+$intention+'\'<br/>';
     t = t + '       <p>Veuillez compléter la requete suivante: <br/>';
     t = t + '   	<textarea name="requete" rows="10" cols="80" id="requete"></textarea><br/>';
 
-    t = t + '   	<input type="hidden" name="Soumettre" value="Reponse"/>';
-    t = t + '   	<img src="images/gear_64.png" name="Soumettre" alt="Soumettre" title="Executer la requete" width="32" ';
-    t = t + '   		onClick="reponse(\''+$base+'\'); return false;" style="cursor:pointer" id="send_new"/>';
+    t = t + '       <input type="hidden" name="Soumettre" value="Envoyer"/>';
+    t = t + '       <img src="images/gear_64.png" name="Soumettre" alt="Soumettre" title="Soumettre" width="32" ';
+    t = t + '           onClick="reponse(\''+$base+'\'); return false;" style="cursor:pointer" id="send_new"/>';
+    t = t + '       <img src="images/add_64.png" id="memoriser" name="Mémoriser" alt="Mémoriser" title="Mémoriser" width="32" ';
+    t = t + '           onClick="remember1(\''+$base+'\'); return false;" style="cursor:pointer"/>';
     t = t + '   </form></p>';
     t = t + '   <div id="results"></div>';
     t = t + '</div>';
@@ -468,14 +468,11 @@ function new_reponse_trou($Quest,$base,$aide,$intention) {
    
     $('posts').hide();
     $('posts').update(t);
-
     $('posts').appear();
 }
 
 function new_reponse_requete($Quest,$base,$aide,$intention) {
-    console.log($Quest);
-    console.log($base);
-    console.log($aide);
+    clear;
     t = '<div class="post">';
     t = t + '<h2>Base \''+$base+'\'</h2>';
     t = t + '<h2 class="title">Question \''+$Quest+'\'</h2>';
@@ -489,13 +486,15 @@ function new_reponse_requete($Quest,$base,$aide,$intention) {
         t = t + '   	<br>';
         t = t + '   	<div id="div1">' + $aide + '</div>';
     }
-    t = t + '   <form method="POST" id="SaisieRequete" onSubmit="reponse(); return false;">';
+    t = t + '   <form method="POST" id="SaisieRequete" onSubmit="reponse(\''+$base+'\'); return false;">';
     t = t + '       <p>\''+$intention+'\'<br/>';
     t = t + '       <p>Veuillez donner la requete : <br/>';
     t = t + '   	<textarea name="requete" rows="10" cols="80" id="requete"></textarea><br/>';
-    t = t + '   	<input type="hidden" name="Soumettre" value="Reponse"/>';
-    t = t + '   	<img src="images/gear_64.png" name="Soumettre" alt="Soumettre" title="Soumettre" width="32" ';
-    t = t + '   		onClick="reponse(\''+$base+'\'); return false;" style="cursor:pointer" id="send_new"/>';
+    t = t + '       <input type="hidden" name="Soumettre" value="Envoyer"/>';
+    t = t + '       <img src="images/gear_64.png" name="Soumettre" alt="Soumettre" title="Soumettre" width="32" ';
+    t = t + '           onClick="reponse(\''+$base+'\'); return false;" style="cursor:pointer" id="send_new"/>';
+    t = t + '       <img src="images/add_64.png" id="memoriser" name="Mémoriser" alt="Mémoriser" title="Mémoriser" width="32" ';
+    t = t + '           onClick="remember1(\''+$base+'\'); return false;" style="cursor:pointer"/>';
     t = t + '   </form></p>';
     t = t + '   <div id="results"></div>';
     t = t + '</div>';
@@ -503,7 +502,6 @@ function new_reponse_requete($Quest,$base,$aide,$intention) {
    
     $('posts').hide();
     $('posts').update(t);
-    
     $('posts').appear();
 }
 
@@ -525,6 +523,14 @@ function reponse($base) {
             alert('new_query: Impossible d\'obtenir la rubrique !')
         }
     });
+}
+
+function remember1($base) {
+    req = new Request($('requete').getValue(), $base, result_type);
+    req.result = current_result;
+    rs.add(req);
+    $('memoriser').hide();
+    $('results').insert("<p>Requête mémorisée</p>");
 }
 
 //</script>

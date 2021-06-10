@@ -193,6 +193,10 @@ function pageInitial($base, $tpname, $descr, $dbName){
 	echo "</button>";
 	echo "</div>";
 
+	echo "<div class='post'><h2 class='title'>Nombre de questions : ";
+    NbQuestionTp($dbName, $tpname);
+    echo "</div>";
+
 	echo "<div class='post'><h2 class='title'>Mots clés : ";
 	TPThemesDispo($dbName, $tpname);
 	echo "</div>";
@@ -203,6 +207,33 @@ function pageInitial($base, $tpname, $descr, $dbName){
 	echo "</a>";
 	echo "</h2>";
 	echo "</div>";
+
+	echo "<div class='post'><h2 class='title'>Déroulement : "."</h2>";
+    echo "<br>"."<li>"."Pour débuter le TP, il vous suffit d'appuyer sur le bouton commencé qui vous emmènera sur une liste de questions.";
+    echo "<br>"."<li>"."Pour commencer une question, il vous suffit de cliquer sur le crayon.";
+    echo "<br>"."<li>"."Lors d'une question, plusieurs choix se proposent à vous :";
+    echo "<ul>";
+        echo "-  Retournez au menu des questions avec la flèche tout en mémorisant votre réponse.";
+        echo "<br>"."-  Mémoriser votre réponse dans l'historique grâce au panier.";
+        echo "<br>"."-  (non-disponible quand il s'agit de rechercher une intention) Exécuter votre requête grâce à la roue crantée.";
+    echo "</ul>";
+    echo "</div>";
+}
+
+function NbQuestionTp($dbName, $tpRef){
+    $xmlFile = xmlFile($dbName);
+    $listeTP = 'liste-TP';
+    $listeTp = ($xmlFile->$listeTP);
+    $refQuest = 'ref-question';
+
+    foreach($listeTp->TP as $tp){
+        if($tp['nom'] == $tpRef){
+            foreach($listeTp->TP->$refQuest as $tpQuest){
+                $i++;
+            }
+        }
+    }
+    echo $i;
 }
 
 //Retourne la liste des TP d'une base de donnée
@@ -422,12 +453,9 @@ function type_question($Quest,$base,$i){
 		$t = $t.'<b>Where </b>'.$Quest->SQL->Where.'<br>';
 		echo "Toujours un problème avec le bouton"."<br>";
 		echo $t;
-		//echo '<input type="hidden" name="Aller à la question" value="Envoyer"/>';
-        //echo '<img src="images/briefcase_64.png" name="Soumettre" alt="Soumettre" title="Soumettre" width="32" ';
-		//echo 'onClick="new_reponse_intention(\''+$i+'\',\''+$base+'\',\''+$Quest->aide+'\'); return false;" style="cursor:pointer" id="send_new"/>';
 		echo "<input type='hidden' name='Soumettre' value='Envoyer'/>";
-		echo "<img src='images/pencil_64.png' name='Soumettre' alt='Soumettre' title='Soumettre' width='32' ";
-		echo "onClick='new_reponse_intention(\"$i\",\"$base\",\"$aidePop\",\"$t\"); return false;' style='cursor:pointer' id='send_new'/>";
+		echo '<img src="images/pencil_64.png" name="Soumettre" alt="Soumettre" title="Soumettre" width="32" ';
+        echo 'onClick="new_reponse_intention(\''.$i.'\',\''.$base.'\',\''.$aidePop.'\'); return false;" style="cursor:pointer" id="send_new"/>';
 	}else if($Quest->getName() == 'rq-trou'){
 		echo "<input type='hidden' name='Soumettre' value='Envoyer'/>";
 		echo "<img src='images/pencil_64.png' name='Soumettre' alt='Soumettre' title='Soumettre' width='32' ";

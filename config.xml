@@ -98,6 +98,7 @@
 					<li>depuis la barre de menu, pour une nouvelle requête, celle présentée est la
 						dernière faite ;</li>
 					<li>depuis l'historique, pour retravailler une requête déjà proposée.</li>
+					 <li>depuis la liste des questions d'un TP, permet d'accéder à la question.</li>
 				</ul>
 				<p><img src="images/add_64.png" width="32" alt="aide"/> : permet de mémoriser une
 					requête.</p>
@@ -115,6 +116,8 @@
 						résultat est alors fait juste en dessous ;</li>
 					<li>depuis l'historique, pour exécuter à nouveau une requête déjà proposée (un
 						nouveau clic efface le résultat).</li>
+					<li>depuis une question pour lancer son exécution, l'affichage du
+                        résultat est alors fait juste en dessous.</li>
 				</ul>
 				<p><img src="images/delete_64.png" width="32" alt="supprimer"/> : permet, dans
 					l'historique, de supprimer une requête.</p>
@@ -125,6 +128,8 @@
 					limitations.</p>
 				<p><img src="images/shield_64.png" width="32" alt="base de données"/> : Énonce les
 					différentes mentions légales liées à cette application.</p>
+				<p><img src="images/left_64.png" width="32" alt="base de données"/> : Lors d'un TP 
+                    permet de retourner à la liste des questions.</p>
 			</div>
 		</div>
 	</aides>
