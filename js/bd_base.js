@@ -164,7 +164,7 @@ function histo_mod(i) {
 }
 
 function histo_del(i) {
-    if (confirm("Êtes-vous certain(e) de vouloir supprimer la requête " + i + " ?")) {
+    if (confirm("Êtes-vous certain(e) de vouloir supprimer la requête " + i + " ?")) {
         rs.remove(i);
         get_histo();
     }
