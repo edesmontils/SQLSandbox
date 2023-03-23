@@ -1,1 +1,5 @@
 ./tmp/copie_*
+.idea/vcs.xml
+.idea/SQLSandbox.iml
+.idea/php.xml
+.idea/modules.xml

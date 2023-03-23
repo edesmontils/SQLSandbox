@@ -37,7 +37,7 @@ var RequestSet = Class.create({
             if (r.error == 'ok') t = t + "<img src='images/tick_64.png' width='32' alt='ok' title='ok' />"; else t = t + "<img src='images/block_64.png' width='32' alt='ko' title='ko'/>";
             t = t + "</td><td><pre>" + r.request + "</pre></td><td>";
             t = t + "<img src='images/gear_64.png' alt='Envoyer la requête' title='Envoyer la requête' width='32' onClick='histo(" + i + "); return false;'  style='cursor:pointer'/>";
-            t = t + "<img src='images/pencil_64.png' alt='Éditer la requête' title='Éditer la requête' width='32' onClick='histo_mod(" + i + "); return false;'  style='cursor:pointer'/>";
+            t = t + "<img src='images/pencil_64.png' alt='Éditer la requête' title='Éditer la requête' width='32' onClick='histo_mod(" + i + "); return false;'  style='cursor:pointer'/>";
             t = t + "&nbsp;&nbsp;&nbsp;<img src='images/delete_64.png' alt='Supprimer la requête' title='Supprimer la requête' width='32' onClick='histo_del(" + i + "); return false;'  style='cursor:pointer'/>";
             
             t = t + "</td><td><div id='results-" + i + "'></div></td></tr>";
