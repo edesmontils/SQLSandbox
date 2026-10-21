@@ -123,8 +123,8 @@ if ($debug) {
 }
 
 // Purge de TMP s'il reste des fichiers non supprimés...
-$dir=opendir("./tmp");
-while (($nom=readdir($dir)) !== false) {
+$dir=@opendir("./tmp");
+while ($dir && ($nom=readdir($dir)) !== false) {
 	$chemin = "./tmp/".$nom;
 	if (substr($nom,0,6)=='copie_' && is_file($chemin)) {
 		$delta = time() - filemtime($chemin);
@@ -134,23 +134,35 @@ while (($nom=readdir($dir)) !== false) {
 		}
 	}
 }
-closedir($dir);
+if ($dir) closedir($dir);
 
 // Mise en place des BD temporaires pour l'utilisation courante (session)
 if ($debug) echo "<p>Création des bases temporaires pour cette session</p>";
+$dossierTmp = realpath('./tmp');
+$erreursCopie = array();
+if ($dossierTmp === false || !is_writable($dossierTmp)) {
+	$erreursCopie[] = "Le répertoire tmp n'est pas accessible en écriture : aucune base n'est disponible.";
+	$listeBase = array();
+	$listeNoms = array();
+}
 foreach($listeNoms as $nom) {
-	$_SESSION["copie_$nom"]= tempnam('./tmp',"copie_$nom".'_');
-	
-	//_________________________________________________
-	//$listeBase[$nom]['tmp'] = $_SESSION["copie_$nom"]; // Danger pour la sécurité !
-	//_________________________________________________
-	
-	copy($listeBase[$nom]['fichier'],$_SESSION["copie_$nom"]);
+	// tempnam() se replie silencieusement sur le répertoire temporaire du système :
+	// une copie créée ailleurs que dans tmp/ ne serait jamais purgée.
+	$copie = @tempnam($dossierTmp, "copie_$nom".'_');
+	if ($copie === false || dirname($copie) !== $dossierTmp
+	    || !@copy($listeBase[$nom]['fichier'], $copie)) {
+		if ($copie !== false && is_file($copie)) unlink($copie);
+		$erreursCopie[] = "Impossible de préparer la base ".htmlspecialchars($nom).".";
+		unset($listeBase[$nom]);
+		continue;
+	}
+	$_SESSION["copie_$nom"] = $copie;
 	if ($debug) echo "<p>Création de ".$_SESSION["copie_$nom"]."</p>";
-	
+
 	$tables = get_tables($nom);
 	$listeBase[$nom]['tables'] = $tables;
 }
+$listeNoms = array_keys($listeBase);
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
@@ -205,6 +217,12 @@ Released for free under a Creative Commons Attribution 2.5 License
 </div>
 
 <div id="content">
+
+	<?php if (count($erreursCopie) > 0) {
+		echo "<div class='post'><h2 class='title'>Problème d'installation</h2><div class='story'>";
+		foreach($erreursCopie as $m) echo "<p>$m</p>";
+		echo "</div></div>";
+	} ?>
 
 	<!-- ================================== -->
 	<!-- =============== Posts ============ --> 

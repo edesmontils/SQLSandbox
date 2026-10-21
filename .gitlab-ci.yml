@@ -1,0 +1,5 @@
+tests:
+  image: php:8.3-cli
+  script:
+    - php -m | grep -i -E 'sqlite3|simplexml'
+    - php tests/run.php
