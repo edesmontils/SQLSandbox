@@ -47,7 +47,7 @@
         </rq-résultat>
         <rq-résultat xml:id="re-em-02">
             <theme><projection/><sélection-simple/><jointure-simple/></theme>
-            <intention></intention>
+            <intention>On recherche le nom des fleuves qui se jettent dans une mer.</intention>
             <SQL>
                 <Select>nom_f</Select>
                 <From><Natural-Join>
@@ -75,7 +75,7 @@
         </rq-trou>
         <rq-trou xml:id="tr-em-02">
             <theme><projection/><sélection-simple/></theme>
-            <intention></intention>
+            <intention>On recherche le nom des fleuves qui se jettent dans une mer.</intention>
             <SQL>
                 <Select>nom_f</Select>
                 <From><Natural-Join>
