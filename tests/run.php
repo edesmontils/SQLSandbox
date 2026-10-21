@@ -102,11 +102,28 @@ foreach (array("select nom, row_number() over (order by nom) from etudiants" => 
                "select 'over (' from etudiants -- over (" => false) as $q => $attendu) {
 	verifie(($attendu ? 'fenêtrage détecté : ' : 'pas de fenêtrage : ').$q, utilise_fenetrage($q) === $attendu);
 }
-verifie('fenêtrage refusé avant SQLite 3.32.3 (OVH : 3.27.2)', !fenetrage_autorise(3027002) && fenetrage_autorise(3045001));
-if (fenetrage_autorise()) {
+verifie('fenêtrage et printf() refusés avant SQLite 3.32.3 (OVH : 3.27.2)', !sqlite_recent(3027002) && sqlite_recent(3045001));
+if (sqlite_recent()) {
 	list($r, $o) = execute("select nom, row_number() over (order by nom) from etudiants");
 	verifie('fenêtrage utilisable avec ce SQLite ('.SQLite3::version()['versionString'].')', $r === true, $o);
 }
+foreach (array("create virtual table v3 using fts3(x)", "create virtual table v4 using fts4(x)") as $q) {
+	list($r, $o) = execute($q);
+	verifie("refusé : $q", $r === null && strpos($o, 'not authorized') !== false, $o);
+}
+list($r, $o) = execute("analyze");
+verifie('ANALYZE utilisable', $r === true, $o);
+foreach (array("update sqlite_stat1 set stat = '1 0'", "insert into sqlite_stat1 values('etudiants', null, '0 0')") as $q) {
+	list($r, $o) = execute($q);
+	verifie("refusé : $q", $r === null && strpos($o, 'not authorized') !== false, $o);
+}
+execute("create table d(id integer primary key autoincrement, a)");
+list($r, $o) = execute("insert into d(a) values (1)");
+verifie('AUTOINCREMENT utilisable (sqlite_sequence)', $r === true, $o);
+list($r, $o) = execute("drop table d");
+verifie('DROP TABLE utilisable', $r === true, $o);
+list($r, $o) = execute("select count(*) from sqlite_master where name = 'd'");
+verifie('table bien supprimée', strpos($o, '<td>0</td>') !== false, $o);
 list($r, $o) = execute("select '".str_repeat('x', LONGUEUR_MAX_REQUETE)."'");
 verifie('requête trop longue refusée', $r === null && strpos($o, 'trop longue') !== false, substr($o, 0, 200));
 
@@ -226,6 +243,7 @@ function copies() { global $travail; return count(glob("$travail/copie_*")); }
 function tailles() { global $travail; return array_sum(array_map('filesize', glob("$travail/copie_*"))); }
 
 $avant = copies();
+$taille_avant = tailles(); // copies éventuellement laissées par un essai précédent
 list($code, $page) = http("$u/index.php");
 $entetes = implode("\n", $derniers_entetes);
 verifie('en-têtes de sécurité', stripos($entetes, 'X-SQLSandbox: 1') !== false
@@ -236,7 +254,7 @@ verifie('index.php répond', $code == 200 && strpos($page, 'csrf_token') !== fal
 $session = dirname($racine).'/sessions-sqlsandbox/sess_'.substr($cookie, strlen('PHPSESSID='));
 verifie('session rangée hors du site', is_file($session) && strpos(realpath($session), $racine.'/') !== 0, $session);
 verifie('chemins serveur non exposés', strpos($page, '"fichier"') === false && strpos($page, '"config"') === false);
-verifie('visite : fichiers réservés hors du site, mais vides', copies() > $avant && tailles() == 0, tailles());
+verifie('visite : fichiers réservés hors du site, mais vides', copies() > $avant && tailles() == $taille_avant, tailles());
 verifie('aucune copie dans tmp/ du site', count(glob($racine.'/tmp/copie_*')) == 0);
 preg_match('/csrf_token = "([0-9a-f]+)"/', $page, $m);
 $jeton = $m[1] ?? '';
@@ -246,7 +264,7 @@ list($code, $corps) = http("$u/controler.php", $requete);
 verifie('requête sans jeton refusée (403)', $code == 403 && strpos($corps, 'Session expirée') !== false);
 list($code, $corps) = http("$u/controler.php", $requete + array('csrf' => $jeton));
 verifie('requête avec jeton exécutée', $code == 200 && strpos($corps, 'Dupont') !== false, $corps);
-verifie('copie faite à la première requête', tailles() > 0, tailles());
+verifie('copie faite à la première requête', tailles() > $taille_avant, tailles());
 list($code, $corps) = http("$u/controler.php?Soumettre=inexistante");
 verifie('rubrique inconnue refusée', strpos($corps, 'inconnue') !== false, $corps);
 list($code, $corps) = http("$u/tp.php?base=tp-em&tp=tp-em-01");

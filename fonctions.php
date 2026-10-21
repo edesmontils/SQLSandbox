@@ -48,11 +48,14 @@ $GLOBALS['PRAGMAS_AUTORISES'] = array('table_info', 'table_xinfo', 'index_list',
 // permettraient d'écrire des fichiers arbitraires sur le serveur, les autres PRAGMA
 // de modifier le comportement de la base (dont la limite de taille), les objets
 // temporaires de contourner cette limite. fts3_tokenizer() divulgue des adresses
-// mémoire.
+// mémoire. Les autres refus ferment des failles connues des anciens SQLite (voir
+// sqlite_recent()) : inutiles pour apprendre SQL, ils sont appliqués partout.
 function autorisation_sql($action, $arg1 = null, $arg2 = null) {
 	switch ($action) {
 		case SQLite3::ATTACH:
 		case SQLite3::DETACH:
+		// Tables virtuelles (fts3, fts4...) : CVE-2020-13630, CVE-2020-13632, CVE-2020-13631
+		case SQLite3::CREATE_VTABLE:
 		// Les objets temporaires échappent à la limite de taille de la base
 		case SQLite3::CREATE_TEMP_TABLE:
 		case SQLite3::CREATE_TEMP_INDEX:
@@ -62,8 +65,19 @@ function autorisation_sql($action, $arg1 = null, $arg2 = null) {
 		case SQLite3::PRAGMA:
 			return in_array(strtolower((string)$arg1), $GLOBALS['PRAGMAS_AUTORISES'], true)
 				? SQLite3::OK : SQLite3::DENY;
+		// Statistiques de l'optimiseur : des valeurs forgées font planter SQLite avant
+		// 3.30 (CVE-2019-16168). ANALYZE les écrit sans passer par ces contrôles. La
+		// suppression reste permise : DROP TABLE efface les statistiques de la table
+		// en passant par l'autorizer, et effacer ne permet pas de forger des valeurs.
+		case SQLite3::INSERT:
+		case SQLite3::UPDATE:
+			return (stripos((string)$arg1, 'sqlite_stat') === 0) ? SQLite3::DENY : SQLite3::OK;
 		case SQLite3::FUNCTION:
-			return strtolower((string)$arg2) == 'fts3_tokenizer' ? SQLite3::DENY : SQLite3::OK;
+			$fonction = strtolower((string)$arg2);
+			if ($fonction == 'fts3_tokenizer') return SQLite3::DENY;
+			// Dépassement d'entier dans printf() avant 3.32.1 (CVE-2020-13434)
+			if (!sqlite_recent() && in_array($fonction, array('printf', 'format'), true)) return SQLite3::DENY;
+			return SQLite3::OK;
 		default:
 			return SQLite3::OK;
 	}
@@ -127,14 +141,14 @@ function plusieurs_instructions($sql) {
 	return false;
 }
 
-// Fonctions de fenêtrage (OVER, WINDOW) : avant SQLite 3.32.3, plusieurs failles
-// connues permettent de faire planter le processus (CVE-2019-19244, CVE-2020-11655,
-// CVE-2020-13871...). Elles sont refusées sur ces versions (hébergement OVH : 3.27).
-define('VERSION_SQLITE_FENETRAGE', 3032003);
+// Avant SQLite 3.32.3, plusieurs failles connues touchent les fonctions de fenêtrage
+// (OVER, WINDOW : CVE-2019-19244, CVE-2020-11655, CVE-2020-13871...) et printf()
+// (CVE-2020-13434). Elles sont refusées sur ces versions (hébergement OVH : 3.27).
+define('VERSION_SQLITE_RECENTE', 3032003);
 
-function fenetrage_autorise($version = null) {
+function sqlite_recent($version = null) {
 	if (is_null($version)) $version = SQLite3::version()['versionNumber'];
-	return $version >= VERSION_SQLITE_FENETRAGE;
+	return $version >= VERSION_SQLITE_RECENTE;
 }
 
 function utilise_fenetrage($sql) {
@@ -255,7 +269,7 @@ function get($requete,$base) {
 		$db->close();
 		return null;
 	}
-	if (!fenetrage_autorise() && utilise_fenetrage($requete)) {
+	if (!sqlite_recent() && utilise_fenetrage($requete)) {
 		echo "<script language='javascript'>result_type='ko';</script><p>Les fonctions de fenêtrage "
 		    ."(OVER, WINDOW) ne sont pas disponibles sur ce serveur : sa version de SQLite (".html(SQLite3::version()['versionString'])
 		    .") a des failles connues dans ces fonctions.</p>";
