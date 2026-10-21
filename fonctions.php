@@ -208,7 +208,7 @@ function message_erreur($db) {
 function arret_requete() {
 	$e = error_get_last();
 	if ($e && $e['type'] == E_ERROR && strpos($e['message'], 'Maximum execution time') !== false) {
-		echo "<script language='javascript'>result_type='ko';</script>"
+		echo "<script>result_type='ko';</script>"
 		    ."<p>Requête interrompue : durée maximale d'exécution dépassée (".DELAI_MAX." s).</p>";
 	}
 }
@@ -244,7 +244,7 @@ function reserve_execution() {
 function get($requete,$base) {
 	$db = ouvre_base($base);
 	if (is_null($db)) {
-		echo "<script language='javascript'>result_type='ko';</script><p>Base inconnue ou inaccessible. "
+		echo "<script>result_type='ko';</script><p>Base inconnue ou inaccessible. "
 		    ."Rouvrez l'application depuis sa page d'accueil pour réinitialiser les bases.</p>";
 		return null;
 	}
@@ -252,7 +252,7 @@ function get($requete,$base) {
 	// de l'élève ne restent pas bloqués pendant l'exécution de la requête
 	if (session_status() == PHP_SESSION_ACTIVE) session_write_close();
 	if (!reserve_execution()) {
-		echo "<script language='javascript'>result_type='ko';</script><p>Trop de requêtes en cours depuis "
+		echo "<script>result_type='ko';</script><p>Trop de requêtes en cours depuis "
 		    ."votre adresse : patientez quelques secondes avant de réessayer.</p>";
 		$db->close();
 		return null;
@@ -264,13 +264,13 @@ function get($requete,$base) {
 		$arret_enregistre = true;
 	}
 	if (strlen($requete) > LONGUEUR_MAX_REQUETE) {
-		echo "<script language='javascript'>result_type='ko';</script><p>Requête trop longue (au plus "
+		echo "<script>result_type='ko';</script><p>Requête trop longue (au plus "
 		    .(LONGUEUR_MAX_REQUETE / 1024)." Ko).</p>";
 		$db->close();
 		return null;
 	}
 	if (!sqlite_recent() && utilise_fenetrage($requete)) {
-		echo "<script language='javascript'>result_type='ko';</script><p>Les fonctions de fenêtrage "
+		echo "<script>result_type='ko';</script><p>Les fonctions de fenêtrage "
 		    ."(OVER, WINDOW) ne sont pas disponibles sur ce serveur : sa version de SQLite (".html(SQLite3::version()['versionString'])
 		    .") a des failles connues dans ces fonctions.</p>";
 		$db->close();
@@ -286,9 +286,9 @@ function get($requete,$base) {
 		if ($nbcol == 0) {
 			// Requête sans résultat tabulaire (INSERT, UPDATE, CREATE...) : déjà exécutée
 			$nb = $db->changes();
-			echo "<script language='javascript'>result_type='ok';</script><p>Requête exécutée ($nb ligne(s) modifiée(s))</p>";
+			echo "<script>result_type='ok';</script><p>Requête exécutée ($nb ligne(s) modifiée(s))</p>";
 		} else {
-			echo '<table cellspacing="5" border="2" cellpadding="2"><thead><tr>';
+			echo '<table class="resultat"><thead><tr>';
 			for ($i = 0; $i < $nbcol; $i++) {
 				echo '<th>'.htmlspecialchars($result->columnName($i)).'</th>';
 			}
@@ -306,9 +306,9 @@ function get($requete,$base) {
 			}
 			echo '</tbody></table>';
 			if ($db->lastErrorCode() != 0 && $db->lastErrorCode() != 100 && $db->lastErrorCode() != 101) {
-				echo '<script language="javascript">result_type=\'ko\';</script><p>'.message_erreur($db).'</p>';
+				echo '<script>result_type=\'ko\';</script><p>'.message_erreur($db).'</p>';
 			} else {
-				echo "<script language='javascript'>result_type='ok';</script><p> $nbtuples ligne(s) obtenue(s)"
+				echo "<script>result_type='ok';</script><p> $nbtuples ligne(s) obtenue(s)"
 				     .($tronque ? ' (affichage limité aux '.MAX_LIGNES.' premières lignes)' : '').'</p>';
 				$ok = true;
 			}
@@ -317,7 +317,7 @@ function get($requete,$base) {
 		if (is_null($ok) && $nbcol == 0) $ok = true;
 	} else {
 		echo '<p>Problème dans la requête</p>';
-		echo "<script language='javascript'>result_type='ko';</script><p>".message_erreur($db)."</p>";
+		echo "<script>result_type='ko';</script><p>".message_erreur($db)."</p>";
 	}
 	$db->close();
 	return $ok;
@@ -592,7 +592,7 @@ function liste_question($base, $nom_tp) {
 	if ((string)$tp['statut'] == 'note') {
 		// TP noté : compte à rebours d'une heure
 		echo "<h3 class='indicateur'>Temps restant : <span id='countdown'></span></h3>";
-		echo "<script type='text/javascript'>
+		echo "<script>
 			var temps_restant = 60 * 60;
 			function compte_a_rebours() {
 				var s = temps_restant % 60;
@@ -628,25 +628,26 @@ function liste_question_thema($base, $theme) {
 
 // En-tête commun des pages ouvertes dans un nouvel onglet (TP, thèmes, tables, aide)
 function debut_page() {
-	?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
+	?><!DOCTYPE html>
+<html lang="fr">
 <head>
-  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SQL Sandbox</title>
-  <link href="default.css" rel="stylesheet" type="text/css" />
-  <script type="text/javascript">
+  <link href="default.css" rel="stylesheet">
+  <script>
     csrf_token = <?php echo json_encode(isset($_SESSION['csrf']) ? $_SESSION['csrf'] : ''); ?>;
   </script>
-  <script src="./js/bd_base.js" type="text/javascript"></script>
+  <script src="./js/bd_base.js"></script>
 </head>
-<body>
-<div id="content">
+<body class="onglet">
+<main id="contenu">
   <div id="posts">
 <?php
 }
 
 function fin_page() {
-	echo "  </div>\n</div>\n</body>\n</html>\n";
+	echo "  </div>\n</main>\n</body>\n</html>\n";
 }
 
 // Vérifie que la session a été initialisée par index.php (copies des bases)

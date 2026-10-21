@@ -6,7 +6,7 @@ Released for free under a Creative Commons Attribution 2.5 License
 */
 
 body {
-	margin: 0 20px 0 0;
+	margin: 0;
 	padding: 0;
 	background: #FFFFFF url(images/img1.jpg) repeat-y;
 	font: normal small "Trebuchet MS", Arial, Helvetica, sans-serif;
@@ -70,9 +70,33 @@ a:hover {
 	border: none;
 }
 
+/* Mise en page : grille à deux colonnes (menus à gauche, contenu à droite),
+   une seule colonne sur téléphone (voir la fin du fichier) */
+
+#page {
+	display: grid;
+	grid-template-columns: 260px minmax(0, 1fr);
+	grid-template-rows: 160px auto 1fr;
+	grid-template-areas:
+		"header  ."
+		"menu    contenu"
+		"annexes contenu";
+	min-height: 100vh;
+}
+
+#menu {
+	grid-area: menu;
+}
+
+#annexes {
+	grid-area: annexes;
+	align-self: start;
+}
+
 /* Header */
 
 #header {
+	grid-area: header;
 	width: 230px;
 	height: 90px;
 	padding: 70px 0 0 30px;
@@ -98,12 +122,58 @@ a:hover {
 
 /* Posts */
 
-#posts {
-	float: left;
-	position: absolute;
-	left: 270px;
-	top: 0;
-	margin: 160px 20px 0 0;
+#contenu {
+	grid-area: contenu;
+	min-width: 0;
+	margin: 0 20px 0 10px;
+}
+
+/* Pages ouvertes dans un nouvel onglet (TP, thèmes, tables, aide) : pas de menus */
+.onglet #contenu {
+	margin: 160px 20px 0 270px;
+}
+
+/* Les grands résultats défilent dans leur cadre, sans élargir la page */
+#posts table {
+	display: block;
+	width: max-content;
+	max-width: 100%;
+	overflow-x: auto;
+}
+
+#posts pre {
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+#posts img {
+	max-width: 100%;
+	height: auto;
+}
+
+#posts textarea {
+	max-width: 100%;
+	box-sizing: border-box;
+	font-size: 1.1em;
+}
+
+table.resultat,
+table.historique {
+	border-spacing: 5px;
+}
+
+table.resultat {
+	border: 2px outset #B8C2D6;
+}
+
+table.historique {
+	border: 1px outset #B8C2D6;
+}
+
+table.resultat td, table.resultat th,
+table.historique td, table.historique th {
+	border: 1px inset #B8C2D6;
+	padding: 2px;
 }
 
 #div1{
@@ -187,4 +257,131 @@ a:hover {
 
 .btnPopup:hover{
 	background-color: bisque;
+}
+
+/* Tablette en portrait et téléphone : une seule colonne, menus en haut,
+   contact et mentions en bas */
+
+@media (max-width: 760px) {
+	body {
+		background: #FFFFFF;
+		font-size: 15px;
+	}
+
+	#page {
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-rows: auto;
+		grid-template-areas:
+			"header"
+			"menu"
+			"contenu"
+			"annexes";
+		min-height: 0;
+	}
+
+	#header {
+		width: auto;
+		height: auto;
+		padding: 16px;
+		background: linear-gradient(#C9D5EA, #E4EAF4);
+	}
+
+	#header p {
+		margin: 4px 0 0 0;
+	}
+
+	#menu, #annexes {
+		display: flex;
+		flex-wrap: wrap;
+		background: #E4EAF4;
+	}
+
+	#annexes {
+		margin-top: 20px;
+	}
+
+	#menu .boxed, #annexes .boxed {
+		flex: 1 1 240px;
+	}
+
+	.boxed .heading {
+		padding: 10px 16px 5px 16px;
+	}
+
+	.boxed .content {
+		padding-bottom: 10px;
+		background: none;
+	}
+
+	.boxed li {
+		padding: 2px 16px;
+		background: none;
+	}
+
+	/* Bases en pastilles, faciles à toucher */
+	#bases li {
+		display: inline-block;
+		padding: 0;
+		margin: 3px 0 3px 16px;
+	}
+
+	#bases li a {
+		display: inline-block;
+		padding: 6px 10px;
+		background: #FFFFFF;
+		border-radius: 4px;
+	}
+
+	#contenu, .onglet #contenu {
+		margin: 16px;
+	}
+
+	.title {
+		font-size: 1.4em;
+		overflow-wrap: anywhere;
+	}
+
+	#posts textarea {
+		width: 100%;
+	}
+
+	/* 16 px au moins : sinon iOS zoome sur le champ quand on le touche */
+	#posts textarea, #posts select {
+		font-size: 16px;
+	}
+
+	/* Historique : une fiche par requête plutôt qu'une ligne de six colonnes */
+	/* (sélecteurs d'enfants : le tableau de résultat imbriqué n'est pas touché) */
+	table.historique, table.historique > tbody, table.historique > tbody > tr {
+		display: block;
+		border: none;
+	}
+
+	table.historique > thead {
+		display: none;
+	}
+
+	table.historique > tbody > tr {
+		margin-bottom: 12px;
+		padding: 6px;
+		border: 1px solid #B8C2D6;
+	}
+
+	table.historique > tbody > tr > td {
+		border: none;
+		padding: 2px;
+	}
+
+	table.historique > tbody > tr > td:nth-child(-n+3) {
+		display: inline-block;
+		vertical-align: middle;
+	}
+
+	table.historique > tbody > tr > td:nth-child(n+4) {
+		display: block;
+	}
+
+	#footer p {
+		margin: 0 16px;
+	}
 }

@@ -134,7 +134,7 @@ class RequestSet {
     }
     show() { // corps de classe toujours en mode strict : variables déclarées
         var t, r;
-        t = '<div class="post"><h2 class="title">Historique</h2>' + '<div class="story"><table cellspacing="5" border="1" cellpadding="2">' + '<thead><th>n°</th><th>Base</th><th>Réussite</th><th>Requête</th><th>Actions</th><th></th></thead>';
+        t = '<div class="post"><h2 class="title">Historique</h2>' + '<div class="story"><table class="historique">' + '<thead><tr><th>n°</th><th>Base</th><th>Réussite</th><th>Requête</th><th>Actions</th><th></th></tr></thead>';
 
         for (var i = 0; i < this.nb; i++) {
             r = this.set[i];
@@ -305,17 +305,17 @@ function new_query() {
     t = t + '<h2 class="title">Édition d\'une requête</h2>';
     t = t + '<div class="story">';
     t = t + '	<form method="POST" id="SaisieRequete" onSubmit="query(); return false;">';
-    t = t + '	<p>Base : <select name="base" id="base">';
+    t = t + '	<p><label for="base">Base :</label> <select name="base" id="base">';
     for(var i = 0; i < noms_bases.length;i++) {
     	t = t + '<option>'+echappe(noms_bases[i])+'</option>';
     }
     t = t + '</select></p>';
-    t = t + '	<p>Entrez votre requête : <br/>';
+    t = t + '	<p><label for="requete">Entrez votre requête :</label><br/>';
     t = t + '	<textarea name="requete" rows="10" cols="80" id="requete"></textarea><br/>';
     t = t + '	<input type="hidden" name="Soumettre" value="Envoyer"/>';
-    t = t + '	<img src="images/gear_64.png" name="Soumettre" alt="Soumettre" title="Soumettre" width="32" ';
-    t = t + '		onClick="query(); return false;" style="cursor:pointer" id="send_new"/>';
-    t = t + '	</form></p>';
+    t = t + '	<img src="images/gear_64.png" alt="Soumettre" title="Soumettre" width="32" ';
+    t = t + '		onClick="query(); return false;" style="cursor:pointer" id="send_new"/></p>';
+    t = t + '	</form>';
     t = t + '	<div id="results"></div>';
     t = t + '</div>';
     t = t + '</div>';

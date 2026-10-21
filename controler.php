@@ -44,7 +44,7 @@ if (isset($_SESSION['debug']) && $session_ok) {
 			           :"<img src='images/block_64.png' width='32' alt='ko' title='ko'/>");
 			           
 			if ($mode == '1') 
-				echo '<img src="images/add_64.png" id="memoriser" name="Mémoriser" alt="Mémoriser" title="Mémoriser" width="32" onClick="remember(); 							return false;" style="cursor:pointer"/>';
+				echo '<img src="images/add_64.png" id="memoriser" alt="Mémoriser" title="Mémoriser" width="32" onClick="remember(); 							return false;" style="cursor:pointer"/>';
 		} else { 
 		   echo "<p>Pas de requête ou/et de base proposée !</p>";
 		}
