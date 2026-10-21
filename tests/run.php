@@ -72,11 +72,20 @@ verifie('PRAGMA table_info autorisé', $r === true && strpos($o, 'noetu') !== fa
 list($r, $o) = execute("select name from pragma_table_info('etudiants')");
 verifie('pragma_table_info() autorisé', $r === true && strpos($o, 'noetu') !== false, $o);
 execute("create table big(b)");
-list($r, $o) = execute("insert into big select randomblob(1000000) from (with recursive r(n) as "
+list($r, $o) = execute("insert into big select printf('%.*c', 1000000, 'x') from (with recursive r(n) as "
                      ."(select 1 union all select n+1 from r limit 100) select n from r)");
 clearstatcache();
 verifie('taille de la base limitée', $r === null && strpos($o, 'taille maximale') !== false
                                     && filesize($copie) <= TAILLE_MAX_BASE, $o);
+foreach (array("create temp table tt(a)", "create temp view tv as select 1",
+               "create temp trigger tg after insert on t begin select 1; end") as $q) {
+	list($r, $o) = execute($q);
+	verifie("refusé : $q", $r === null && strpos($o, 'not authorized') !== false, $o);
+}
+foreach (array("select length(randomblob(400000000))", "select hex(zeroblob(400000000))") as $q) {
+	list($r, $o) = execute($q);
+	verifie("refusé : $q", $r === null && strpos($o, 'not authorized') !== false, $o);
+}
 
 echo "Détection de plusieurs instructions\n";
 $cas = array(
@@ -133,6 +142,13 @@ $_SESSION['copie_autre'] = "$tmp/copie_autre";
 touch($_SESSION['copie_autre']);
 purge_db();
 verifie('purge_db supprime les copies de session', !file_exists($copie) && !file_exists("$tmp/copie_autre"));
+$_SESSION['originaux']['test'] = realpath('./bdd/cours/cours');
+list($r, $o) = execute("select count(*) from etudiants");
+verifie('copie purgée recréée depuis la base d\'origine', $r === true && file_exists($copie), $o);
+unset($_SESSION['originaux']['test']);
+unlink($copie);
+list($r, $o) = execute("select 1");
+verifie('copie introuvable : message explicite', $r === null && strpos($o, 'Rouvrez l\'application') !== false, $o);
 
 // ---------------------------------------------------------------------------
 echo "Application (serveur intégré)\n";
@@ -180,6 +196,8 @@ list($code, $corps) = http("$u/tp.php?base=tp-em&tp=tp-em-01");
 verifie('page d\'un TP', substr_count($corps, 'ouvre_question(') == 4, $corps);
 list($code, $corps) = http("$u/tp.php?base=tp-em&tp=".urlencode('<img src=x>'));
 verifie('page d\'un TP : paramètre non affiché', strpos($corps, '<img src=x>') === false && strpos($corps, 'TP inconnu') !== false);
+list($code, $corps) = http("$u/tp.php?base=tp-em&tp[]=x");
+verifie('paramètre en tableau ignoré sans warning', strpos($corps, 'TP inconnu') !== false && stripos($corps, 'warning') === false, $corps);
 list($code, $corps) = http("$u/questionsThem.php?base=tp-em&theme=projection");
 verifie('page d\'un thème', substr_count($corps, 'ouvre_question(') == 1, $corps);
 list($code, $corps) = http("$u/controler.php?Soumettre=tp&nom_base=tp-em");

@@ -1,5 +1,10 @@
 <?php
 
+// Paramètre de la requête HTTP, s'il est une chaîne (les tableaux, comme base[]=x, sont ignorés)
+function param($nom) {
+	return (isset($_REQUEST[$nom]) && is_string($_REQUEST[$nom])) ? $_REQUEST[$nom] : null;
+}
+
 // Jeton anti-CSRF, généré par index.php et renvoyé par le JavaScript
 function jeton_valide() {
 	return isset($_SESSION['csrf'], $_REQUEST['csrf'])
@@ -29,18 +34,26 @@ $GLOBALS['PRAGMAS_AUTORISES'] = array('table_info', 'table_xinfo', 'index_list',
 
 // Autorise ou refuse les actions SQL. ATTACH/DETACH (et donc VACUUM INTO)
 // permettraient d'écrire des fichiers arbitraires sur le serveur, les autres PRAGMA
-// de modifier le comportement de la base (dont la limite de taille) et
-// fts3_tokenizer() divulgue des adresses mémoire.
+// de modifier le comportement de la base (dont la limite de taille), les objets
+// temporaires de contourner cette limite. fts3_tokenizer() divulgue des adresses
+// mémoire ; randomblob() et zeroblob() font allouer des centaines de Mo à SQLite,
+// hors du memory_limit de PHP (et sont inutiles pour apprendre SQL).
 function autorisation_sql($action, $arg1 = null, $arg2 = null) {
 	switch ($action) {
 		case SQLite3::ATTACH:
 		case SQLite3::DETACH:
+		// Les objets temporaires échappent à la limite de taille de la base
+		case SQLite3::CREATE_TEMP_TABLE:
+		case SQLite3::CREATE_TEMP_INDEX:
+		case SQLite3::CREATE_TEMP_TRIGGER:
+		case SQLite3::CREATE_TEMP_VIEW:
 			return SQLite3::DENY;
 		case SQLite3::PRAGMA:
 			return in_array(strtolower((string)$arg1), $GLOBALS['PRAGMAS_AUTORISES'], true)
 				? SQLite3::OK : SQLite3::DENY;
 		case SQLite3::FUNCTION:
-			return strtolower((string)$arg2) == 'fts3_tokenizer' ? SQLite3::DENY : SQLite3::OK;
+			return in_array(strtolower((string)$arg2), array('fts3_tokenizer', 'randomblob', 'zeroblob'), true)
+				? SQLite3::DENY : SQLite3::OK;
 		default:
 			return SQLite3::OK;
 	}
@@ -96,6 +109,10 @@ function plusieurs_instructions($sql) {
 function ouvre_base($base) {
 	if (!is_string($base) || !isset($_SESSION["copie_$base"])) return null;
 	$fic = $_SESSION["copie_$base"];
+	// Copie purgée (onglet principal fermé) alors qu'un onglet de TP l'utilise encore :
+	// on repart de la base d'origine, comme à l'ouverture de l'application.
+	if (!is_file($fic) && isset($_SESSION['originaux'][$base]))
+		@copy($_SESSION['originaux'][$base], $fic);
 	if (!is_file($fic)) return null;
 	try {
 		$db = new SQLite3($fic, SQLITE3_OPEN_READWRITE);
@@ -133,7 +150,8 @@ function arret_requete() {
 function get($requete,$base) {
 	$db = ouvre_base($base);
 	if (is_null($db)) {
-		echo "<script language='javascript'>result_type='ko';</script><p>Base inconnue ou inaccessible.</p>";
+		echo "<script language='javascript'>result_type='ko';</script><p>Base inconnue ou inaccessible. "
+		    ."Rouvrez l'application depuis sa page d'accueil pour réinitialiser les bases.</p>";
 		return null;
 	}
 	set_time_limit(DELAI_MAX);

@@ -6,6 +6,6 @@ include "./fonctions.php";
 
 debut_page();
 if (session_initialisee()) {
-	liste_question(isset($_GET['base']) ? $_GET['base'] : null, isset($_GET['tp']) ? $_GET['tp'] : null);
+	liste_question(param('base'), param('tp'));
 }
 fin_page();

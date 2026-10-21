@@ -35,6 +35,7 @@ try {
 	//mode "debug"
 	$debug = ((string)$att['debug']) == 'true';
 	$_SESSION['debug'] = $debug;
+	if ($debug) ini_set('display_errors', '1');
 	
 	//Gestion du seuil de vie des copies de base //60 * 60 * 24;
 	$seuil = (integer)$config->seuil;
@@ -155,6 +156,8 @@ foreach($listeNoms as $nom) {
 	$_SESSION["copie_$nom"] = $copie;
 	// Fichier de configuration (TP, questions), relu côté serveur sans passer par le navigateur
 	$_SESSION['configs'][$nom] = $listeBase[$nom]['config'];
+	// Base d'origine, pour recréer la copie si elle est purgée pendant un TP
+	$_SESSION['originaux'][$nom] = realpath($listeBase[$nom]['fichier']);
 	if ($debug) echo "<p>Création de ".$_SESSION["copie_$nom"]."</p>";
 
 	$tables = get_tables($nom);

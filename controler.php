@@ -4,17 +4,13 @@ require './session.php';
 
 if (isset($_SESSION['debug']) && $session_ok) {
 	$debug = $_SESSION['debug'];
-	// Les erreurs PHP brutes (chemins, messages internes) ne sont montrées qu'en mode debug
-	if (!$debug) ini_set('display_errors', '0');
+	if ($debug) ini_set('display_errors', '1');
 	require_once('./lib/LibXML.php');
 	include "./fonctions.php";
 
-	if (isset($_REQUEST['Soumettre'])) $Soumettre = $_REQUEST['Soumettre'];
-	else $Soumettre = 'rien';
-	if (isset($_REQUEST['requete'])) $requete = $_REQUEST['requete'];
-	else $requete = null;
-	if (isset($_REQUEST['base'])) $base = $_REQUEST['base'];
-	else $base = null;
+	$Soumettre = isset($_REQUEST['Soumettre']) ? param('Soumettre') : 'rien';
+	$requete = param('requete');
+	$base = param('base');
 	
 	if ($debug) { 
 		echo '<p>Mode Debug On</p>';
@@ -38,7 +34,7 @@ if (isset($_SESSION['debug']) && $session_ok) {
 	} 
 	//======================================================
 	else if ($Soumettre == "Envoyer") {
-		$mode = isset($_REQUEST['mode']) ? (string)$_REQUEST['mode'] : '1';
+		$mode = is_null(param('mode')) ? '1' : param('mode');
 		if (!jeton_valide()) {
 			http_response_code(403);
 			echo "<p>Session expirée : l'application a sans doute été ouverte ou rechargée dans un autre onglet. Rechargez cette page pour continuer.</p>";
@@ -120,14 +116,13 @@ if (isset($_SESSION['debug']) && $session_ok) {
 	//======================================================
 	// Travaux pratiques : les noms de base et de TP sont vérifiés dans la configuration
 	else if ($Soumettre == "tp") {
-		liste_TP(isset($_REQUEST['nom_base']) ? $_REQUEST['nom_base'] : null);
+		liste_TP(param('nom_base'));
 	}
 	else if ($Soumettre == "themes_dispo") {
-		themes_dispo(isset($_REQUEST['nom_base']) ? $_REQUEST['nom_base'] : null);
+		themes_dispo(param('nom_base'));
 	}
 	else if ($Soumettre == "pageIni") {
-		page_tp(isset($_REQUEST['nom_base']) ? $_REQUEST['nom_base'] : null,
-		        isset($_REQUEST['tp_name']) ? $_REQUEST['tp_name'] : null);
+		page_tp(param('nom_base'), param('tp_name'));
 	}
 	//======================================================
 	else {//echo "<p>liste base $Soumettre</p>";

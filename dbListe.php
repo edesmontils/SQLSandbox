@@ -6,6 +6,6 @@ include "./fonctions.php";
 
 debut_page();
 if (session_initialisee()) {
-	liste_base(isset($_GET['base']) ? $_GET['base'] : null);
+	liste_base(param('base'));
 }
 fin_page();
