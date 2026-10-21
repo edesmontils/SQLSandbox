@@ -97,6 +97,24 @@ foreach ($cas as $c) {
 list($r, $o) = execute("select 1; drop table etudiants");
 verifie('avertissement affiché', strpos($o, 'seule la première instruction') !== false, $o);
 
+echo "Travaux pratiques\n";
+$_SESSION['configs']['tp-em'] = './bdd/em/config.xml';
+$conf = config_base('tp-em');
+verifie('configuration lue depuis la session', $conf !== null);
+verifie('base sans configuration en session refusée', config_base('../../etc') === null && config_base('cours') === null);
+$tp = cherche_tp($conf, 'tp-em-01');
+$ids = array_map('id_question', questions_tp($conf, $tp));
+verifie('questions du TP dans l\'ordre', $ids === array('tr-em-01', 're-em-01', 'int-em-01', 'cmp-em-01'), implode(',', $ids));
+verifie('TP inconnu', cherche_tp($conf, 'inexistant') === null);
+verifie('thèmes ouverts et difficulté', themes_ouverts($conf) === array('projection' => 1), json_encode(themes_ouverts($conf)));
+$q = cherche_question($conf, 'int-em-01');
+verifie('texte SQL reconstruit', texte_sql($q->SQL) === "SELECT nom-f\nFROM Fleuve NATURAL JOIN Espace-Maritime\nWHERE type='mer'", texte_sql($q->SQL));
+ob_start(); liste_question('tp-em', '<script>x</script>'); $o = ob_get_clean();
+verifie('nom de TP non reconnu non affiché', strpos($o, '<script>x') === false && strpos($o, 'TP inconnu') !== false, $o);
+ob_start(); bouton_question(cherche_question($conf, 'tr-em-01'), 'tp-em', 1); $o = ob_get_clean();
+verifie('données de question encodées dans l\'attribut', preg_match("/onClick='ouvre_question\\(([^']*)\\);/", $o, $m)
+        && json_decode(html_entity_decode($m[1], ENT_QUOTES))->sql === "SELECT \nFROM Fleuve\nWHERE longueur>1000", $o);
+
 echo "Purge\n";
 $_SESSION['copie_autre'] = "$tmp/copie_autre";
 touch($_SESSION['copie_autre']);
@@ -145,6 +163,14 @@ list($code, $corps) = http("$u/controler.php", $requete + array('csrf' => $jeton
 verifie('requête avec jeton exécutée', $code == 200 && strpos($corps, 'Dupont') !== false, $corps);
 list($code, $corps) = http("$u/controler.php?Soumettre=inexistante");
 verifie('rubrique inconnue refusée', strpos($corps, 'inconnue') !== false, $corps);
+list($code, $corps) = http("$u/tp.php?base=tp-em&tp=tp-em-01");
+verifie('page d\'un TP', substr_count($corps, 'ouvre_question(') == 4, $corps);
+list($code, $corps) = http("$u/tp.php?base=tp-em&tp=".urlencode('<img src=x>'));
+verifie('page d\'un TP : paramètre non affiché', strpos($corps, '<img src=x>') === false && strpos($corps, 'TP inconnu') !== false);
+list($code, $corps) = http("$u/questionsThem.php?base=tp-em&theme=projection");
+verifie('page d\'un thème', substr_count($corps, 'ouvre_question(') == 1, $corps);
+list($code, $corps) = http("$u/controler.php?Soumettre=tp&nom_base=tp-em");
+verifie('liste des TP', strpos($corps, 'page_tp(') !== false && strpos($corps, 'tp-em-02') !== false, $corps);
 list($code, $corps) = http("$u/controler.php", array('Soumettre' => 'end', 'csrf' => $jeton));
 verifie('fin de session : copies purgées', strpos($corps, 'purgées') !== false && copies() == $avant);
 

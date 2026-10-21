@@ -1,10 +1,6 @@
 <?php 
 
-ini_set('session.cookie_httponly','1');
-ini_set('session.cookie_samesite','Lax');
-ini_set('session.use_strict_mode','1');
-$session_ok = session_start();
-setlocale(LC_TIME,'fr_FR');
+require './session.php';
 
 if (isset($_SESSION['debug']) && $session_ok) {
 	$debug = $_SESSION['debug'];
@@ -120,6 +116,18 @@ if (isset($_SESSION['debug']) && $session_ok) {
 		} catch(Exception $e) {
   			echo "<p>erreur<br/>Pb (Exception) ! ".htmlspecialchars($e->getMessage())."<br/>".$libxml->afficheErreurs()."<br/></p>";
 		}	
+	}
+	//======================================================
+	// Travaux pratiques : les noms de base et de TP sont vérifiés dans la configuration
+	else if ($Soumettre == "tp") {
+		liste_TP(isset($_REQUEST['nom_base']) ? $_REQUEST['nom_base'] : null);
+	}
+	else if ($Soumettre == "themes_dispo") {
+		themes_dispo(isset($_REQUEST['nom_base']) ? $_REQUEST['nom_base'] : null);
+	}
+	else if ($Soumettre == "pageIni") {
+		page_tp(isset($_REQUEST['nom_base']) ? $_REQUEST['nom_base'] : null,
+		        isset($_REQUEST['tp_name']) ? $_REQUEST['tp_name'] : null);
 	}
 	//======================================================
 	else {//echo "<p>liste base $Soumettre</p>";

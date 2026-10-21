@@ -216,6 +216,7 @@ function liste_base($base) {
 		return;
 	}
 	$tables = get_tables($base);
+	sommaire($tables);
 	foreach($tables as $ta) {
 		$nom = htmlspecialchars($ta, ENT_QUOTES);
 		echo "<a id='$nom'></a><div class='post'>";
@@ -225,5 +226,292 @@ function liste_base($base) {
 		echo "<p><a href='#matiere'><img src='images/up_64.png' alt='Sommaire' title='Sommaire' width='32'/></a></p>";
 		echo '</div></div>';
 	}
+}
+
+// Sommaire des tables d'une base
+function sommaire($tables) {
+	echo "<a id='matiere'></a><div class='post'><h2 class='title'>Sommaire</h2><div class='story'><ul>";
+	foreach($tables as $ta) {
+		$nom = htmlspecialchars($ta, ENT_QUOTES);
+		echo "<li><a href='#$nom'><img src='images/down_64.png' alt='' width='16'/>&nbsp;&nbsp;$nom</a></li>";
+	}
+	echo "</ul></div></div>";
+}
+
+//======================================================
+// Travaux pratiques et questions (fichiers config.xml des bases)
+//======================================================
+
+function html($texte) {
+	return htmlspecialchars((string)$texte, ENT_QUOTES);
+}
+
+// Arguments d'un appel JavaScript placé dans un attribut HTML (onClick...)
+function args_js() {
+	return html(implode(',', array_map('json_encode', func_get_args())));
+}
+
+// Configuration (élément base_de_donnee) de la base $base de la session, ou null.
+// Le chemin vient de la session (rempli par index.php), jamais de la requête.
+function config_base($base) {
+	if (!is_string($base) || !isset($_SESSION['configs'][$base])) return null;
+	$conf = @simplexml_load_file($_SESSION['configs'][$base], 'SimpleXMLElement',
+	                             LIBXML_DTDLOAD|LIBXML_DTDATTR|LIBXML_NOBLANKS|LIBXML_NOCDATA);
+	return ($conf && $conf->getName() == 'base_de_donnee') ? $conf : null;
+}
+
+// Contenu HTML d'un élément de la configuration (description, aide...)
+function contenu_xml($element) {
+	$t = '';
+	if ($element) foreach($element->children() as $c) $t .= $c->asXML();
+	return $t;
+}
+
+// Identifiant (xml:id) d'une question
+function id_question($q) {
+	$a = $q->attributes('xml', true);
+	return isset($a['id']) ? (string)$a['id'] : '';
+}
+
+function cherche_tp($conf, $nom) {
+	if ($conf && isset($conf->{'liste-TP'}))
+		foreach($conf->{'liste-TP'}->TP as $tp)
+			if ((string)$tp['nom'] === $nom) return $tp;
+	return null;
+}
+
+function cherche_question($conf, $id) {
+	if ($conf && isset($conf->{'liste-questions'}))
+		foreach($conf->{'liste-questions'}->children() as $q)
+			if (id_question($q) === $id) return $q;
+	return null;
+}
+
+// Questions d'un TP, dans l'ordre du TP
+function questions_tp($conf, $tp) {
+	$liste = array();
+	foreach($tp->{'ref-question'} as $ref) {
+		$q = cherche_question($conf, (string)$ref['question']);
+		if ($q) $liste[] = $q;
+	}
+	return $liste;
+}
+
+// Thèmes d'une question : nom => difficulté (attribut poids du DTD)
+function themes_question($q) {
+	$themes = array();
+	if (isset($q->theme))
+		foreach($q->theme->children() as $t) $themes[$t->getName()] = (int)$t['poids'];
+	return $themes;
+}
+
+// Thèmes des questions ouvertes au travail thématique (disponibilité "ouvert")
+function themes_ouverts($conf) {
+	$themes = array();
+	if ($conf && isset($conf->{'liste-questions'}))
+		foreach($conf->{'liste-questions'}->children() as $q)
+			if ((string)$q['disponibilité'] == 'ouvert') $themes += themes_question($q);
+	return $themes;
+}
+
+function nom_theme($theme) {
+	return ucfirst(str_replace('-', ' ', $theme));
+}
+
+// Texte SQL d'une requête décrite par sa structure (élément SQL du DTD)
+function texte_sql($sql) {
+	if (!$sql) return '';
+	if (isset($sql->Text)) return trim((string)$sql->Text);
+	$t = 'SELECT '.((string)$sql->Select['Distinct'] == 'Vrai' ? 'DISTINCT ' : '').trim((string)$sql->Select);
+	$t .= "\nFROM ";
+	if (isset($sql->From)) foreach($sql->From->children() as $c) $t .= texte_jointure($c);
+	foreach(array('Where' => 'WHERE', 'Group-by' => 'GROUP BY', 'Having' => 'HAVING', 'Order-by' => 'ORDER BY') as $e => $mot)
+		if (isset($sql->$e) && trim((string)$sql->$e) !== '') $t .= "\n$mot ".trim((string)$sql->$e);
+	return $t;
+}
+
+function texte_jointure($e) {
+	if ($e->getName() == 'Table') return trim((string)$e);
+	$parties = array();
+	foreach($e->children() as $c) if ($c->getName() != 'On') $parties[] = texte_jointure($c);
+	if ($e->getName() == 'Natural-Join') return implode(' NATURAL JOIN ', $parties);
+	return implode(' JOIN ', $parties).' ON '.trim((string)$e->On);
+}
+
+// Description et référence d'une base (contenu du fichier de configuration)
+function description_base($base) {
+	$conf = config_base($base);
+	echo "<div class='post'><h2 class='title'>Base ".html($base)."</h2><div class='story'>";
+	if ($conf) {
+		echo contenu_xml($conf->description);
+		$ref = trim((string)$conf->référence);
+		if ($ref !== '') echo "<p>Référence : <a href='".html($ref)."'>".html($ref)."</a></p>";
+	}
+	echo "</div></div>";
+}
+
+// Liste des TP d'une base
+function liste_TP($base) {
+	$conf = config_base($base);
+	echo "<div class='post'><h2 class='title'>Travaux pratiques</h2><ul>";
+	$nb = 0;
+	if ($conf && isset($conf->{'liste-TP'})) {
+		foreach($conf->{'liste-TP'}->TP as $tp) {
+			$nb++;
+			echo "<li><a href='#' onClick='page_tp(".args_js($base, (string)$tp['nom']).");return false;'>"
+			    ."<img src='images/down_64.png' height='16' width='16' alt=''/> ".html($tp['nom'])."</a></li>";
+		}
+	}
+	echo "</ul>";
+	if ($nb == 0) echo "<h3 class='indicateur'>Aucun TP disponible actuellement</h3>";
+	echo "</div>";
+}
+
+// Page d'accueil d'un TP
+function page_tp($base, $nom_tp) {
+	$conf = config_base($base);
+	$tp = cherche_tp($conf, (string)$nom_tp);
+	if (is_null($tp)) {
+		echo "<p>TP inconnu.</p>";
+		return;
+	}
+	$questions = questions_tp($conf, $tp);
+	$themes = array();
+	foreach($questions as $q) $themes += themes_question($q);
+
+	echo "<div class='post'><h2 class='title'>".html($tp['nom'])."</h2>";
+	echo contenu_xml($tp->{'objectif-pédagogique'});
+	echo "<p><a class='btnPopup' href='tp.php?base=".html(urlencode($base))."&amp;tp=".html(urlencode($tp['nom']))."' target='_blank'>Commencer</a></p>";
+	echo "</div>";
+	echo "<div class='post'><h2 class='title'>Nombre de questions : ".count($questions)."</h2></div>";
+	echo "<div class='post'><h2 class='title'>Mots clés</h2><h3 class='indicateur'>";
+	foreach(array_keys($themes) as $t) echo html(nom_theme($t))."<br/>";
+	echo "</h3></div>";
+	echo "<div class='post'><h2 class='title'>Icônes utilisés : <a href='aides.php' target='_blank'>"
+	    ."<img src='images/help_64.png' width='20' alt='Aide'/></a></h2></div>";
+	echo "<div class='post'><h2 class='title'>Déroulement</h2><ul>"
+	    ."<li>Pour débuter le TP, appuyez sur le bouton « Commencer » : la liste des questions s'ouvre dans un nouvel onglet.</li>"
+	    ."<li>Pour commencer une question, cliquez sur le crayon.</li>"
+	    ."<li>Lors d'une question, plusieurs choix se proposent à vous :<ul>"
+	    ."<li>retourner au menu des questions avec la flèche, en mémorisant votre réponse ;</li>"
+	    ."<li>mémoriser votre réponse grâce au panier ;</li>"
+	    ."<li>exécuter votre requête grâce à la roue crantée (sauf pour les questions où il faut trouver l'intention).</li>"
+	    ."</ul></li></ul></div>";
+}
+
+// Thèmes disponibles pour le travail thématique d'une base, avec leur difficulté
+function themes_dispo($base) {
+	$themes = themes_ouverts(config_base($base));
+	echo "<div class='post'><h2 class='title'>Questions à thèmes</h2><ul>";
+	foreach($themes as $t => $poids) {
+		echo "<li><a href='questionsThem.php?base=".html(urlencode($base))."&amp;theme=".html(urlencode($t))."' target='_blank'>"
+		    ."<img src='images/down_64.png' height='16' width='16' alt=''/> ".html(nom_theme($t))."</a></li>";
+	}
+	echo "</ul>";
+	if (count($themes) == 0) {
+		echo "<h3 class='indicateur'>Aucune question n'est disponible actuellement</h3>";
+	} else {
+		echo "<p><b><u>Difficulté des questions proposées</u></b><br/>";
+		foreach($themes as $t => $poids) echo html(nom_theme($t))." : $poids/6<br/>";
+		echo "</p>";
+	}
+	echo "</div>";
+}
+
+// Bouton d'ouverture d'une question (données passées à ouvre_question() en JavaScript)
+function bouton_question($q, $base, $numero) {
+	$sql = $q->SQL;
+	$question = array(
+		'base' => (string)$base,
+		'numero' => $numero,
+		'type' => $q->getName(),
+		'intention' => trim((string)$q->intention),
+		// Pour une requête à trous, le second élément SQL est la requête à compléter
+		'sql' => texte_sql($q->getName() == 'rq-trou' && count($sql) > 1 ? $sql[1] : $sql[0]),
+		'aide' => contenu_xml($q->aide)
+	);
+	echo "<p><a>Question $numero</a> ";
+	echo "<img src='images/pencil_64.png' alt='Répondre' title='Répondre à la question' width='32' "
+	    ."onClick='ouvre_question(".args_js($question)."); return false;' style='cursor:pointer'/></p>";
+}
+
+// Liste des questions d'un TP (page tp.php)
+function liste_question($base, $nom_tp) {
+	$conf = config_base($base);
+	$tp = cherche_tp($conf, (string)$nom_tp);
+	if (is_null($tp)) {
+		echo "<p>TP inconnu.</p>";
+		return;
+	}
+	description_base($base);
+	echo "<div class='post'><h2 class='title'>Questions du TP ".html($tp['nom'])."</h2>";
+	if ((string)$tp['statut'] == 'note') {
+		// TP noté : compte à rebours d'une heure
+		echo "<h3 class='indicateur'>Temps restant : <span id='countdown'></span></h3>";
+		echo "<script type='text/javascript'>
+			var temps_restant = 60 * 60;
+			function compte_a_rebours() {
+				var s = temps_restant % 60;
+				$('countdown').update(Math.floor(temps_restant / 60) + ' min ' + (s < 10 ? '0' : '') + s + ' s');
+				if (temps_restant > 0) temps_restant--;
+			}
+			compte_a_rebours();
+			setInterval(compte_a_rebours, 1000);
+		</script>";
+	}
+	$questions = questions_tp($conf, $tp);
+	foreach($questions as $i => $q) bouton_question($q, $base, $i + 1);
+	if (count($questions) == 0) echo "<h3 class='indicateur'>Aucune question n'est disponible actuellement</h3>";
+	echo "</div>";
+}
+
+// Liste des questions ouvertes d'un thème (page questionsThem.php)
+function liste_question_thema($base, $theme) {
+	$conf = config_base($base);
+	$themes = themes_ouverts($conf);
+	if (!is_string($theme) || !isset($themes[$theme])) {
+		echo "<p>Thème inconnu.</p>";
+		return;
+	}
+	description_base($base);
+	echo "<div class='post'><h2 class='title'>Thème : ".html(nom_theme($theme))."</h2>";
+	$i = 0;
+	foreach($conf->{'liste-questions'}->children() as $q)
+		if ((string)$q['disponibilité'] == 'ouvert' && isset(themes_question($q)[$theme]))
+			bouton_question($q, $base, ++$i);
+	echo "</div>";
+}
+
+// En-tête commun des pages ouvertes dans un nouvel onglet (TP, thèmes, tables, aide)
+function debut_page() {
+	?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <title>SQL Sandbox</title>
+  <link href="default.css" rel="stylesheet" type="text/css" />
+  <script src="./js/prototype.js" type="text/javascript"></script>
+  <script src="./js/scriptaculous/scriptaculous.js" type="text/javascript"></script>
+  <script type="text/javascript">
+    csrf_token = <?php echo json_encode(isset($_SESSION['csrf']) ? $_SESSION['csrf'] : ''); ?>;
+  </script>
+  <script src="./js/bd_base.js" type="text/javascript"></script>
+</head>
+<body>
+<div id="content">
+  <div id="posts">
+<?php
+}
+
+function fin_page() {
+	echo "  </div>\n</div>\n</body>\n</html>\n";
+}
+
+// Vérifie que la session a été initialisée par index.php (copies des bases)
+function session_initialisee() {
+	if (isset($_SESSION['debug'])) return true;
+	echo "<div class='post'><h2 class='title'>Session non initialisée</h2><div class='story'>"
+	    ."<p>Ouvrez d'abord l'application depuis sa page d'accueil, puis relancez cette page.</p></div></div>";
+	return false;
 }
 ?>

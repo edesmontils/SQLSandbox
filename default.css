@@ -106,10 +106,25 @@ a:hover {
 	margin: 160px 20px 0 0;
 }
 
+#div1{
+	display: none;
+	background-color: #c6d4fc;
+	color: black;
+	padding: 5px;
+}
+
 .post {
 	margin-bottom: 20px;
 	padding-bottom: 20px;
 	border-bottom: 1px dotted #8A8E99;
+}
+
+.indicateur {
+	color: #8A8E99;
+}
+
+.indisponible {
+	color: #8A8E99;
 }
 
 .title {
@@ -163,4 +178,13 @@ a:hover {
 
 #footer a {
 	color: #8A8E99;
+}
+
+.btnPopup{
+	background-color: beige;
+	cursor: pointer;
+}
+
+.btnPopup:hover{
+	background-color: bisque;
 }

@@ -22,7 +22,7 @@
         <enseignant nom="Desmontils" prénom="Emmanuel" courriel="emmanuel.desmontils@univ-nantes.fr" xml:id="eED"/>
     </liste-enseignants>
     <liste-TP>
-        <TP nom="tp-em-01" enseignant="eED">
+        <TP nom="tp-em-01" enseignant="eED" statut="libre">
             <objectif-pédagogique><p>Quelques requête simples.</p></objectif-pédagogique>
             <ref-question question="tr-em-01"/>
             <ref-question question="re-em-01"/>
@@ -30,8 +30,8 @@
             <ref-question question="cmp-em-01"/>
         </TP>
         <TP nom="tp-em-02">
-            <objectif-pédagogique></objectif-pédagogique>
-            <ref-question question="tp-em-02"/>
+            <objectif-pédagogique><p>Test</p></objectif-pédagogique>
+            <ref-question question="tr-em-02"/>
             <ref-question question="re-em-02"/>
         </TP>
     </liste-TP>
@@ -56,6 +56,7 @@
                 </Natural-Join></From>
                 <Where>type='mer'</Where>
             </SQL>
+            <aide><p>Test 5 pour aide question</p></aide>
         </rq-résultat>
         <rq-trou xml:id="tr-em-01" enseignant="eED" disponibilité="ouvert">
             <theme><projection/></theme>
@@ -65,6 +66,7 @@
                 <From><Table>Fleuve</Table></From>
                 <Where>longueur>1000</Where>
             </SQL>
+            <aide><p>Test 1 pour aide question</p></aide>
             <SQL>
                 <Select></Select>
                 <From><Table>Fleuve</Table></From>
@@ -82,6 +84,7 @@
                 </Natural-Join></From>
                 <Where>type='mer'</Where>
             </SQL>
+            <aide><p>Test 4 pour aide question</p></aide>
             <SQL>
                 <Select></Select>
                 <From></From>
@@ -100,6 +103,7 @@
                 </Natural-Join></From>
                 <Where>type='mer'</Where>
             </SQL>
+            <aide><p>Test 2 pour aide question</p></aide>
         </rq-intention>
         <rq-complète xml:id="cmp-em-01" enseignant="eED">
             <theme><projection/><sélection-simple/><jointure-simple/></theme>
@@ -112,6 +116,7 @@
                 </Natural-Join></From>
                 <Where>type='mer'</Where>
             </SQL>
+            <aide><p>Test 3 pour aide question</p></aide>
         </rq-complète>
     </liste-questions>
 </base_de_donnee>

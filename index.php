@@ -1,9 +1,5 @@
 <?php 
-ini_set('session.cookie_httponly','1');
-ini_set('session.cookie_samesite','Lax');
-ini_set('session.use_strict_mode','1');
-$session_ok = session_start();
-setlocale(LC_TIME,'fr_FR');
+require './session.php';
  //phpinfo();
 $debug=false;
 $ok = true;
@@ -157,6 +153,8 @@ foreach($listeNoms as $nom) {
 		continue;
 	}
 	$_SESSION["copie_$nom"] = $copie;
+	// Fichier de configuration (TP, questions), relu côté serveur sans passer par le navigateur
+	$_SESSION['configs'][$nom] = $listeBase[$nom]['config'];
 	if ($debug) echo "<p>Création de ".$_SESSION["copie_$nom"]."</p>";
 
 	$tables = get_tables($nom);
@@ -247,13 +245,13 @@ Released for free under a Creative Commons Attribution 2.5 License
 	</div>
 	
 	<div id="bases" class="boxed">
-		<h2 class="heading">Description des bases</h2>
+		<h2 class="heading">Bases disponibles</h2>
 		<div class="content">
 			<ul>
 		<?php foreach($listeNoms as $nom) {
 				$h = htmlspecialchars($nom, ENT_QUOTES);
 				$j = htmlspecialchars(json_encode($nom), ENT_QUOTES);
-				echo "<li> <a href='#' onClick='new Effect.Highlight(this); db($j);return false;' style='cursor:pointer'><img src='images/Database.png' alt='Base $h' title='Base $h' width='32'/> $h</a></li>";
+				echo "<li> <a href='#' onClick='new Effect.Highlight(this); db($j);return false;' style='cursor:pointer'>$h</a></li>";
 			}?>
 			</ul>
 		</div>

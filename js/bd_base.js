@@ -210,42 +210,150 @@ function new_query() {
     $('posts').appear();
 }
 
-function db(nom) {
-	t = '<a id="matiere"></a><div class="post">';
-	t = t + '	<h2 class="title">Description de la base '+nom.escapeHTML()+'</h2>';
-	t = t + '    <div class="story">';
-  	t = t + '<p>'+listeBases[nom]['description']+'</p>';
-  	t = t + '<p>Référence : <a href="'+listeBases[nom]['référence']+'">'+listeBases[nom]['référence']+'</a></p>';
-	t = t + '</div></div>';
-	
-	t = t +  '<a id="matiere"></a><div class="post"><h2 class="title">Sommaire</h2>';
-	t = t +  '    <div class="story"><ul>';
-	for(var i = 0; i < listeBases[nom]['tables'].length;i++) {
-		var $ta = listeBases[nom]['tables'][i].escapeHTML().replace(/'/g, '&#39;');
-		t = t +  "<li><a href='#"
-		      +$ta+"'><img src='images/down_64.png' alt='"
-		      +$ta+"' title='"
-		      +$ta+"' width='16'/>&nbsp;&nbsp;"
-		      +$ta+"</a></li>";
-	}
-	t = t +  '</ul></div></div>';
-	
-	 $('posts').hide();
-     $('posts').update(t);
-     $('posts').show();
+// Valeur JavaScript sûre à placer dans un attribut HTML (onClick="f(...)")
+function attr_js(v) {
+    return JSON.stringify(v).escapeHTML().replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
 
+// Description d'une base (contenu du fichier de configuration, de confiance)
+function description_base(nom) {
+    var ref = listeBases[nom]['référence'];
+    t = '<a id="matiere"></a><div class="post">';
+    t = t + '<h2 class="title">Description de la base ' + nom.escapeHTML() + ' ';
+    t = t + '<img src="images/Database.png" alt="Liste des tables" title="Liste des tables (nouvel onglet)" width="32" ';
+    t = t + 'onClick="db_tables(' + attr_js(nom) + '); return false;" style="cursor:pointer"/></h2>';
+    t = t + '<div class="story">';
+    t = t + '<p>' + listeBases[nom]['description'] + '</p>';
+    if (ref) t = t + '<p>Référence : <a href="' + ref.escapeHTML().replace(/"/g, '&quot;') + '">' + ref.escapeHTML() + '</a></p>';
+    t = t + '</div></div>';
+    return t;
+}
+
+// Ajoute à la page le résultat d'une rubrique du contrôleur, puis appelle suite()
+function insere_rubrique(parametres, suite) {
     new Ajax.Request('controler.php', {
         method: 'get',
-        parameters: {
-            Soumettre: nom
-        },
+        parameters: parametres,
         onSuccess: function (trs) {
             $('posts').insert(trs.responseText);
+            if (suite) suite();
         },
         onFailure: function () {
-            alert('db: Impossible d\'obtenir la rubrique !')
+            alert('Impossible d\'obtenir la rubrique !')
         }
     });
+}
+
+// Affiche la description d'une base, ses TP et ses questions à thèmes
+function db(nom) {
+    $('posts').hide();
+    $('posts').update(description_base(nom));
+    $('posts').show();
+    // Requêtes enchaînées pour garder l'ordre d'affichage
+    insere_rubrique({Soumettre: 'tp', nom_base: nom}, function () {
+        insere_rubrique({Soumettre: 'themes_dispo', nom_base: nom});
+    });
+}
+
+// Contenu des tables d'une base, dans un nouvel onglet
+function db_tables(nom) {
+    window.open('dbListe.php?base=' + encodeURIComponent(nom));
+}
+
+// Page d'accueil d'un TP
+function page_tp(nom, tp) {
+    $('posts').hide();
+    $('posts').update(description_base(nom));
+    $('posts').show();
+    insere_rubrique({Soumettre: 'pageIni', nom_base: nom, tp_name: tp});
+}
+
+//=================================================================
+// Questions (pages tp.php et questionsThem.php)
+//=================================================================
+
+var reponses = {};          // réponses mémorisées, par numéro de question
+var question_courante = null;
+var page_questions = null;  // liste des questions, pour y revenir
+
+function bascule_aide() {
+    var aide = $('div1');
+    aide.style.display = (aide.style.display == 'block') ? 'none' : 'block';
+}
+
+function ouvre_question(q) {
+    if (page_questions == null) page_questions = $('posts').innerHTML;
+    question_courante = q;
+    t = '<div class="post">';
+    t = t + '<h2>Base ' + q.base.escapeHTML() + '</h2>';
+    t = t + '<h2 class="title">Question ' + q.numero + '</h2>';
+    t = t + '<div class="story">';
+    if (q.aide) {
+        t = t + '<p><button class="btnPopup" onclick="bascule_aide(); return false;">Aide</button></p>';
+        t = t + '<div id="div1">' + q.aide + '</div>';
+    }
+    if (q.type == 'rq-intention') {
+        t = t + '<p>Requête :</p><pre>' + q.sql.escapeHTML() + '</pre>';
+        t = t + '<p>Veuillez donner l\'intention de la requête ci-dessus :<br/>';
+        t = t + '<textarea rows="3" cols="80" id="requete"></textarea></p>';
+    } else {
+        t = t + '<p>' + q.intention.escapeHTML() + '</p>';
+        t = t + '<p>' + (q.type == 'rq-trou' ? 'Veuillez compléter la requête suivante :' : 'Veuillez donner la requête :') + '<br/>';
+        t = t + '<textarea rows="10" cols="80" id="requete"></textarea></p>';
+    }
+    t = t + '<p>';
+    if (q.type != 'rq-intention') {
+        t = t + '<img src="images/gear_64.png" alt="Exécuter" title="Exécuter la requête" width="32" ';
+        t = t + 'onClick="reponse(); return false;" style="cursor:pointer"/>';
+    }
+    t = t + '<img src="images/add_64.png" alt="Mémoriser" title="Mémoriser la réponse" width="32" ';
+    t = t + 'onClick="memorise_reponse(true); return false;" style="cursor:pointer"/>';
+    t = t + '<img src="images/left_64.png" alt="Retour" title="Retourner à la liste des questions" width="32" ';
+    t = t + 'onClick="retour_questions(); return false;" style="cursor:pointer"/>';
+    t = t + '</p><div id="results"></div>';
+    t = t + '</div></div>';
+
+    $('posts').hide();
+    $('posts').update(t);
+    var initiale = reponses[q.numero];
+    if (initiale == null) initiale = (q.type == 'rq-trou') ? q.sql : '';
+    $('requete').setValue(initiale);
+    $('posts').appear();
+}
+
+// Exécute la réponse de l'élève sur sa copie de la base
+function reponse() {
+    new Ajax.Request('controler.php', {
+        method: 'post',
+        parameters: {
+            Soumettre: 'Envoyer', csrf: csrf_token, requete: $('requete').getValue(), base: question_courante.base, mode: 0
+        },
+        onSuccess: function (trs) {
+            if (trs.responseText == '') {
+                query_failed();
+                return;
+            }
+            $('results').hide();
+            $('results').update(trs.responseText);
+            $('results').appear();
+        },
+        onFailure: function (trs) {
+            if (trs.status == 403) $('results').update(trs.responseText);
+            else query_failed();
+        }
+    });
+}
+
+function memorise_reponse(message) {
+    reponses[question_courante.numero] = $('requete').getValue();
+    if (message) $('results').insert('<p>Réponse mémorisée</p>');
+}
+
+function retour_questions() {
+    memorise_reponse(false);
+    $('posts').hide();
+    $('posts').update(page_questions);
+    $('posts').appear();
 }
 
 function news() {

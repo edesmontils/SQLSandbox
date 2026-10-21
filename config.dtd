@@ -59,7 +59,7 @@
 <!ATTLIST TP 
     nom ID #REQUIRED 
     niveau CDATA #IMPLIED 
-    statut (libre|noté) "libre"
+    statut (libre|note) "libre"
     datedébut CDATA #IMPLIED
     datefin CDATA #IMPLIED
     enseignant IDREF #IMPLIED >
