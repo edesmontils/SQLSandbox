@@ -108,12 +108,25 @@ verifie('questions du TP dans l\'ordre', $ids === array('tr-em-01', 're-em-01', 
 verifie('TP inconnu', cherche_tp($conf, 'inexistant') === null);
 verifie('thèmes ouverts et difficulté', themes_ouverts($conf) === array('projection' => 1), json_encode(themes_ouverts($conf)));
 $q = cherche_question($conf, 'int-em-01');
-verifie('texte SQL reconstruit', texte_sql($q->SQL) === "SELECT nom-f\nFROM Fleuve NATURAL JOIN Espace-Maritime\nWHERE type='mer'", texte_sql($q->SQL));
+verifie('texte SQL reconstruit', texte_sql($q->SQL) === "SELECT nom_f\nFROM Fleuve NATURAL JOIN EspaceMaritime\nWHERE type='mer'", texte_sql($q->SQL));
 ob_start(); liste_question('tp-em', '<script>x</script>'); $o = ob_get_clean();
 verifie('nom de TP non reconnu non affiché', strpos($o, '<script>x') === false && strpos($o, 'TP inconnu') !== false, $o);
 ob_start(); bouton_question(cherche_question($conf, 'tr-em-01'), 'tp-em', 1); $o = ob_get_clean();
 verifie('données de question encodées dans l\'attribut', preg_match("/onClick='ouvre_question\\(([^']*)\\);/", $o, $m)
         && json_decode(html_entity_decode($m[1], ENT_QUOTES))->sql === "SELECT \nFROM Fleuve\nWHERE longueur>1000", $o);
+
+// Chaque requête de référence des fichiers de configuration doit s'exécuter sur sa base
+foreach (glob('./bdd/*/config.xml') as $fic) {
+	$c = simplexml_load_file($fic, 'SimpleXMLElement', LIBXML_DTDLOAD|LIBXML_DTDATTR);
+	if (!isset($c->{'liste-questions'})) continue;
+	$bd = new SQLite3(dirname($fic).'/'.(string)$c->fichier['nom'], SQLITE3_OPEN_READONLY);
+	foreach ($c->{'liste-questions'}->children() as $q) {
+		$sql = texte_sql($q->SQL[0]);
+		verifie("requête de référence ".basename(dirname($fic))."/".id_question($q), @$bd->query($sql) !== false,
+		        $bd->lastErrorMsg()." : ".str_replace("\n", ' ', $sql));
+	}
+	$bd->close();
+}
 
 echo "Purge\n";
 $_SESSION['copie_autre'] = "$tmp/copie_autre";

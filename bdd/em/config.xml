@@ -40,7 +40,7 @@
             <theme><projection/><sélection-simple/></theme>
             <intention>On recherche les fleuves de longueur supérieure à 1000 Km.</intention>
             <SQL>
-                <Select>nom-f</Select>
+                <Select>nom_f</Select>
                 <From><Table>Fleuve</Table></From>
                 <Where>longueur>1000</Where>
             </SQL>
@@ -49,10 +49,10 @@
             <theme><projection/><sélection-simple/><jointure-simple/></theme>
             <intention></intention>
             <SQL>
-                <Select>nom-f</Select>
+                <Select>nom_f</Select>
                 <From><Natural-Join>
                     <Table>Fleuve</Table>
-                    <Table>Espace-Maritime</Table>
+                    <Table>EspaceMaritime</Table>
                 </Natural-Join></From>
                 <Where>type='mer'</Where>
             </SQL>
@@ -62,7 +62,7 @@
             <theme><projection/></theme>
             <intention>On recherche les fleuves de longueur supérieure à 1000 Km.</intention>
             <SQL>
-                <Select>nom-f</Select>
+                <Select>nom_f</Select>
                 <From><Table>Fleuve</Table></From>
                 <Where>longueur>1000</Where>
             </SQL>
@@ -77,10 +77,10 @@
             <theme><projection/><sélection-simple/></theme>
             <intention></intention>
             <SQL>
-                <Select>nom-f</Select>
+                <Select>nom_f</Select>
                 <From><Natural-Join>
                     <Table>Fleuve</Table>
-                    <Table>Espace-Maritime</Table>
+                    <Table>EspaceMaritime</Table>
                 </Natural-Join></From>
                 <Where>type='mer'</Where>
             </SQL>
@@ -96,10 +96,10 @@
             <theme></theme>
             <intention>Le nom des fleuves qui se jettent dans une mer.</intention>
             <SQL>
-                <Select>nom-f</Select>
+                <Select>nom_f</Select>
                 <From><Natural-Join>
                     <Table>Fleuve</Table>
-                    <Table>Espace-Maritime</Table>
+                    <Table>EspaceMaritime</Table>
                 </Natural-Join></From>
                 <Where>type='mer'</Where>
             </SQL>
@@ -109,10 +109,10 @@
             <theme><projection/><sélection-simple/><jointure-simple/></theme>
             <intention>Les fleuves qui se jettent dans une mer.</intention>
             <SQL>
-                <Select>nom-f</Select>
+                <Select>nom_f</Select>
                 <From><Natural-Join>
                     <Table>Fleuve</Table>
-                    <Table>Espace-Maritime</Table>
+                    <Table>EspaceMaritime</Table>
                 </Natural-Join></From>
                 <Where>type='mer'</Where>
             </SQL>
