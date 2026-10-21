@@ -1,9 +1,13 @@
 <?php 
-$session_ok = session_start();
-setlocale(LC_TIME,'fr_FR');
+require './session.php';
  //phpinfo();
 $debug=false;
 $ok = true;
+$nom_appli = 'SQL Sandbox';
+$version = '';
+$seuil = 10800;
+$listeBase = array();
+$listeNoms = array();
 
 //Récupération des paramètres
 require_once('./lib/LibXML.php');
@@ -14,6 +18,8 @@ if (isset($_SESSION['debug'])) {
 	purge_db();	
 	session_unset();
 }
+session_regenerate_id(true);
+$_SESSION['csrf'] = bin2hex(random_bytes(16));
 
 try { 
 	$config = new SimpleXMLElement('./config.xml',
@@ -29,15 +35,16 @@ try {
 	//mode "debug"
 	$debug = ((string)$att['debug']) == 'true';
 	$_SESSION['debug'] = $debug;
+	if ($debug) ini_set('display_errors', '1');
 	
 	//Gestion du seuil de vie des copies de base //60 * 60 * 24;
-	$seuil = (integer)$config->seuil;
+	$seuil = (int)$config->seuil;
 	
 	//Gestion des bases
 	$listeBase = array();
 
 	//Définitions dans le fichier de config principal
-	foreach($config->listeBases->base_de_donnee as $base) { 
+	if (isset($config->listeBases)) foreach($config->listeBases->base_de_donnee as $base) { 
 		$listeBase[(string)$base['nom']] = array(
 			'config' => './config.xml',
 			'fichier' => (string)$base->fichier['nom'],
@@ -50,7 +57,7 @@ try {
 	}
 
 	// Définitions dans un fichier de config spécialisé/dédié
-	foreach($config->listeBases->configBD as $configBD) {
+	if (isset($config->listeBases)) foreach($config->listeBases->configBD as $configBD) {
 		$BD = new SimpleXMLElement($configBD['localisation'].'/'.$configBD['fichier'],
                                    LIBXML_DTDATTR|LIBXML_DTDLOAD|LIBXML_DTDVALID
                                    |LIBXML_NOBLANKS|LIBXML_NOCDATA,
@@ -99,7 +106,7 @@ try {
 	ksort($listeBase,SORT_NATURAL | SORT_FLAG_CASE);
 	$listeNoms = array_keys($listeBase);
 } catch(Exception $e) {
-  echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()
+  echo "<p>erreur<br/>Pb (Exception) ! ".htmlspecialchars($e->getMessage())."<br/>".$libxml->afficheErreurs()
        ."<br/></p>";
 }
 
@@ -113,34 +120,56 @@ if ($debug) {
 }
 
 // Purge de TMP s'il reste des fichiers non supprimés...
-$dir=opendir("./tmp");	
-while ($nom=readdir($dir)) {
-	if (file_exists($nom)) {
-		$file = stat($nom);
-		$delta = time() - $file['atime'];
-		if ((substr($nom,0,6)=='copie_')&&($delta>$seuil)) {
-		    if ($debug) echo "<p>Suppression de $nom (ancien de $delta secondes)</p>";
-			if (file_exists($nom)) unlink($nom);
+// (dans le dossier de travail, et dans tmp/ où se trouvaient les copies des versions précédentes)
+foreach (array_unique(array_filter(array(DOSSIER_TMP, realpath('./tmp')))) as $dossier) {
+	$dir=@opendir($dossier);
+	while ($dir && ($nom=readdir($dir)) !== false) {
+		$chemin = $dossier.'/'.$nom;
+		if ((substr($nom,0,6)=='copie_' || substr($nom,0,7)=='verrou_') && is_file($chemin)) {
+			$delta = time() - filemtime($chemin);
+			if ($delta>$seuil) {
+				if ($debug) echo "<p>Suppression de $nom (ancien de $delta secondes)</p>";
+				unlink($chemin);
+			}
 		}
 	}
+	if ($dir) closedir($dir);
 }
-closedir($dir);
 
 // Mise en place des BD temporaires pour l'utilisation courante (session)
 if ($debug) echo "<p>Création des bases temporaires pour cette session</p>";
+$dossierTmp = DOSSIER_TMP;
+$erreursCopie = array();
+if (is_null($dossierTmp)) {
+	$erreursCopie[] = "Aucun dossier de travail accessible en écriture (sqlsandbox-tmp à côté du site, ou tmp) : aucune base n'est disponible.";
+	$listeBase = array();
+	$listeNoms = array();
+}
 foreach($listeNoms as $nom) {
-	$_SESSION["copie_$nom"]= tempnam('./tmp',"copie_$nom".'_');
-	
-	//_________________________________________________
-	//$listeBase[$nom]['tmp'] = $_SESSION["copie_$nom"]; // Danger pour la sécurité !
-	//_________________________________________________
-	
-	copy($listeBase[$nom]['fichier'],$_SESSION["copie_$nom"]);
-	if ($debug) echo "<p>Création de ".$_SESSION["copie_$nom"]."</p>";
-	
-	$tables = get_tables($nom);
+	// Seul un nom de fichier (vide) est réservé : la copie est faite à la première
+	// requête sur la base (ouvre_base), pour qu'une simple visite ne coûte rien.
+	// tempnam() se replie silencieusement sur le répertoire temporaire du système :
+	// une copie créée ailleurs que dans le dossier de travail ne serait jamais purgée.
+	$original = realpath($listeBase[$nom]['fichier']);
+	$copie = @tempnam($dossierTmp, "copie_$nom".'_');
+	if ($copie === false || dirname($copie) !== $dossierTmp
+	    || $original === false || !is_readable($original)) {
+		if ($copie !== false && is_file($copie)) unlink($copie);
+		$erreursCopie[] = "Impossible de préparer la base ".htmlspecialchars($nom).".";
+		unset($listeBase[$nom]);
+		continue;
+	}
+	$_SESSION["copie_$nom"] = $copie;
+	// Fichier de configuration (TP, questions), relu côté serveur sans passer par le navigateur
+	$_SESSION['configs'][$nom] = $listeBase[$nom]['config'];
+	// Base d'origine, pour recréer la copie si elle est purgée pendant un TP
+	$_SESSION['originaux'][$nom] = $original;
+	if ($debug) echo "<p>Réservation de ".$_SESSION["copie_$nom"]."</p>";
+
+	$tables = get_tables($nom, $original);
 	$listeBase[$nom]['tables'] = $tables;
 }
+$listeNoms = array_keys($listeBase);
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
@@ -169,21 +198,38 @@ Released for free under a Creative Commons Attribution 2.5 License
   <script src="./js/prototype.js" type="text/javascript"></script>
   <script src="./js/scriptaculous/scriptaculous.js" type="text/javascript"></script>
   <script type="text/javascript">  
-    listeBases = <?php echo json_encode($listeBase); ?>;
-    noms_bases = <?php echo json_encode($listeNoms); ?>
+    listeBases = <?php
+    // On n'envoie au navigateur ni les chemins des fichiers ni les copies de session
+    $pourClient = array();
+    foreach($listeBase as $n => $b) {
+    	$pourClient[$n] = array(
+    		'référence' => $b['référence'],
+    		'description' => $b['description'],
+    		'tables' => $b['tables']
+    	);
+    }
+    echo json_encode($pourClient, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE); ?>;
+    noms_bases = <?php echo json_encode($listeNoms, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE); ?>;
+    csrf_token = <?php echo json_encode($_SESSION['csrf']); ?>;
   </script>
   <script src="./js/bd_base.js" type="text/javascript"></script>
  
 </head>
 
-<body onload="init()" onunload="end()" onreload="end()">
+<body onload="init()" onunload="end()">
 
 <div id="header">
-	<h1><?php echo $nom_appli;?></h1>
-	<p>Version <?php echo $version;?></p>
+	<h1><?php echo htmlspecialchars($nom_appli);?></h1>
+	<p>Version <?php echo htmlspecialchars($version);?></p>
 </div>
 
 <div id="content">
+
+	<?php if (count($erreursCopie) > 0) {
+		echo "<div class='post'><h2 class='title'>Problème d'installation</h2><div class='story'>";
+		foreach($erreursCopie as $m) echo "<p>$m</p>";
+		echo "</div></div>";
+	} ?>
 
 	<!-- ================================== -->
 	<!-- =============== Posts ============ --> 
@@ -207,11 +253,15 @@ Released for free under a Creative Commons Attribution 2.5 License
 		</div>
 	</div>
 	
-	<div id="categories" class="boxed">
-		<h2 class="heading">Description des bases</h2>
+	<div id="bases" class="boxed">
+		<h2 class="heading">Bases disponibles</h2>
 		<div class="content">
 			<ul>
-		<?php foreach($listeNoms as $nom) echo "<li> <a href='#' onClick='new Effect.Highlight(this); db(\"$nom\");return false;' style='cursor:pointer'><img src='images/Database.png' alt='Base $nom' title='Base $nom' width='32'/> $nom</a></li>";?>
+		<?php foreach($listeNoms as $nom) {
+				$h = htmlspecialchars($nom, ENT_QUOTES);
+				$j = htmlspecialchars(json_encode($nom), ENT_QUOTES);
+				echo "<li> <a href='#' onClick='new Effect.Highlight(this); db($j);return false;' style='cursor:pointer'>$h</a></li>";
+			}?>
 			</ul>
 		</div>
 	</div>
@@ -240,11 +290,12 @@ Released for free under a Creative Commons Attribution 2.5 License
 		</div>
 	</div>
 	
-	<div id="pages" class="boxed">
+	<div id="liens" class="boxed">
 		<!--h2 class="heading">Liens</h2-->
 		<div class="content">
 			<div id="footer">
-				<p>Copyright &copy; 2010, 2011, 2016 <a href="http://www.desmontils.net/">E. Desmontils</a>,<br/> Université de Nantes. 
+				<p>Copyright &copy; 2010-2026 <a href="http://www.desmontils.net/">E. Desmontils</a>,<br/> Université de Nantes.
+				   <br/>Logiciel libre sous <a href="https://www.gnu.org/licenses/gpl-3.0.fr.html">licence GPL v3</a>
 				   <br/>Designed by <a href="http://www.freecsstemplates.org/"><strong>Free CSS Templates</strong></a> 
 				   <br/><a href="http://validator.w3.org/check/referer" title="This page validates as XHTML 1.0 Transitional">Valid <abbr title="eXtensible HyperText Markup Language">XHTML</abbr></a>
 				   <br/><a href="#" onclick="mentions();return false;" style='cursor:pointer'>Autres mentions légales</a>

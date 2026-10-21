@@ -1,19 +1,16 @@
 <?php 
 
-$session_ok = session_start();
-setlocale(LC_TIME,'fr_FR');
+require './session.php';
 
 if (isset($_SESSION['debug']) && $session_ok) {
 	$debug = $_SESSION['debug'];
+	if ($debug) ini_set('display_errors', '1');
 	require_once('./lib/LibXML.php');
 	include "./fonctions.php";
 
-	if (isset($_REQUEST['Soumettre'])) $Soumettre = $_REQUEST['Soumettre'];
-	else $Soumettre = 'rien';
-	if (isset($_REQUEST['requete'])) $requete = $_REQUEST['requete'];
-	else $requete = null;
-	if (isset($_REQUEST['base'])) $base = $_REQUEST['base'];
-	else $base = null;
+	$Soumettre = isset($_REQUEST['Soumettre']) ? param('Soumettre') : 'rien';
+	$requete = param('requete');
+	$base = param('base');
 	
 	if ($debug) { 
 		echo '<p>Mode Debug On</p>';
@@ -27,16 +24,21 @@ if (isset($_SESSION['debug']) && $session_ok) {
 	// Début du traitement des différentes actions demandées		
 	//======================================================
 	if ($Soumettre == 'end') { // supprime les $_SESSION["copie_$nom"];
-		purge_db();
-		//unset($_SESSION['debug']);
-		//session_unset();
-		echo "<p>Bases purgées...</p>";
+		if (jeton_valide()) {
+			purge_db();
+			echo "<p>Bases purgées...</p>";
+		} else {
+			http_response_code(403);
+			echo "<p>Session expirée : l'application a sans doute été ouverte ou rechargée dans un autre onglet. Rechargez cette page pour continuer.</p>";
+		}
 	} 
 	//======================================================
 	else if ($Soumettre == "Envoyer") {
-		$mode = $_REQUEST['mode'];
-		if (isset($requete) && isset($base)){
-		    $requete = stripslashes($requete);	
+		$mode = is_null(param('mode')) ? '1' : param('mode');
+		if (!jeton_valide()) {
+			http_response_code(403);
+			echo "<p>Session expirée : l'application a sans doute été ouverte ou rechargée dans un autre onglet. Rechargez cette page pour continuer.</p>";
+		} else if (is_string($requete) && is_string($base)){
 			$t=get($requete,$base);  
 			echo (!is_null($t) ? "<img src='images/tick_64.png'  width='32' alt='ok' title='ok'/>"
 			           :"<img src='images/block_64.png' width='32' alt='ko' title='ko'/>");
@@ -57,7 +59,7 @@ if (isset($_SESSION['debug']) && $session_ok) {
 			foreach($config->aides->children() as $c)
 			echo $c->asXML();
 		} catch(Exception $e) {
-  			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
+  			echo "<p>erreur<br/>Pb (Exception) ! ".htmlspecialchars($e->getMessage())."<br/>".$libxml->afficheErreurs()."<br/></p>";
 		}	
 	}
 	//======================================================
@@ -65,7 +67,7 @@ if (isset($_SESSION['debug']) && $session_ok) {
 		try {
 			$config = new SimpleXMLElement('./config.xml',
 		                                LIBXML_DTDATTR|LIBXML_DTDLOAD|LIBXML_DTDVALID
-		                                |LIBXML_NOBLANKS|LIBXML_NOCDATA|LIBXML_NOENT|LIBXML_COMPACT,
+		                                |LIBXML_NOBLANKS|LIBXML_NOCDATA|LIBXML_COMPACT,
 		                                true);
 			$listeMessages = $config->listeMessages->message;
 			foreach($listeMessages as $post_message) {
@@ -77,7 +79,7 @@ if (isset($_SESSION['debug']) && $session_ok) {
 				echo "</div></div>\n";
 			}
 		} catch(Exception $e) {
-  			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
+  			echo "<p>erreur<br/>Pb (Exception) ! ".htmlspecialchars($e->getMessage())."<br/>".$libxml->afficheErreurs()."<br/></p>";
 		}	
 	}
 	//======================================================
@@ -91,7 +93,7 @@ if (isset($_SESSION['debug']) && $session_ok) {
 			foreach($apropos->children() as $c)
 				echo $c->asXML();
 		} catch(Exception $e) {
-  			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
+  			echo "<p>erreur<br/>Pb (Exception) ! ".htmlspecialchars($e->getMessage())."<br/>".$libxml->afficheErreurs()."<br/></p>";
 		}	
 	}
 	//======================================================
@@ -108,8 +110,19 @@ if (isset($_SESSION['debug']) && $session_ok) {
 				echo $c->asXML();
 			echo "</div></div>\n";										
 		} catch(Exception $e) {
-  			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
+  			echo "<p>erreur<br/>Pb (Exception) ! ".htmlspecialchars($e->getMessage())."<br/>".$libxml->afficheErreurs()."<br/></p>";
 		}	
+	}
+	//======================================================
+	// Travaux pratiques : les noms de base et de TP sont vérifiés dans la configuration
+	else if ($Soumettre == "tp") {
+		liste_TP(param('nom_base'));
+	}
+	else if ($Soumettre == "themes_dispo") {
+		themes_dispo(param('nom_base'));
+	}
+	else if ($Soumettre == "pageIni") {
+		page_tp(param('nom_base'), param('tp_name'));
 	}
 	//======================================================
 	else {//echo "<p>liste base $Soumettre</p>";
