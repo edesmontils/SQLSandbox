@@ -99,7 +99,7 @@ echo "Requêtes simultanées par adresse IP\n";
 // dont toutes les places sont occupées par d'autres processus.
 $_SERVER['REMOTE_ADDR'] = '203.0.113.7';
 $occupes = array();
-$prefixe = dirname(__DIR__).'/tmp/verrou_'.md5('203.0.113.7').'_';
+$prefixe = DOSSIER_TMP.'/verrou_'.md5('203.0.113.7').'_';
 for ($i = 0; $i < REQUETES_PAR_IP; $i++) {
 	$occupes[$i] = fopen($prefixe.$i, 'c');
 	flock($occupes[$i], LOCK_EX);
@@ -204,8 +204,10 @@ function http($url, $post = null) {
 	}
 	return array($code, (string)$corps);
 }
-function copies() { return count(glob(dirname(__DIR__).'/tmp/copie_*')); }
-function tailles() { return array_sum(array_map('filesize', glob(dirname(__DIR__).'/tmp/copie_*'))); }
+// Serveur lancé avec -t $racine : son dossier de travail est à côté de la racine web
+$travail = dirname($racine).'/sqlsandbox-tmp';
+function copies() { global $travail; return count(glob("$travail/copie_*")); }
+function tailles() { global $travail; return array_sum(array_map('filesize', glob("$travail/copie_*"))); }
 
 $avant = copies();
 list($code, $page) = http("$u/index.php");
@@ -217,7 +219,8 @@ verifie('index.php répond', $code == 200 && strpos($page, 'csrf_token') !== fal
 $session = dirname($racine).'/sessions-sqlsandbox/sess_'.substr($cookie, strlen('PHPSESSID='));
 verifie('session rangée hors du site', is_file($session) && strpos(realpath($session), $racine.'/') !== 0, $session);
 verifie('chemins serveur non exposés', strpos($page, '"fichier"') === false && strpos($page, '"config"') === false);
-verifie('visite : fichiers réservés dans tmp/, mais vides', copies() > $avant && tailles() == 0, tailles());
+verifie('visite : fichiers réservés hors du site, mais vides', copies() > $avant && tailles() == 0, tailles());
+verifie('aucune copie dans tmp/ du site', count(glob($racine.'/tmp/copie_*')) == 0);
 preg_match('/csrf_token = "([0-9a-f]+)"/', $page, $m);
 $jeton = $m[1] ?? '';
 $requete = array('Soumettre' => 'Envoyer', 'base' => 'cours', 'mode' => '1',
@@ -246,7 +249,7 @@ proc_terminate($serveur);
 proc_close($serveur);
 foreach (glob("$tmp/*") as $f) unlink($f);
 // Verrous et session créés par les tests
-foreach (glob(dirname(__DIR__).'/tmp/verrou_*') as $f) unlink($f);
+foreach (array_merge(glob(DOSSIER_TMP.'/verrou_*'), glob("$travail/verrou_*")) as $f) unlink($f);
 if (is_file($session)) unlink($session);
 rmdir($tmp);
 

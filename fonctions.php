@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__.'/dossiers.php';
 
 // Paramètre de la requête HTTP, s'il est une chaîne (les tableaux, comme base[]=x, sont ignorés)
 function param($nom) {
@@ -159,14 +160,15 @@ function arret_requete() {
 }
 
 // Réserve une place d'exécution pour l'adresse IP du client (verrous flock sur des
-// fichiers tmp/verrou_*). Le verrou est libéré par le système à la fin du processus,
+// fichiers verrou_* de DOSSIER_TMP). Le verrou est libéré par le système à la fin du processus,
 // même s'il est tué par la limite de durée. Retourne false si aucune place ne se
 // libère à temps.
 function reserve_execution() {
 	static $verrou = null;
 	if (!is_null($verrou)) return true; // déjà réservée par ce processus
+	if (is_null(DOSSIER_TMP)) return true; // pas de dossier de travail : pas de limite
 	$ip = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : 'cli';
-	$prefixe = dirname(__FILE__).'/tmp/verrou_'.md5($ip).'_';
+	$prefixe = DOSSIER_TMP.'/verrou_'.md5($ip).'_';
 	$fin = microtime(true) + ATTENTE_PLACE;
 	do {
 		for ($i = 0; $i < REQUETES_PAR_IP; $i++) {

@@ -12,21 +12,11 @@ ini_set('display_errors', '0');
 // l'hébergement ne les supprime pas plus tôt ; PHP les nettoie lui-même, le nettoyage
 // du système ne passant pas dans ce dossier.
 // Le nom d'un fichier de session contient l'identifiant de session : le dossier est
-// placé hors du site (à côté de la racine web, par exemple ~/sessions-sqlsandbox chez
-// OVH), et à défaut dans tmp/sessions (protégé par tmp/.htaccess et un index.html vide).
+// placé hors du site (dossiers.php), et à défaut dans tmp/sessions (avec un index.html
+// vide, et protégé par tmp/.htaccess quand celui-ci est pris en compte).
 define('DUREE_SESSION', 3 * 60 * 60);
-function dossier_sessions() {
-	$candidats = array();
-	if (!empty($_SERVER['DOCUMENT_ROOT']))
-		$candidats[] = dirname(rtrim($_SERVER['DOCUMENT_ROOT'], '/')).'/sessions-sqlsandbox';
-	$candidats[] = __DIR__.'/tmp/sessions';
-	foreach ($candidats as $dossier) {
-		if (!@is_dir($dossier)) @mkdir($dossier, 0700);
-		if (@is_dir($dossier) && @is_writable($dossier)) return $dossier;
-	}
-	return null;
-}
-$dossierSessions = dossier_sessions();
+require_once __DIR__.'/dossiers.php';
+$dossierSessions = dossier_prive('sessions-sqlsandbox', __DIR__.'/tmp/sessions');
 if (!is_null($dossierSessions)) {
 	if (strpos($dossierSessions, __DIR__) === 0 && !is_file($dossierSessions.'/index.html'))
 		@touch($dossierSessions.'/index.html'); // pas de liste des fichiers sans .htaccess

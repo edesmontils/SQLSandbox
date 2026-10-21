@@ -120,25 +120,28 @@ if ($debug) {
 }
 
 // Purge de TMP s'il reste des fichiers non supprimés...
-$dir=@opendir("./tmp");
-while ($dir && ($nom=readdir($dir)) !== false) {
-	$chemin = "./tmp/".$nom;
-	if ((substr($nom,0,6)=='copie_' || substr($nom,0,7)=='verrou_') && is_file($chemin)) {
-		$delta = time() - filemtime($chemin);
-		if ($delta>$seuil) {
-			if ($debug) echo "<p>Suppression de $nom (ancien de $delta secondes)</p>";
-			unlink($chemin);
+// (dans le dossier de travail, et dans tmp/ où se trouvaient les copies des versions précédentes)
+foreach (array_unique(array_filter(array(DOSSIER_TMP, realpath('./tmp')))) as $dossier) {
+	$dir=@opendir($dossier);
+	while ($dir && ($nom=readdir($dir)) !== false) {
+		$chemin = $dossier.'/'.$nom;
+		if ((substr($nom,0,6)=='copie_' || substr($nom,0,7)=='verrou_') && is_file($chemin)) {
+			$delta = time() - filemtime($chemin);
+			if ($delta>$seuil) {
+				if ($debug) echo "<p>Suppression de $nom (ancien de $delta secondes)</p>";
+				unlink($chemin);
+			}
 		}
 	}
+	if ($dir) closedir($dir);
 }
-if ($dir) closedir($dir);
 
 // Mise en place des BD temporaires pour l'utilisation courante (session)
 if ($debug) echo "<p>Création des bases temporaires pour cette session</p>";
-$dossierTmp = realpath('./tmp');
+$dossierTmp = DOSSIER_TMP;
 $erreursCopie = array();
-if ($dossierTmp === false || !is_writable($dossierTmp)) {
-	$erreursCopie[] = "Le répertoire tmp n'est pas accessible en écriture : aucune base n'est disponible.";
+if (is_null($dossierTmp)) {
+	$erreursCopie[] = "Aucun dossier de travail accessible en écriture (sqlsandbox-tmp à côté du site, ou tmp) : aucune base n'est disponible.";
 	$listeBase = array();
 	$listeNoms = array();
 }
@@ -146,7 +149,7 @@ foreach($listeNoms as $nom) {
 	// Seul un nom de fichier (vide) est réservé : la copie est faite à la première
 	// requête sur la base (ouvre_base), pour qu'une simple visite ne coûte rien.
 	// tempnam() se replie silencieusement sur le répertoire temporaire du système :
-	// une copie créée ailleurs que dans tmp/ ne serait jamais purgée.
+	// une copie créée ailleurs que dans le dossier de travail ne serait jamais purgée.
 	$original = realpath($listeBase[$nom]['fichier']);
 	$copie = @tempnam($dossierTmp, "copie_$nom".'_');
 	if ($copie === false || dirname($copie) !== $dossierTmp
