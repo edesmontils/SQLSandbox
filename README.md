@@ -12,6 +12,12 @@ A cas où, faire : 'chmod a+w tmp'
 
 PHP 8.0 ou plus récent (pour `SQLite3::setAuthorizer`), avec les extensions `sqlite3` et `SimpleXML`.
 
+SQLite 3.32.3 ou plus récent est recommandé (version visible avec `select sqlite_version()`) :
+- avant 3.31, la limite de mémoire de SQLite (`PRAGMA hard_heap_limit`) est ignorée ;
+- avant 3.32.3, les fonctions de fenêtrage (`OVER`, `WINDOW`) ont des failles connues : l'application les refuse sur ces versions.
+
+L'hébergement mutualisé OVH (image `stable64`) fournit SQLite 3.27 : ces deux protections y sont donc respectivement inactive et active.
+
 ## Sécurité du déploiement
 
 Les répertoires `tmp/` (copies des bases de chaque session), `bdd/` (bases et scripts SQL), `lib/` et `tests/` ne doivent pas être accessibles depuis le web. Sous Apache, les fichiers `.htaccess` fournis s'en chargent, à condition que `AllowOverride` l'autorise. Sous nginx, qui ignore les `.htaccess`, ajouter dans le bloc `server` :

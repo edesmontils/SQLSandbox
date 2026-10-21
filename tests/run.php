@@ -94,6 +94,22 @@ execute("select 1");
 clearstatcache();
 verifie('date de la copie rafraîchie à chaque ouverture', filemtime($copie) > time() - 60);
 
+echo "Anciennes versions de SQLite\n";
+foreach (array("select nom, row_number() over (order by nom) from etudiants" => true,
+               "select nom, count(*) over w from etudiants window w as (order by nom)" => true,
+               "select nom, rank() OVER(partition by prenom) from etudiants" => true,
+               "select over from t where window = 1" => false,
+               "select 'over (' from etudiants -- over (" => false) as $q => $attendu) {
+	verifie(($attendu ? 'fenêtrage détecté : ' : 'pas de fenêtrage : ').$q, utilise_fenetrage($q) === $attendu);
+}
+verifie('fenêtrage refusé avant SQLite 3.32.3 (OVH : 3.27.2)', !fenetrage_autorise(3027002) && fenetrage_autorise(3045001));
+if (fenetrage_autorise()) {
+	list($r, $o) = execute("select nom, row_number() over (order by nom) from etudiants");
+	verifie('fenêtrage utilisable avec ce SQLite ('.SQLite3::version()['versionString'].')', $r === true, $o);
+}
+list($r, $o) = execute("select '".str_repeat('x', LONGUEUR_MAX_REQUETE)."'");
+verifie('requête trop longue refusée', $r === null && strpos($o, 'trop longue') !== false, substr($o, 0, 200));
+
 echo "Requêtes simultanées par adresse IP\n";
 // Ce processus a déjà sa place (requêtes ci-dessus) : on simule un autre client
 // dont toutes les places sont occupées par d'autres processus.
@@ -212,7 +228,8 @@ function tailles() { global $travail; return array_sum(array_map('filesize', glo
 $avant = copies();
 list($code, $page) = http("$u/index.php");
 $entetes = implode("\n", $derniers_entetes);
-verifie('en-têtes de sécurité', stripos($entetes, 'X-Frame-Options: SAMEORIGIN') !== false
+verifie('en-têtes de sécurité', stripos($entetes, 'X-SQLSandbox: 1') !== false
+                                && stripos($entetes, 'X-Frame-Options: SAMEORIGIN') !== false
                                 && stripos($entetes, 'X-Content-Type-Options: nosniff') !== false, $entetes);
 verifie('index.php répond', $code == 200 && strpos($page, 'csrf_token') !== false);
 // Serveur lancé avec -t $racine : les sessions vont à côté de la racine web, hors du site

@@ -32,4 +32,7 @@ $session_ok = session_start();
 header('X-Frame-Options: SAMEORIGIN');
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: same-origin');
+// Permet au JavaScript de distinguer les réponses de l'application de celles d'un
+// pare-feu ou d'un proxy de l'hébergeur
+header('X-SQLSandbox: 1');
 setlocale(LC_TIME,'fr_FR');

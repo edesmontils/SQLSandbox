@@ -32,6 +32,8 @@ define('DELAI_MAX', 5);
 // au plus un instant ; seules des requêtes lentes en rafale sont refusées.
 define('REQUETES_PAR_IP', 4);
 define('ATTENTE_PLACE', 3);
+// Longueur maximale (octets) d'une requête saisie
+define('LONGUEUR_MAX_REQUETE', 64 * 1024);
 // Taille maximale (octets) d'une copie de base, pour éviter de remplir le disque
 define('TAILLE_MAX_BASE', 20 * 1024 * 1024);
 // Mémoire maximale (octets) de SQLite, qui alloue hors du memory_limit de PHP
@@ -67,22 +69,19 @@ function autorisation_sql($action, $arg1 = null, $arg2 = null) {
 	}
 }
 
-// Indique si $sql contient autre chose qu'une seule instruction (SQLite n'exécute
-// que la première). Tient compte des chaînes, identifiants, commentaires et
-// des corps de triggers (BEGIN ... END), qui contiennent des ';'.
-function plusieurs_instructions($sql) {
+// Découpe $sql en jetons, en ignorant espaces et commentaires : array('mot', 'SELECT'),
+// array('chaine', ...) pour les chaînes et identifiants entre délimiteurs, array(';', ';')
+// et array('car', '(') pour les autres caractères.
+function jetons_sql($sql) {
+	$jetons = array();
 	$n = strlen($sql);
 	$i = 0;
-	$mots = array();   // premiers mots de l'instruction
-	$trigger = false;  // dans le corps BEGIN ... END d'un CREATE TRIGGER
-	$cas = 0;          // profondeur des CASE ... END dans un trigger
-	$fin = false;      // un ';' terminant la première instruction a été vu
 	while ($i < $n) {
 		$c = $sql[$i];
 		if ($c == "'" || $c == '"' || $c == '`' || $c == '[') {
-			if ($fin) return true;
 			$ferme = ($c == '[') ? ']' : $c;
 			$j = strpos($sql, $ferme, $i + 1);
+			$jetons[] = array('chaine', substr($sql, $i, ($j === false ? $n : $j + 1) - $i));
 			$i = ($j === false) ? $n : $j + 1;
 		} else if ($c == '-' && $i + 1 < $n && $sql[$i + 1] == '-') {
 			$j = strpos($sql, "\n", $i);
@@ -91,24 +90,65 @@ function plusieurs_instructions($sql) {
 			$j = strpos($sql, '*/', $i + 2);
 			$i = ($j === false) ? $n : $j + 2;
 		} else if (ctype_alpha($c) || $c == '_') {
-			if ($fin) return true;
 			$j = $i;
 			while ($j < $n && (ctype_alnum($sql[$j]) || $sql[$j] == '_')) $j++;
-			$mot = strtoupper(substr($sql, $i, $j - $i));
-			if (count($mots) < 4) $mots[] = $mot;
-			if ($mot == 'BEGIN' && $mots[0] == 'CREATE' && in_array('TRIGGER', $mots)) $trigger = true;
-			else if ($trigger && $mot == 'CASE') $cas++;
-			else if ($trigger && $mot == 'END') {
-				if ($cas > 0) $cas--; else $trigger = false;
-			}
+			$jetons[] = array('mot', strtoupper(substr($sql, $i, $j - $i)));
 			$i = $j;
-		} else if ($c == ';') {
-			if (!$trigger) $fin = true;
-			$i++;
 		} else {
-			if ($fin && !ctype_space($c)) return true;
+			if (!ctype_space($c)) $jetons[] = array($c == ';' ? ';' : 'car', $c);
 			$i++;
 		}
+	}
+	return $jetons;
+}
+
+// Indique si $sql contient autre chose qu'une seule instruction (SQLite n'exécute
+// que la première). Tient compte des chaînes, identifiants, commentaires et
+// des corps de triggers (BEGIN ... END), qui contiennent des ';'.
+function plusieurs_instructions($sql) {
+	$mots = array();   // premiers mots de l'instruction
+	$trigger = false;  // dans le corps BEGIN ... END d'un CREATE TRIGGER
+	$cas = 0;          // profondeur des CASE ... END dans un trigger
+	$fin = false;      // un ';' terminant la première instruction a été vu
+	foreach (jetons_sql($sql) as $jeton) {
+		list($type, $valeur) = $jeton;
+		if ($fin && $type != ';') return true;
+		if ($type == 'mot') {
+			if (count($mots) < 4) $mots[] = $valeur;
+			if ($valeur == 'BEGIN' && $mots[0] == 'CREATE' && in_array('TRIGGER', $mots)) $trigger = true;
+			else if ($trigger && $valeur == 'CASE') $cas++;
+			else if ($trigger && $valeur == 'END') {
+				if ($cas > 0) $cas--; else $trigger = false;
+			}
+		} else if ($type == ';' && !$trigger) {
+			$fin = true;
+		}
+	}
+	return false;
+}
+
+// Fonctions de fenêtrage (OVER, WINDOW) : avant SQLite 3.32.3, plusieurs failles
+// connues permettent de faire planter le processus (CVE-2019-19244, CVE-2020-11655,
+// CVE-2020-13871...). Elles sont refusées sur ces versions (hébergement OVH : 3.27).
+define('VERSION_SQLITE_FENETRAGE', 3032003);
+
+function fenetrage_autorise($version = null) {
+	if (is_null($version)) $version = SQLite3::version()['versionNumber'];
+	return $version >= VERSION_SQLITE_FENETRAGE;
+}
+
+function utilise_fenetrage($sql) {
+	$jetons = jetons_sql($sql);
+	foreach ($jetons as $k => $jeton) {
+		if ($jeton[0] != 'mot' || !in_array($jeton[1], array('OVER', 'WINDOW'), true)) continue;
+		// OVER (...), OVER nom_de_fenêtre, WINDOW nom AS (...)
+		$suivant = isset($jetons[$k + 1]) ? $jetons[$k + 1] : null;
+		if (!$suivant) continue;
+		if ($suivant[1] == '(') return true;
+		// un mot-clé après OVER/WINDOW : c'est un nom de colonne ou de table (select over from t)
+		if ($suivant[0] == 'mot' && !in_array($suivant[1], array('FROM', 'WHERE', 'AS', 'AND', 'OR',
+		    'ORDER', 'GROUP', 'HAVING', 'LIMIT', 'UNION', 'EXCEPT', 'INTERSECT', 'JOIN', 'ON', 'IS',
+		    'IN', 'NOT', 'LIKE', 'BETWEEN', 'ASC', 'DESC', 'SET', 'VALUES'), true)) return true;
 	}
 	return false;
 }
@@ -208,6 +248,19 @@ function get($requete,$base) {
 	if (!$arret_enregistre) {
 		register_shutdown_function('arret_requete');
 		$arret_enregistre = true;
+	}
+	if (strlen($requete) > LONGUEUR_MAX_REQUETE) {
+		echo "<script language='javascript'>result_type='ko';</script><p>Requête trop longue (au plus "
+		    .(LONGUEUR_MAX_REQUETE / 1024)." Ko).</p>";
+		$db->close();
+		return null;
+	}
+	if (!fenetrage_autorise() && utilise_fenetrage($requete)) {
+		echo "<script language='javascript'>result_type='ko';</script><p>Les fonctions de fenêtrage "
+		    ."(OVER, WINDOW) ne sont pas disponibles sur ce serveur : sa version de SQLite (".html(SQLite3::version()['versionString'])
+		    .") a des failles connues dans ces fonctions.</p>";
+		$db->close();
+		return null;
 	}
 	if (plusieurs_instructions($requete)) {
 		echo "<p><strong>Attention :</strong> seule la première instruction a été exécutée, la suite a été ignorée.</p>";

@@ -133,17 +133,31 @@ function query() {
             $('results').appear();
         },
         onFailure: function (trs) {
-            if (trs.status == 403) $('results').update(trs.responseText);
-            else query_failed();
+            query_failed(trs);
         }
     });
 }
 
-function query_failed() {
+// Échec d'une requête : réponse de l'application (session expirée...), blocage par un
+// pare-feu de l'hébergeur (réponse sans l'en-tête X-SQLSandbox) ou processus PHP
+// arrêté par la limite de durée (réponse vide)
+function query_failed(trs) {
+    var message;
+    var de_l_application = trs && trs.getHeader('X-SQLSandbox');
+    if (trs && trs.status == 403 && de_l_application) {
+        $('results').update(trs.responseText);
+        return;
+    }
     result_type = 'ko';
-    current_result = "<img src='images/block_64.png' width='32' alt='ko' title='ko'/>"
-        + "<p>Pas de réponse du serveur : la requête a probablement dépassé la durée maximale d'exécution "
-        + "et a été interrompue. Simplifiez-la (conditions de jointure, LIMIT...).</p>";
+    if (trs && !de_l_application && (trs.status == 403 || trs.status == 406)) {
+        message = "La requête a été bloquée avant d'atteindre l'application (code " + trs.status
+            + ") : le pare-feu de l'hébergeur l'a sans doute prise pour une attaque. "
+            + "Reformulez-la, ou signalez-la à votre enseignant.";
+    } else {
+        message = "Pas de réponse du serveur : la requête a probablement dépassé la durée maximale "
+            + "d'exécution et a été interrompue. Simplifiez-la (conditions de jointure, LIMIT...).";
+    }
+    current_result = "<img src='images/block_64.png' width='32' alt='ko' title='ko'/><p>" + message + "</p>";
     $('results').update(current_result);
 }
 
@@ -338,8 +352,7 @@ function reponse() {
             $('results').appear();
         },
         onFailure: function (trs) {
-            if (trs.status == 403) $('results').update(trs.responseText);
-            else query_failed();
+            query_failed(trs);
         }
     });
 }
