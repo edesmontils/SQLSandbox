@@ -634,10 +634,14 @@ function debut_page() {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SQL Sandbox</title>
+  <link href="js/codemirror/codemirror.css" rel="stylesheet">
   <link href="default.css" rel="stylesheet">
   <script>
     csrf_token = <?php echo json_encode(isset($_SESSION['csrf']) ? $_SESSION['csrf'] : ''); ?>;
   </script>
+  <!-- Éditeur SQL : CodeMirror 5 (licence MIT, js/codemirror/LICENSE) -->
+  <script src="./js/codemirror/codemirror.js"></script>
+  <script src="./js/codemirror/sql.js"></script>
   <script src="./js/bd_base.js"></script>
 </head>
 <body class="onglet">

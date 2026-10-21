@@ -72,6 +72,24 @@ function choisit(select, valeur) {
     }
 }
 
+// Transforme la zone de saisie en éditeur SQL (CodeMirror : coloration, numéros de
+// ligne). Ctrl+Entrée (Cmd+Entrée sur Mac) appelle executer(). La zone de saisie est
+// tenue à jour à chaque frappe : le reste du code lit toujours $('requete').value.
+function editeur_sql(zone, executer) {
+    if (typeof CodeMirror == 'undefined') return null; // bibliothèque absente : zone simple
+    var touches = {'Ctrl-Enter': executer, 'Cmd-Enter': executer};
+    var editeur = CodeMirror.fromTextArea(zone, {
+        mode: 'text/x-sqlite',
+        lineNumbers: true,
+        lineWrapping: true,
+        indentUnit: 4,
+        viewportMargin: Infinity,
+        extraKeys: touches
+    });
+    editeur.on('change', function () { editeur.save(); });
+    return editeur;
+}
+
 // Appel AJAX à controler.php. surSucces(reponse) est appelé pour un code 2xx ou 304,
 // ou sans code du tout (serveur injoignable : réponse vide) ; surEchec(reponse) sinon.
 // reponse : {status, responseText, getHeader(nom)}
@@ -310,9 +328,9 @@ function new_query() {
     	t = t + '<option>'+echappe(noms_bases[i])+'</option>';
     }
     t = t + '</select></p>';
-    t = t + '	<p><label for="requete">Entrez votre requête :</label><br/>';
-    t = t + '	<textarea name="requete" rows="10" cols="80" id="requete"></textarea><br/>';
-    t = t + '	<input type="hidden" name="Soumettre" value="Envoyer"/>';
+    t = t + '	<p><label for="requete">Entrez votre requête (Ctrl+Entrée pour l\'exécuter) :</label></p>';
+    t = t + '	<textarea name="requete" rows="10" cols="80" id="requete"></textarea>';
+    t = t + '	<p><input type="hidden" name="Soumettre" value="Envoyer"/>';
     t = t + '	<img src="images/gear_64.png" alt="Soumettre" title="Soumettre" width="32" ';
     t = t + '		onClick="query(); return false;" style="cursor:pointer" id="send_new"/></p>';
     t = t + '	</form>';
@@ -327,6 +345,7 @@ function new_query() {
     choisit($('base'), current_base);
 
     apparait($('posts'));
+    editeur_sql($('requete'), query);
 }
 
 // Valeur JavaScript sûre à placer dans un attribut HTML (onClick="f(...)")
@@ -414,8 +433,9 @@ function ouvre_question(q) {
         t = t + '<textarea rows="3" cols="80" id="requete"></textarea></p>';
     } else {
         t = t + '<p>' + echappe(q.intention) + '</p>';
-        t = t + '<p>' + (q.type == 'rq-trou' ? 'Veuillez compléter la requête suivante :' : 'Veuillez donner la requête :') + '<br/>';
-        t = t + '<textarea rows="10" cols="80" id="requete"></textarea></p>';
+        t = t + '<p>' + (q.type == 'rq-trou' ? 'Veuillez compléter la requête suivante' : 'Veuillez donner la requête');
+        t = t + ' (Ctrl+Entrée pour l\'exécuter) :</p>';
+        t = t + '<textarea rows="10" cols="80" id="requete"></textarea>';
     }
     t = t + '<p>';
     if (q.type != 'rq-intention') {
@@ -435,6 +455,8 @@ function ouvre_question(q) {
     if (initiale == null) initiale = (q.type == 'rq-trou') ? q.sql : '';
     $('requete').value = initiale;
     apparait($('posts'));
+    // L'intention se rédige en français : zone de saisie simple
+    if (q.type != 'rq-intention') editeur_sql($('requete'), reponse);
 }
 
 // Exécute la réponse de l'élève sur sa copie de la base

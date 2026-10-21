@@ -157,6 +157,25 @@ a:hover {
 	font-size: 1.1em;
 }
 
+/* Éditeur SQL (CodeMirror) : hauteur suivant le texte, cadre comme une zone de saisie */
+#posts .CodeMirror {
+	height: auto;
+	min-height: 10em;
+	max-width: 100%;
+	border: 1px solid #B8C2D6;
+	font-size: 1.1em;
+	color: #333;
+}
+
+#posts .CodeMirror-gutters {
+	background: #EEF2F8;
+	border-right: 1px solid #B8C2D6;
+}
+
+#posts .CodeMirror-scroll {
+	min-height: 10em;
+}
+
 table.resultat,
 table.historique {
 	border-spacing: 5px;
@@ -346,7 +365,7 @@ table.historique td, table.historique th {
 	}
 
 	/* 16 px au moins : sinon iOS zoome sur le champ quand on le touche */
-	#posts textarea, #posts select {
+	#posts textarea, #posts select, #posts .CodeMirror {
 		font-size: 16px;
 	}
 

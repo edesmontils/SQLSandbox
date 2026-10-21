@@ -191,6 +191,7 @@ Released for free under a Creative Commons Attribution 2.5 License
   <meta property="og:site_name" content="SQL Sandbox">
   <meta property="fb:admins" content="706563623">
 
+  <link href="js/codemirror/codemirror.css" rel="stylesheet">
   <link href="default.css" rel="stylesheet">
 
   <script>
@@ -208,6 +209,9 @@ Released for free under a Creative Commons Attribution 2.5 License
     noms_bases = <?php echo json_encode($listeNoms, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE); ?>;
     csrf_token = <?php echo json_encode($_SESSION['csrf']); ?>;
   </script>
+  <!-- Éditeur SQL : CodeMirror 5 (licence MIT, js/codemirror/LICENSE) -->
+  <script src="./js/codemirror/codemirror.js"></script>
+  <script src="./js/codemirror/sql.js"></script>
   <script src="./js/bd_base.js"></script>
 </head>
 
