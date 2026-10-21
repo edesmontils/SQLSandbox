@@ -90,6 +90,32 @@ function editeur_sql(zone, executer) {
     return editeur;
 }
 
+// Met en évidence l'onglet (ou la pastille de base) `element`, ou aucun si null
+function marque_actif(element) {
+    document.querySelectorAll('.onglet.actif, .pastille.actif').forEach(function (e) {
+        e.classList.remove('actif');
+    });
+    if (element) element.classList.add('actif');
+}
+
+function pastille_base(nom) {
+    var trouve = null;
+    document.querySelectorAll('.pastille').forEach(function (e) {
+        if (e.dataset.base == nom) trouve = e;
+    });
+    return trouve;
+}
+
+// Requête proposée pour une base : SELECT * sur sa première table (plutôt qu'une
+// requête d'exemple qui échouerait faute de table)
+function suggestion(base) {
+    var tables = (listeBases[base] && listeBases[base]['tables']) || [];
+    if (tables.length == 0) return '';
+    var t = tables[0];
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(t)) t = '"' + t.replace(/"/g, '""') + '"';
+    return 'SELECT *\nFROM ' + t + ';';
+}
+
 // Appel AJAX à controler.php. surSucces(reponse) est appelé pour un code 2xx ou 304,
 // ou sans code du tout (serveur injoignable : réponse vide) ; surEchec(reponse) sinon.
 // reponse : {status, responseText, getHeader(nom)}
@@ -145,28 +171,35 @@ class RequestSet {
     add(request) {
         this.set.push(request);
         this.nb = this.nb + 1;
+        maj_compteur(this.nb);
     }
     remove(i) {
         this.set.splice(i, 1);
         this.nb = this.set.length;
+        maj_compteur(this.nb);
     }
     show() { // corps de classe toujours en mode strict : variables déclarées
         var t, r;
-        t = '<div class="post"><h2 class="title">Historique</h2>' + '<div class="story"><table class="historique">' + '<thead><tr><th>n°</th><th>Base</th><th>Réussite</th><th>Requête</th><th>Actions</th><th></th></tr></thead>';
+        t = '<div class="post"><h2 class="title">Requêtes mémorisées</h2><div class="story">';
+        if (this.nb == 0) {
+            return t + '<p>Aucune requête mémorisée pour l\'instant : après avoir exécuté une requête, '
+                + 'cliquez sur « 🧺 Mémoriser » pour la retrouver ici.</p></div></div>';
+        }
+        t = t + '<table class="historique">' + '<thead><tr><th>n°</th><th>Base</th><th>Réussite</th><th>Requête</th><th>Actions</th><th>Résultat</th></tr></thead><tbody>';
 
         for (var i = 0; i < this.nb; i++) {
             r = this.set[i];
             t = t + '<tr><td> ' + i + ' </td><td>' + echappe(r.base) + '</td><td>';
-            if (r.error == 'ok') t = t + "<img src='images/tick_64.png' width='32' alt='ok' title='ok' />"; else t = t + "<img src='images/block_64.png' width='32' alt='ko' title='ko'/>";
+            if (r.error == 'ok') t = t + "<span class='statut ok' title='Réussite'>✅</span>"; else t = t + "<span class='statut ko' title='Échec'>❌</span>";
             t = t + "</td><td><pre>" + echappe(r.request) + "</pre></td><td>";
-            t = t + "<img src='images/gear_64.png' alt='Envoyer la requête' title='Envoyer la requête' width='32' onClick='histo(" + i + "); return false;'  style='cursor:pointer'/>";
-            t = t + "<img src='images/pencil_64.png' alt='Éditer la requête' title='Éditer la requête' width='32' onClick='histo_mod(" + i + "); return false;'  style='cursor:pointer'/>";
-            t = t + "&nbsp;&nbsp;&nbsp;<img src='images/delete_64.png' alt='Supprimer la requête' title='Supprimer la requête' width='32' onClick='histo_del(" + i + "); return false;'  style='cursor:pointer'/>";
+            t = t + "<button type='button' class='btn petit' title='Afficher ou masquer le résultat obtenu' onclick='histo(" + i + ")'>👁️ Résultat</button>";
+            t = t + "<button type='button' class='btn secondaire petit' title='Reprendre la requête dans l\'éditeur' onclick='histo_mod(" + i + ")'>✏️ Modifier</button>";
+            t = t + "<button type='button' class='btn danger petit' title='Supprimer la requête' onclick='histo_del(" + i + ")'>🗑️ Supprimer</button>";
 
             t = t + "</td><td><div id='results-" + i + "'></div></td></tr>";
         }
 
-        t = t + '</table></div></div>';
+        t = t + '</tbody></table></div></div>';
         return t;
     }
 }
@@ -193,12 +226,18 @@ window.onbeforeunload = function (evt) {
 // Fonctions de gestion de l'interface et des appels AJAX
 //=======================================================
 
+// Nombre de requêtes mémorisées, affiché dans l'onglet « Mémoire »
+function maj_compteur(nb) {
+    var c = $('nb_memo');
+    if (c) c.textContent = '(' + nb + ')';
+}
+
 function clear() {
 
 	// Variables de gestion de la mémoire initialisées.
 	rs = new RequestSet();
 	result_type = null;
-	current_request = "Select * \n From X \n Where x";
+	current_request = null; // requête proposée selon la base (suggestion())
 	current_base = "";
 	current_result = null;
 
@@ -237,7 +276,7 @@ function remember() {
     req.result = current_result;
     rs.add(req);
     cache($('memoriser'));
-    ajoute($('results'), "<p>Requête mémorisée</p>");
+    ajoute($('results'), "<p class='statut ok'>🧺 Requête mémorisée</p>");
 }
 
 function query() {
@@ -280,7 +319,7 @@ function query_failed(trs) {
         message = "Pas de réponse du serveur : la requête a probablement dépassé la durée maximale "
             + "d'exécution et a été interrompue. Simplifiez-la (conditions de jointure, LIMIT...).";
     }
-    current_result = "<img src='images/block_64.png' width='32' alt='ko' title='ko'/><p>" + message + "</p>";
+    current_result = "<p class='statut ko'>❌ Échec</p><p class='message'>" + message + "</p>";
     maj($('results'), current_result);
 }
 
@@ -313,26 +352,31 @@ function histo_del(i) {
 }
 
 function get_histo() {
+    marque_actif($('onglet-memoire'));
     cache($('posts'));
     maj($('posts'), rs.show());
     apparait($('posts'));
 }
 
+var editeur_courant = null;  // éditeur CodeMirror de la page d'édition
+var derniere_suggestion = null; // requête proposée automatiquement, pas encore modifiée
+
 function new_query() {
+    marque_actif($('onglet-requete'));
     t = '<div class="post">';
     t = t + '<h2 class="title">Édition d\'une requête</h2>';
     t = t + '<div class="story">';
     t = t + '	<form method="POST" id="SaisieRequete" onSubmit="query(); return false;">';
-    t = t + '	<p><label for="base">Base :</label> <select name="base" id="base">';
+    t = t + '	<p><label for="base">Base</label><select name="base" id="base" onchange="change_base()">';
     for(var i = 0; i < noms_bases.length;i++) {
     	t = t + '<option>'+echappe(noms_bases[i])+'</option>';
     }
     t = t + '</select></p>';
-    t = t + '	<p><label for="requete">Entrez votre requête (Ctrl+Entrée pour l\'exécuter) :</label></p>';
+    t = t + '	<p class="libelle"><label for="requete">Requête SQL <span class="astuce">(Ctrl+Entrée pour l\'exécuter)</span></label></p>';
     t = t + '	<textarea name="requete" rows="10" cols="80" id="requete"></textarea>';
-    t = t + '	<p><input type="hidden" name="Soumettre" value="Envoyer"/>';
-    t = t + '	<img src="images/gear_64.png" alt="Soumettre" title="Soumettre" width="32" ';
-    t = t + '		onClick="query(); return false;" style="cursor:pointer" id="send_new"/></p>';
+    t = t + '	<input type="hidden" name="Soumettre" value="Envoyer"/>';
+    t = t + '	<div class="actions"><button type="submit" class="btn" id="send_new">▶️ Exécuter la requête</button>';
+    t = t + '	<button type="button" class="btn secondaire" onclick="db_tables($(\'base\').value)" title="Contenu des tables de la base (nouvel onglet)">📋 Voir les tables</button></div>';
     t = t + '	</form>';
     t = t + '	<div id="results"></div>';
     t = t + '</div>';
@@ -341,11 +385,26 @@ function new_query() {
     cache($('posts'));
     maj($('posts'), t);
 
-    $('requete').value = current_request;
-    choisit($('base'), current_base);
+    if (current_base) choisit($('base'), current_base);
+    if (current_request == null) {
+        derniere_suggestion = suggestion($('base').value);
+        $('requete').value = derniere_suggestion;
+    } else {
+        derniere_suggestion = null;
+        $('requete').value = current_request;
+    }
 
     apparait($('posts'));
-    editeur_sql($('requete'), query);
+    editeur_courant = editeur_sql($('requete'), query);
+}
+
+// Changement de base : la requête proposée suit la base, tant que l'élève ne l'a pas modifiée
+function change_base() {
+    current_base = $('base').value;
+    if (derniere_suggestion == null || $('requete').value != derniere_suggestion) return;
+    derniere_suggestion = suggestion(current_base);
+    if (editeur_courant) editeur_courant.setValue(derniere_suggestion);
+    else $('requete').value = derniere_suggestion;
 }
 
 // Valeur JavaScript sûre à placer dans un attribut HTML (onClick="f(...)")
@@ -357,13 +416,14 @@ function attr_js(v) {
 function description_base(nom) {
     var ref = listeBases[nom]['référence'];
     t = '<a id="matiere"></a><div class="post">';
-    t = t + '<h2 class="title">Description de la base ' + echappe(nom) + ' ';
-    t = t + '<img src="images/Database.png" alt="Liste des tables" title="Liste des tables (nouvel onglet)" width="32" ';
-    t = t + 'onClick="db_tables(' + attr_js(nom) + '); return false;" style="cursor:pointer"/></h2>';
+    t = t + '<h2 class="title">Base ' + echappe(nom) + '</h2>';
     t = t + '<div class="story">';
     t = t + '<p>' + listeBases[nom]['description'] + '</p>';
     if (ref) t = t + '<p>Référence : <a href="' + echappe(ref).replace(/"/g, '&quot;') + '">' + echappe(ref) + '</a></p>';
-    t = t + '</div></div>';
+    t = t + '<div class="actions">';
+    t = t + '<button type="button" class="btn" onclick="current_base = ' + attr_js(nom) + '; current_request = null; new_query()">✏️ Interroger cette base</button>';
+    t = t + '<button type="button" class="btn secondaire" title="Contenu des tables (nouvel onglet)" onclick="db_tables(' + attr_js(nom) + ')">📋 Voir les tables</button>';
+    t = t + '</div></div></div>';
     return t;
 }
 
@@ -381,6 +441,7 @@ function insere_rubrique(parametres, suite) {
 
 // Affiche la description d'une base, ses TP et ses questions à thèmes
 function db(nom) {
+    marque_actif(pastille_base(nom));
     cache($('posts'));
     maj($('posts'), description_base(nom));
     montre($('posts'));
@@ -397,6 +458,7 @@ function db_tables(nom) {
 
 // Page d'accueil d'un TP
 function page_tp(nom, tp) {
+    marque_actif(pastille_base(nom));
     cache($('posts'));
     maj($('posts'), description_base(nom));
     montre($('posts'));
@@ -424,29 +486,26 @@ function ouvre_question(q) {
     t = t + '<h2 class="title">Question ' + q.numero + '</h2>';
     t = t + '<div class="story">';
     if (q.aide) {
-        t = t + '<p><button class="btnPopup" onclick="bascule_aide(); return false;">Aide</button></p>';
+        t = t + '<p><button type="button" class="btn secondaire petit" onclick="bascule_aide()">💡 Aide</button></p>';
         t = t + '<div id="div1">' + q.aide + '</div>';
     }
     if (q.type == 'rq-intention') {
-        t = t + '<p>Requête :</p><pre>' + echappe(q.sql) + '</pre>';
-        t = t + '<p>Veuillez donner l\'intention de la requête ci-dessus :<br/>';
-        t = t + '<textarea rows="3" cols="80" id="requete"></textarea></p>';
+        t = t + '<p class="libelle">Requête :</p><pre>' + echappe(q.sql) + '</pre>';
+        t = t + '<p class="libelle"><label for="requete">Que fait la requête ci-dessus ? Rédigez son intention :</label></p>';
+        t = t + '<textarea rows="3" cols="80" id="requete"></textarea>';
     } else {
         t = t + '<p>' + echappe(q.intention) + '</p>';
-        t = t + '<p>' + (q.type == 'rq-trou' ? 'Veuillez compléter la requête suivante' : 'Veuillez donner la requête');
-        t = t + ' (Ctrl+Entrée pour l\'exécuter) :</p>';
+        t = t + '<p class="libelle"><label for="requete">' + (q.type == 'rq-trou' ? 'Complétez la requête suivante' : 'Écrivez la requête');
+        t = t + ' <span class="astuce">(Ctrl+Entrée pour l\'exécuter)</span></label></p>';
         t = t + '<textarea rows="10" cols="80" id="requete"></textarea>';
     }
-    t = t + '<p>';
+    t = t + '<div class="actions">';
     if (q.type != 'rq-intention') {
-        t = t + '<img src="images/gear_64.png" alt="Exécuter" title="Exécuter la requête" width="32" ';
-        t = t + 'onClick="reponse(); return false;" style="cursor:pointer"/>';
+        t = t + '<button type="button" class="btn" onclick="reponse()">▶️ Exécuter</button>';
     }
-    t = t + '<img src="images/add_64.png" alt="Mémoriser" title="Mémoriser la réponse" width="32" ';
-    t = t + 'onClick="memorise_reponse(true); return false;" style="cursor:pointer"/>';
-    t = t + '<img src="images/left_64.png" alt="Retour" title="Retourner à la liste des questions" width="32" ';
-    t = t + 'onClick="retour_questions(); return false;" style="cursor:pointer"/>';
-    t = t + '</p><div id="results"></div>';
+    t = t + '<button type="button" class="btn secondaire" onclick="memorise_reponse(true)">🧺 Mémoriser la réponse</button>';
+    t = t + '<button type="button" class="btn secondaire" onclick="retour_questions()">⬅️ Retour aux questions</button>';
+    t = t + '</div><div id="results"></div>';
     t = t + '</div></div>';
 
     cache($('posts'));
@@ -480,7 +539,7 @@ function reponse() {
 
 function memorise_reponse(message) {
     reponses[question_courante.numero] = $('requete').value;
-    if (message) ajoute($('results'), '<p>Réponse mémorisée</p>');
+    if (message) ajoute($('results'), '<p class="statut ok">🧺 Réponse mémorisée</p>');
 }
 
 function retour_questions() {
@@ -492,7 +551,8 @@ function retour_questions() {
 
 // Affiche une rubrique du contrôleur, chargée une seule fois puis gardée dans
 // la variable globale `memoire` (messages, mentions...)
-function rubrique(soumettre, memoire, nom_erreur) {
+function rubrique(soumettre, memoire, nom_erreur, onglet) {
+    marque_actif(onglet ? $(onglet) : null);
     if (window[memoire] == null) {
         appel('get', {Soumettre: soumettre},
             function (trs) {
@@ -512,7 +572,7 @@ function rubrique(soumettre, memoire, nom_erreur) {
 }
 
 function news() {
-    rubrique('rien', 'messages', 'messages');
+    rubrique('rien', 'messages', 'messages', 'onglet-accueil');
 }
 
 function mentions() {
@@ -524,5 +584,5 @@ function apropos() {
 }
 
 function aides() {
-    rubrique('aides', 'messages_aides', 'aide');
+    rubrique('aides', 'messages_aides', 'aide', 'onglet-aide');
 }

@@ -40,11 +40,11 @@ if (isset($_SESSION['debug']) && $session_ok) {
 			echo "<p>Session expirée : l'application a sans doute été ouverte ou rechargée dans un autre onglet. Rechargez cette page pour continuer.</p>";
 		} else if (is_string($requete) && is_string($base)){
 			$t=get($requete,$base);  
-			echo (!is_null($t) ? "<img src='images/tick_64.png'  width='32' alt='ok' title='ok'/>"
-			           :"<img src='images/block_64.png' width='32' alt='ko' title='ko'/>");
+			echo (!is_null($t) ? "<p class='statut ok'>✅ Requête réussie</p>"
+			           : "<p class='statut ko'>❌ Échec de la requête</p>");
 			           
 			if ($mode == '1') 
-				echo '<img src="images/add_64.png" id="memoriser" alt="Mémoriser" title="Mémoriser" width="32" onClick="remember(); 							return false;" style="cursor:pointer"/>';
+				echo '<button type="button" class="btn secondaire" id="memoriser" title="Garder cette requête et son résultat dans l\'onglet Mémoire" onclick="remember()">🧺 Mémoriser</button>';
 		} else { 
 		   echo "<p>Pas de requête ou/et de base proposée !</p>";
 		}

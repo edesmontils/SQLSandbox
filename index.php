@@ -173,11 +173,6 @@ $listeNoms = array_keys($listeBase);
 ?>
 
 <!DOCTYPE html>
-<!--
-Design by Free CSS Templates
-http://www.freecsstemplates.org
-Released for free under a Creative Commons Attribution 2.5 License
--->
 <html lang="fr">
 <head>
   <meta charset="utf-8">
@@ -191,6 +186,7 @@ Released for free under a Creative Commons Attribution 2.5 License
   <meta property="og:site_name" content="SQL Sandbox">
   <meta property="fb:admins" content="706563623">
 
+  <link rel="icon" href="images/favicon.svg" type="image/svg+xml">
   <link href="js/codemirror/codemirror.css" rel="stylesheet">
   <link href="default.css" rel="stylesheet">
 
@@ -216,12 +212,42 @@ Released for free under a Creative Commons Attribution 2.5 License
 </head>
 
 <body onload="init()" onunload="end()">
-<div id="page">
+<div class="container">
 
-<header id="header">
-	<h1><?php echo htmlspecialchars($nom_appli);?></h1>
-	<p>Version <?php echo htmlspecialchars($version);?></p>
+<header class="entete">
+	<div class="marque">
+		<img src="images/logo.svg" alt="">
+		<div>
+			<h1><?php echo htmlspecialchars($nom_appli);?></h1>
+			<p class="sous-titre">Bac à sable pour apprendre à interroger des bases de données en SQL</p>
+		</div>
+	</div>
+	<p class="badges">
+		<span>🗄️ SGBD : <strong>SQLite <?php echo htmlspecialchars(SQLite3::version()['versionString']);?></strong></span>
+		<span>📚 Bases : <strong><?php echo count($listeNoms);?></strong></span>
+		<span>🏷️ Version : <strong><?php echo htmlspecialchars($version);?></strong></span>
+	</p>
 </header>
+
+<!-- ============================================ -->
+<!-- ========== Onglets et bases ================ -->
+<!-- ============================================ -->
+<nav class="navigation" aria-label="Navigation principale">
+	<div class="onglets">
+		<button type="button" class="onglet" id="onglet-accueil" onclick="news()"><span class="icone">🏠</span> <span>Accueil</span></button>
+		<button type="button" class="onglet" id="onglet-requete" onclick="new_query()"><span class="icone">✏️</span> <span>Requête</span></button>
+		<button type="button" class="onglet" id="onglet-memoire" onclick="get_histo()"><span class="icone">🧺</span> <span>Mémoire <span class="compteur" id="nb_memo">(0)</span></span></button>
+		<button type="button" class="onglet" id="onglet-aide" onclick="aides()"><span class="icone">❓</span> <span>Aide</span></button>
+	</div>
+	<div class="bases">
+		<span class="bases-titre">Bases :</span>
+		<?php foreach($listeNoms as $nom) {
+			$h = htmlspecialchars($nom, ENT_QUOTES);
+			$j = htmlspecialchars(json_encode($nom), ENT_QUOTES);
+			echo "<button type='button' class='pastille' data-base='$h' onclick='db($j)'>$h</button>\n\t\t";
+		}?>
+	</div>
+</nav>
 
 <!-- ================================== -->
 <!-- ============ Contenu ============= -->
@@ -229,82 +255,20 @@ Released for free under a Creative Commons Attribution 2.5 License
 <main id="contenu">
 	<?php if (count($erreursCopie) > 0) {
 		echo "<div class='post'><h2 class='title'>Problème d'installation</h2><div class='story'>";
-		foreach($erreursCopie as $m) echo "<p>$m</p>";
+		foreach($erreursCopie as $m) echo "<p class='message'>$m</p>";
 		echo "</div></div>";
 	} ?>
 	<div id="posts">
 	</div>
 </main>
 
-<!-- ============================================ -->
-<!-- ==== Menus (à gauche, ou en haut sur mobile) = -->
-<!-- ============================================ -->
-<nav id="menu">
-	<div id="categories" class="boxed">
-		<h2 class="heading">Actions</h2>
-		<div class="content"><ul>
-			<li> <img src='images/home_64.png' alt="Informations diverses" title="Informations diverses" width="32"  onclick='news();return false;'  style='cursor:pointer'>
-				 <img src='images/pencil_64.png' alt="Créer une nouvelle requête" title="Créer une nouvelle requête" width="32"  onclick='new_query();return false;'  style='cursor:pointer'>
-			     <img src='images/buy_64.png' alt="Requêtes mémorisées" title="Requêtes mémorisées" width="32" onclick='get_histo();return false;' style='cursor:pointer'>
-			     <img src='images/help_64.png' alt="Aide sur l'application" title="Aide sur l'application" width="32" onclick="aides();return false;" style='cursor:help'>
-			</li>
-			</ul>
-		</div>
-	</div>
-
-	<div id="bases" class="boxed">
-		<h2 class="heading">Bases disponibles</h2>
-		<div class="content">
-			<ul>
-		<?php foreach($listeNoms as $nom) {
-				$h = htmlspecialchars($nom, ENT_QUOTES);
-				$j = htmlspecialchars(json_encode($nom), ENT_QUOTES);
-				echo "<li> <a href='#' onClick='surligne(this); db($j);return false;' style='cursor:pointer'>$h</a></li>";
-			}?>
-			</ul>
-		</div>
-	</div>
-</nav>
-
-<!-- ============================================ -->
-<!-- ==== Contact et mentions (en bas sur mobile) = -->
-<!-- ============================================ -->
-<aside id="annexes">
-	<div id="blogroll" class="boxed">
-		<h2 class="heading">Contact</h2>
-		<div class="content">
-		<ul>
-		  <li> <?php echo "<a href='mailto:emmanuel.desmontils@univ-nantes.fr?subject=SQLSandbox $version - question '>"; ?>
-		       <img src="images/letter_64.png" alt="Courriel" title="Courriel" width="32"></a>
-		       <a href="http://www.desmontils.net/">
-		       <img src="images/globe_64.png" alt="Page Web" title="Page Web" width="32"></a></li>
-		</ul>
-		</div>
-	</div>
-
-	<div id="pages" class="boxed">
-		<h2 class="heading">Mentions</h2>
-		<div class="content">
-			<ul>
-				<li><img src='images/info_64.png' alt="À propos de SQL" title="À propos de SQL" width="32" onclick="apropos();return false;" style='cursor:pointer'>
-				    <img src='images/shield_64.png' alt="Mentions légales" title="Mentions légales" width="32" onclick="mentions();return false;" style='cursor:pointer'>
-				</li>
-			</ul>
-		</div>
-	</div>
-
-	<footer id="liens" class="boxed">
-		<div class="content">
-			<div id="footer">
-				<p>Copyright &copy; 2010-2026 <a href="http://www.desmontils.net/">E. Desmontils</a>,<br> Université de Nantes.
-				   <br>Logiciel libre sous <a href="https://www.gnu.org/licenses/gpl-3.0.fr.html">licence GPL v3</a>
-				   <br>Designed by <a href="http://www.freecsstemplates.org/"><strong>Free CSS Templates</strong></a>
-				   <br><a href="#" onclick="mentions();return false;" style='cursor:pointer'>Autres mentions légales</a>
-				</p>
-			</div>
-		</div>
-	</footer>
-</aside>
+<footer class="pied">
+	<p>© 2010-2026 <a href="http://www.desmontils.net/">E. Desmontils</a>, Nantes Université
+		<span class="separateur">·</span> Logiciel libre sous <a href="https://www.gnu.org/licenses/gpl-3.0.fr.html">licence GPL v3</a></p>
+	<p><?php echo "<a href='mailto:emmanuel.desmontils@univ-nantes.fr?subject=".rawurlencode("SQLSandbox $version - question")."'>✉️ Contact</a>"; ?>
+		<span class="separateur">·</span> <button type="button" onclick="apropos()">ℹ️ À propos de SQL et SQLite</button>
+		<span class="separateur">·</span> <button type="button" onclick="mentions()">🛡️ Mentions légales</button></p>
+</footer>
 
 </div>
 </body>

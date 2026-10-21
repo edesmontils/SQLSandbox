@@ -367,17 +367,17 @@ function liste_base($base) {
 		echo '	<h2 class="title">'."Table $nom".'</h2>';
 		echo '    <div class="story">';
 		get('select * from "'.str_replace('"','""',$ta).'" order by 1',$base);
-		echo "<p><a href='#matiere'><img src='images/up_64.png' alt='Sommaire' title='Sommaire' width='32'/></a></p>";
+		echo "<p class='retour-sommaire'><a href='#matiere'>⬆️ Retour au sommaire</a></p>";
 		echo '</div></div>';
 	}
 }
 
 // Sommaire des tables d'une base
 function sommaire($tables) {
-	echo "<a id='matiere'></a><div class='post'><h2 class='title'>Sommaire</h2><div class='story'><ul>";
+	echo "<a id='matiere'></a><div class='post'><h2 class='title'>Sommaire</h2><div class='story'><ul class='sommaire'>";
 	foreach($tables as $ta) {
 		$nom = htmlspecialchars($ta, ENT_QUOTES);
-		echo "<li><a href='#$nom'><img src='images/down_64.png' alt='' width='16'/>&nbsp;&nbsp;$nom</a></li>";
+		echo "<li><a class='pastille' href='#$nom'>$nom</a></li>";
 	}
 	echo "</ul></div></div>";
 }
@@ -503,7 +503,7 @@ function liste_TP($base) {
 		foreach($conf->{'liste-TP'}->TP as $tp) {
 			$nb++;
 			echo "<li><a href='#' onClick='page_tp(".args_js($base, (string)$tp['nom']).");return false;'>"
-			    ."<img src='images/down_64.png' height='16' width='16' alt=''/> ".html($tp['nom'])."</a></li>";
+			    .html($tp['nom'])."</a></li>";
 		}
 	}
 	echo "</ul>";
@@ -525,22 +525,21 @@ function page_tp($base, $nom_tp) {
 
 	echo "<div class='post'><h2 class='title'>".html($tp['nom'])."</h2>";
 	echo contenu_xml($tp->{'objectif-pédagogique'});
-	echo "<p><a class='btnPopup' href='tp.php?base=".html(urlencode($base))."&amp;tp=".html(urlencode($tp['nom']))."' target='_blank'>Commencer</a></p>";
+	echo "<p class='actions'><a class='btn' href='tp.php?base=".html(urlencode($base))."&amp;tp=".html(urlencode($tp['nom']))."' target='_blank'>🚀 Commencer le TP</a></p>";
 	echo "</div>";
 	echo "<div class='post'><h2 class='title'>Nombre de questions : ".count($questions)."</h2></div>";
 	echo "<div class='post'><h2 class='title'>Mots clés</h2><h3 class='indicateur'>";
 	foreach(array_keys($themes) as $t) echo html(nom_theme($t))."<br/>";
 	echo "</h3></div>";
-	echo "<div class='post'><h2 class='title'>Icônes utilisés : <a href='aides.php' target='_blank'>"
-	    ."<img src='images/help_64.png' width='20' alt='Aide'/></a></h2></div>";
 	echo "<div class='post'><h2 class='title'>Déroulement</h2><ul>"
-	    ."<li>Pour débuter le TP, appuyez sur le bouton « Commencer » : la liste des questions s'ouvre dans un nouvel onglet.</li>"
-	    ."<li>Pour commencer une question, cliquez sur le crayon.</li>"
-	    ."<li>Lors d'une question, plusieurs choix se proposent à vous :<ul>"
-	    ."<li>retourner au menu des questions avec la flèche, en mémorisant votre réponse ;</li>"
-	    ."<li>mémoriser votre réponse grâce au panier ;</li>"
-	    ."<li>exécuter votre requête grâce à la roue crantée (sauf pour les questions où il faut trouver l'intention).</li>"
-	    ."</ul></li></ul></div>";
+	    ."<li>Pour débuter le TP, appuyez sur « 🚀 Commencer le TP » : la liste des questions s'ouvre dans un nouvel onglet.</li>"
+	    ."<li>Pour traiter une question, cliquez sur « ✏️ Répondre ».</li>"
+	    ."<li>Dans une question :<ul>"
+	    ."<li>« ▶️ Exécuter » (ou Ctrl+Entrée) lance votre requête (sauf pour les questions où il faut trouver l'intention) ;</li>"
+	    ."<li>« 🧺 Mémoriser la réponse » garde votre réponse ;</li>"
+	    ."<li>« ⬅️ Retour aux questions » revient à la liste, en mémorisant votre réponse.</li>"
+	    ."</ul></li></ul>"
+	    ."<p><a href='aides.php' target='_blank'>❓ Aide de l'application</a></p></div>";
 }
 
 // Thèmes disponibles pour le travail thématique d'une base, avec leur difficulté
@@ -549,7 +548,7 @@ function themes_dispo($base) {
 	echo "<div class='post'><h2 class='title'>Questions à thèmes</h2><ul>";
 	foreach($themes as $t => $poids) {
 		echo "<li><a href='questionsThem.php?base=".html(urlencode($base))."&amp;theme=".html(urlencode($t))."' target='_blank'>"
-		    ."<img src='images/down_64.png' height='16' width='16' alt=''/> ".html(nom_theme($t))."</a></li>";
+		    .html(nom_theme($t))."</a></li>";
 	}
 	echo "</ul>";
 	if (count($themes) == 0) {
@@ -574,9 +573,9 @@ function bouton_question($q, $base, $numero) {
 		'sql' => texte_sql($q->getName() == 'rq-trou' && count($sql) > 1 ? $sql[1] : $sql[0]),
 		'aide' => contenu_xml($q->aide)
 	);
-	echo "<p><a>Question $numero</a> ";
-	echo "<img src='images/pencil_64.png' alt='Répondre' title='Répondre à la question' width='32' "
-	    ."onClick='ouvre_question(".args_js($question)."); return false;' style='cursor:pointer'/></p>";
+	echo "<p class='question'><span>Question $numero</span> ";
+	echo "<button type='button' class='btn petit' title='Répondre à la question' "
+	    ."onclick='ouvre_question(".args_js($question).")'>✏️ Répondre</button></p>";
 }
 
 // Liste des questions d'un TP (page tp.php)
@@ -634,6 +633,7 @@ function debut_page() {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SQL Sandbox</title>
+  <link rel="icon" href="images/favicon.svg" type="image/svg+xml">
   <link href="js/codemirror/codemirror.css" rel="stylesheet">
   <link href="default.css" rel="stylesheet">
   <script>
@@ -644,14 +644,24 @@ function debut_page() {
   <script src="./js/codemirror/sql.js"></script>
   <script src="./js/bd_base.js"></script>
 </head>
-<body class="onglet">
+<body>
+<div class="container">
+<header class="entete compacte">
+  <div class="marque">
+    <img src="images/logo.svg" alt="">
+    <h1>SQL Sandbox</h1>
+  </div>
+</header>
 <main id="contenu">
   <div id="posts">
 <?php
 }
 
 function fin_page() {
-	echo "  </div>\n</main>\n</body>\n</html>\n";
+	echo "  </div>\n</main>\n"
+	    ."<footer class='pied'><p>© 2010-2026 E. Desmontils, Nantes Université"
+	    ."<span class='separateur'>·</span> Logiciel libre sous licence GPL v3</p></footer>\n"
+	    ."</div>\n</body>\n</html>\n";
 }
 
 // Vérifie que la session a été initialisée par index.php (copies des bases)

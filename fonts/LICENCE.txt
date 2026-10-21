@@ -1,0 +1,11 @@
+Atkinson Hyperlegible Next, version 2.001
+© 2020, 2024 Braille Institute of America, Inc., a 501(c)(3) Charitable Organization.
+https://www.BrailleInstitute.org/
+
+Licence inscrite dans les fichiers de la police :
+"Braille Institute of America, Inc. provides Atkinson Hyperlegible for use,
+without derivatives or alteration, to the public free of charge for all
+non-commercial and commercial work. No attribution required."
+
+Les fichiers .woff2 de ce dossier sont donc distribués tels quels, sans
+modification. Ils proviennent de l'application QueryCraft du même auteur.

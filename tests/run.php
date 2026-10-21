@@ -196,7 +196,7 @@ verifie('texte SQL reconstruit', texte_sql($q->SQL) === "SELECT nom_f\nFROM Fleu
 ob_start(); liste_question('tp-em', '<script>x</script>'); $o = ob_get_clean();
 verifie('nom de TP non reconnu non affiché', strpos($o, '<script>x') === false && strpos($o, 'TP inconnu') !== false, $o);
 ob_start(); bouton_question(cherche_question($conf, 'tr-em-01'), 'tp-em', 1); $o = ob_get_clean();
-verifie('données de question encodées dans l\'attribut', preg_match("/onClick='ouvre_question\\(([^']*)\\);/", $o, $m)
+verifie('données de question encodées dans l\'attribut', preg_match("/onclick='ouvre_question\\(([^']*)\\)/i", $o, $m)
         && json_decode(html_entity_decode($m[1], ENT_QUOTES))->sql === "SELECT \nFROM Fleuve\nWHERE longueur>1000", $o);
 
 // Chaque requête de référence des fichiers de configuration doit s'exécuter sur sa base
