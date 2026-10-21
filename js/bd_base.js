@@ -123,15 +123,28 @@ function query() {
             Soumettre: 'Envoyer', csrf: csrf_token, requete: $('requete').getValue(), base: $('base').getValue(), mode: 1
         },
         onSuccess: function (trs) {
+            if (trs.responseText == '') { // processus PHP arrêté (requête trop longue)
+                query_failed();
+                return;
+            }
             current_result = trs.responseText;
             $('results').hide();
             $('results').update(current_result);
             $('results').appear();
         },
-        onFailure: function () {
-            alert('new_query: Impossible d\'obtenir la rubrique !')
+        onFailure: function (trs) {
+            if (trs.status == 403) $('results').update(trs.responseText);
+            else query_failed();
         }
     });
+}
+
+function query_failed() {
+    result_type = 'ko';
+    current_result = "<img src='images/block_64.png' width='32' alt='ko' title='ko'/>"
+        + "<p>Pas de réponse du serveur : la requête a probablement dépassé la durée maximale d'exécution "
+        + "et a été interrompue. Simplifiez-la (conditions de jointure, LIMIT...).</p>";
+    $('results').update(current_result);
 }
 
 function histo(i) { // Risque de problème de mémoire s'il y a beaucoup de requête et/ou très grosses. Peut-être refaire un accès à la base...

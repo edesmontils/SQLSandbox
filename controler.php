@@ -8,6 +8,8 @@ setlocale(LC_TIME,'fr_FR');
 
 if (isset($_SESSION['debug']) && $session_ok) {
 	$debug = $_SESSION['debug'];
+	// Les erreurs PHP brutes (chemins, messages internes) ne sont montrées qu'en mode debug
+	if (!$debug) ini_set('display_errors', '0');
 	require_once('./lib/LibXML.php');
 	include "./fonctions.php";
 
@@ -35,7 +37,7 @@ if (isset($_SESSION['debug']) && $session_ok) {
 			echo "<p>Bases purgées...</p>";
 		} else {
 			http_response_code(403);
-			echo "<p>Requête refusée.</p>";
+			echo "<p>Session expirée : l'application a sans doute été ouverte ou rechargée dans un autre onglet. Rechargez cette page pour continuer.</p>";
 		}
 	} 
 	//======================================================
@@ -43,7 +45,7 @@ if (isset($_SESSION['debug']) && $session_ok) {
 		$mode = isset($_REQUEST['mode']) ? (string)$_REQUEST['mode'] : '1';
 		if (!jeton_valide()) {
 			http_response_code(403);
-			echo "<p>Requête refusée.</p>";
+			echo "<p>Session expirée : l'application a sans doute été ouverte ou rechargée dans un autre onglet. Rechargez cette page pour continuer.</p>";
 		} else if (is_string($requete) && is_string($base)){
 			$t=get($requete,$base);  
 			echo (!is_null($t) ? "<img src='images/tick_64.png'  width='32' alt='ok' title='ok'/>"
