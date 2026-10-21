@@ -40,7 +40,7 @@ Le serveur intégré de PHP (`php -S`) ne doit pas servir l'application en publi
 php tests/run.php
 ```
 
-Les tests sont lancés automatiquement par GitHub Actions (`.github/workflows/tests.yml`) et GitLab CI (`.gitlab-ci.yml`).
+Les tests sont lancés automatiquement par GitHub Actions (`.github/workflows/tests.yml`) et GitLab CI (`.gitlab-ci.yml`). GitHub Actions les lance aussi avec SQLite 3.27.2, la version de l'hébergement OVH, pour vérifier les protections propres aux anciennes versions.
 
 ## Licence
 

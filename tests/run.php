@@ -37,6 +37,7 @@ $copie = "$tmp/copie_test";
 copy('./bdd/cours/cours', $copie);
 $_SESSION['copie_test'] = $copie;
 
+echo "SQLite ".SQLite3::version()['versionString'].", PHP ".PHP_VERSION."\n";
 echo "Exécution des requêtes\n";
 list($r, $o) = execute("select nom from etudiants where nom = 'Dupont'");
 verifie('apostrophes acceptées', $r === true && strpos($o, '<td>Dupont</td>') !== false, $o);
@@ -72,7 +73,8 @@ verifie('PRAGMA table_info autorisé', $r === true && strpos($o, 'noetu') !== fa
 list($r, $o) = execute("select name from pragma_table_info('etudiants')");
 verifie('pragma_table_info() autorisé', $r === true && strpos($o, 'noetu') !== false, $o);
 execute("create table big(b)");
-list($r, $o) = execute("insert into big select printf('%.*c', 1000000, 'x') from (with recursive r(n) as "
+// hex(zeroblob(n)) : chaîne de 2n caractères, disponible quelle que soit la version de SQLite
+list($r, $o) = execute("insert into big select hex(zeroblob(500000)) from (with recursive r(n) as "
                      ."(select 1 union all select n+1 from r limit 100) select n from r)");
 clearstatcache();
 verifie('taille de la base limitée', $r === null && strpos($o, 'taille maximale') !== false
@@ -82,9 +84,15 @@ foreach (array("create temp table tt(a)", "create temp view tv as select 1",
 	list($r, $o) = execute($q);
 	verifie("refusé : $q", $r === null && strpos($o, 'not authorized') !== false, $o);
 }
-foreach (array("select length(printf('%.*c', 500000000, 'x'))", "select length(randomblob(400000000))") as $q) {
-	list($r, $o) = execute($q);
-	verifie("mémoire de SQLite limitée : $q", $r === null && strpos($o, 'out of memory') !== false, $o);
+// PRAGMA hard_heap_limit n'existe qu'à partir de SQLite 3.31 : avant, il est ignoré
+// (pas de requête de 400 Mo dans ce cas)
+if (SQLite3::version()['versionNumber'] >= 3031000) {
+	foreach (array("select length(hex(zeroblob(200000000)))", "select length(randomblob(400000000))") as $q) {
+		list($r, $o) = execute($q);
+		verifie("mémoire de SQLite limitée : $q", $r === null && strpos($o, 'out of memory') !== false, $o);
+	}
+} else {
+	echo "  --   mémoire de SQLite non limitée par cette version (".SQLite3::version()['versionString']."), test ignoré\n";
 }
 list($r, $o) = execute("select hex(zeroblob(4)), length(randomblob(16))");
 verifie('randomblob() et zeroblob() utilisables', $r === true && strpos($o, '<td>00000000</td><td>16</td>') !== false, $o);
@@ -103,9 +111,15 @@ foreach (array("select nom, row_number() over (order by nom) from etudiants" => 
 	verifie(($attendu ? 'fenêtrage détecté : ' : 'pas de fenêtrage : ').$q, utilise_fenetrage($q) === $attendu);
 }
 verifie('fenêtrage et printf() refusés avant SQLite 3.32.3 (OVH : 3.27.2)', !sqlite_recent(3027002) && sqlite_recent(3045001));
-if (sqlite_recent()) {
-	list($r, $o) = execute("select nom, row_number() over (order by nom) from etudiants");
-	verifie('fenêtrage utilisable avec ce SQLite ('.SQLite3::version()['versionString'].')', $r === true, $o);
+$version = SQLite3::version()['versionString'];
+list($r, $o) = execute("select nom, row_number() over (order by nom) from etudiants");
+if (sqlite_recent()) verifie("fenêtrage utilisable avec SQLite $version", $r === true, $o);
+else verifie("fenêtrage refusé avec SQLite $version", $r === null && strpos($o, 'fenêtrage') !== false, $o);
+foreach (array("select printf('%d', 1)", "select format('%d', 1)") as $q) {
+	list($r, $o) = execute($q);
+	// format() n'existe qu'à partir de SQLite 3.38
+	if (sqlite_recent()) verifie("utilisable avec SQLite $version : $q", $r === true || strpos($o, 'no such function') !== false, $o);
+	else verifie("refusé avec SQLite $version : $q", $r === null && preg_match('/not authorized|no such function/', $o), $o);
 }
 foreach (array("create virtual table v3 using fts3(x)", "create virtual table v4 using fts4(x)") as $q) {
 	list($r, $o) = execute($q);
