@@ -247,12 +247,12 @@ function http($url, $post = null) {
 	$derniers_entetes = $http_response_header ?? array();
 	foreach ($derniers_entetes as $h) {
 		if (preg_match('#^HTTP/\S+ (\d+)#', $h, $m)) $code = (int)$m[1];
-		if (preg_match('#^Set-Cookie: (PHPSESSID=[^;]+)#i', $h, $m)) $cookie = $m[1];
+		if (preg_match('#^Set-Cookie: ('.INSTANCE.'=[^;]+)#i', $h, $m)) $cookie = $m[1];
 	}
 	return array($code, (string)$corps);
 }
 // Serveur lancé avec -t $racine : son dossier de travail est à côté de la racine web
-$travail = dirname($racine).'/sqlsandbox-tmp';
+$travail = dirname($racine).'/'.INSTANCE.'-tmp';
 function copies() { global $travail; return count(glob("$travail/copie_*")); }
 function tailles() { global $travail; return array_sum(array_map('filesize', glob("$travail/copie_*"))); }
 
@@ -265,7 +265,7 @@ verifie('en-têtes de sécurité', stripos($entetes, 'X-SQLSandbox: 1') !== fals
                                 && stripos($entetes, 'X-Content-Type-Options: nosniff') !== false, $entetes);
 verifie('index.php répond', $code == 200 && strpos($page, 'csrf_token') !== false);
 // Serveur lancé avec -t $racine : les sessions vont à côté de la racine web, hors du site
-$session = dirname($racine).'/sessions-sqlsandbox/sess_'.substr($cookie, strlen('PHPSESSID='));
+$session = dirname($racine).'/sessions-'.INSTANCE.'/sess_'.substr($cookie, strlen(INSTANCE.'='));
 verifie('session rangée hors du site', is_file($session) && strpos(realpath($session), $racine.'/') !== 0, $session);
 verifie('chemins serveur non exposés', strpos($page, '"fichier"') === false && strpos($page, '"config"') === false);
 verifie('visite : fichiers réservés hors du site, mais vides', copies() > $avant && tailles() == $taille_avant, tailles());

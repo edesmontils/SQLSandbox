@@ -30,7 +30,11 @@ location ~ ^/SQLSandbox/(tmp|bdd|lib|tests)/ {
 
 (adapter le préfixe `/SQLSandbox/` au chemin d'installation). L'idéal reste de placer `tmp/` hors de la racine web.
 
-Les sessions PHP sont rangées dans un dossier `sessions-sqlsandbox` créé à côté de la racine web (par exemple `~/sessions-sqlsandbox` chez OVH, hors de `www/`), car le nom d'un fichier de session contient l'identifiant de session. Si ce dossier ne peut pas être créé, elles vont dans `tmp/sessions/`, protégé par `tmp/.htaccess`.
+Les sessions PHP sont rangées dans un dossier `sessions-sqlsandbox6` créé à côté de la racine web (par exemple `~/sessions-sqlsandbox6` chez OVH, hors de `www/`), car le nom d'un fichier de session contient l'identifiant de session. Si ce dossier ne peut pas être créé, elles vont dans `tmp/sessions/`, protégé par `tmp/.htaccess`. Les copies des bases et les verrous vont de même dans `sqlsandbox6-tmp`, à défaut dans `tmp/`.
+
+## Plusieurs installations sur un même hébergement
+
+Le nom du cookie de session et des dossiers de travail vient de la constante `INSTANCE` de `dossiers.php` (`sqlsandbox6` pour la version 6). La version 5.0 utilise le cookie `PHPSESSID` et les dossiers `sessions-sqlsandbox` et `sqlsandbox-tmp` : les deux versions peuvent donc fonctionner côte à côte (par exemple dans `/SQLSandbox/` et `/SQLSandbox6/`) sans que l'une réinitialise les bases de l'autre. Pour une troisième installation, choisir un autre nom d'`INSTANCE`.
 
 Le serveur intégré de PHP (`php -S`) ne doit pas servir l'application en public : une requête SQL trop longue arrête tout le serveur.
 

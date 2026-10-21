@@ -141,7 +141,7 @@ if ($debug) echo "<p>Création des bases temporaires pour cette session</p>";
 $dossierTmp = DOSSIER_TMP;
 $erreursCopie = array();
 if (is_null($dossierTmp)) {
-	$erreursCopie[] = "Aucun dossier de travail accessible en écriture (sqlsandbox-tmp à côté du site, ou tmp) : aucune base n'est disponible.";
+	$erreursCopie[] = "Aucun dossier de travail accessible en écriture (".INSTANCE."-tmp à côté du site, ou tmp) : aucune base n'est disponible.";
 	$listeBase = array();
 	$listeNoms = array();
 }
