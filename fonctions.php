@@ -596,7 +596,7 @@ function liste_question($base, $nom_tp) {
 			var temps_restant = 60 * 60;
 			function compte_a_rebours() {
 				var s = temps_restant % 60;
-				$('countdown').update(Math.floor(temps_restant / 60) + ' min ' + (s < 10 ? '0' : '') + s + ' s');
+				$('countdown').textContent = (Math.floor(temps_restant / 60) + ' min ' + (s < 10 ? '0' : '') + s + ' s');
 				if (temps_restant > 0) temps_restant--;
 			}
 			compte_a_rebours();
@@ -634,8 +634,6 @@ function debut_page() {
   <meta http-equiv="content-type" content="text/html; charset=utf-8" />
   <title>SQL Sandbox</title>
   <link href="default.css" rel="stylesheet" type="text/css" />
-  <script src="./js/prototype.js" type="text/javascript"></script>
-  <script src="./js/scriptaculous/scriptaculous.js" type="text/javascript"></script>
   <script type="text/javascript">
     csrf_token = <?php echo json_encode(isset($_SESSION['csrf']) ? $_SESSION['csrf'] : ''); ?>;
   </script>

@@ -67,20 +67,13 @@
 			PixelMixer (<a href="http://pixel-mixer.com/">http://pixel-mixer.com/</a>) sous licence
 				CC-by-sa.<br/><!--img src="http://www.iconspedia.com/common/images/logo.jpg"
 				width="100" alt="CC-by-sa"/--></p>
-		<p>Effets et développement JavaScript grâce aux frameworks <a
-				href="http://www.prototypejs.org">prototypejs.org<!--img
-					src="http://www.prototypejs.org/images/logo-home.gif" alt="prototypejs.org"
-				/--></a> et <a href="http://www.script.aculo.us">script.aculo.us<!--img
-					src="http://www.script.aculo.us/scriptaculous_logo.png" width="300"
-					alt="script.aculo.us"/--></a>.</p>
 		<!--p>Projet soutenu par le Conseil Régional Des Pays de La Loire dans le cadre des projets
 			ENRC 2008-2009.<br/><img src="./images/RVB-PDL_Institutionnel.jpg" width="25%"
 				alt="Région Pays de la Loire"/></p-->
 		<p>Le code de SQLSandbox est un logiciel libre, distribué sous la licence <a rel="license"
 				href="https://www.gnu.org/licenses/gpl-3.0.fr.html">GNU GPL version 3</a>. Il est
 			disponible sur <a href="https://github.com/edesmontils/SQLSandbox"
-				>https://github.com/edesmontils/SQLSandbox</a>. Les bibliothèques Prototype et
-			script.aculo.us sont sous licence MIT ; le design et les icônes restent sous les
+				>https://github.com/edesmontils/SQLSandbox</a>. Le design et les icônes restent sous les
 			licences indiquées ci-dessus.</p>
 	</mentions>
 

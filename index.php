@@ -194,10 +194,7 @@ Released for free under a Creative Commons Attribution 2.5 License
   
   <link href="default.css" rel="stylesheet" type="text/css" />
   
-  <!-- Attention, ordre important ! -->
-  <script src="./js/prototype.js" type="text/javascript"></script>
-  <script src="./js/scriptaculous/scriptaculous.js" type="text/javascript"></script>
-  <script type="text/javascript">  
+  <script type="text/javascript">
     listeBases = <?php
     // On n'envoie au navigateur ni les chemins des fichiers ni les copies de session
     $pourClient = array();
@@ -260,7 +257,7 @@ Released for free under a Creative Commons Attribution 2.5 License
 		<?php foreach($listeNoms as $nom) {
 				$h = htmlspecialchars($nom, ENT_QUOTES);
 				$j = htmlspecialchars(json_encode($nom), ENT_QUOTES);
-				echo "<li> <a href='#' onClick='new Effect.Highlight(this); db($j);return false;' style='cursor:pointer'>$h</a></li>";
+				echo "<li> <a href='#' onClick='surligne(this); db($j);return false;' style='cursor:pointer'>$h</a></li>";
 			}?>
 			</ul>
 		</div>

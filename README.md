@@ -51,7 +51,6 @@ Les tests sont lancés automatiquement par GitHub Actions (`.github/workflows/te
 Le code de SQLSandbox est un logiciel libre, distribué sous la licence GNU GPL version 3 (fichier `LICENSE`).
 
 Éléments tiers, sous leur propre licence :
-- [Prototype](http://prototypejs.org/) et [script.aculo.us](http://script.aculo.us/) (`js/`) : licence MIT ;
 - design adapté du modèle « dusplic » de [Free CSS Templates](http://www.freecsstemplates.org/) (`default.css`, `images/img*.jpg`) : Creative Commons Attribution 2.5 ;
 - icônes du jeu « Basic set » de [PixelMixer](http://pixel-mixer.com/) (`images/*_64.png`) : Creative Commons BY-SA ;
 - base MONDIAL (`bdd/mondial/`) : voir les conditions de sa [page de référence](http://www.dbis.informatik.uni-goettingen.de/Mondial/).
