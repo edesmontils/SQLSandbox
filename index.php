@@ -294,8 +294,7 @@ Released for free under a Creative Commons Attribution 2.5 License
 		<!--h2 class="heading">Liens</h2-->
 		<div class="content">
 			<div id="footer">
-				<p>Copyright &copy; 2010-2026 <a href="http://www.desmontils.net/">E. Desmontils</a>
-				   et contributeurs,<br/> Université de Nantes.
+				<p>Copyright &copy; 2010-2026 <a href="http://www.desmontils.net/">E. Desmontils</a>,<br/> Université de Nantes.
 				   <br/>Logiciel libre sous <a href="https://www.gnu.org/licenses/gpl-3.0.fr.html">licence GPL v3</a>
 				   <br/>Designed by <a href="http://www.freecsstemplates.org/"><strong>Free CSS Templates</strong></a> 
 				   <br/><a href="http://validator.w3.org/check/referer" title="This page validates as XHTML 1.0 Transitional">Valid <abbr title="eXtensible HyperText Markup Language">XHTML</abbr></a>
