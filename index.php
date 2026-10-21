@@ -1,9 +1,17 @@
 <?php 
+ini_set('session.cookie_httponly','1');
+ini_set('session.cookie_samesite','Lax');
+ini_set('session.use_strict_mode','1');
 $session_ok = session_start();
 setlocale(LC_TIME,'fr_FR');
  //phpinfo();
 $debug=false;
 $ok = true;
+$nom_appli = 'SQL Sandbox';
+$version = '';
+$seuil = 10800;
+$listeBase = array();
+$listeNoms = array();
 
 //Récupération des paramètres
 require_once('./lib/LibXML.php');
@@ -14,6 +22,8 @@ if (isset($_SESSION['debug'])) {
 	purge_db();	
 	session_unset();
 }
+session_regenerate_id(true);
+$_SESSION['csrf'] = bin2hex(random_bytes(16));
 
 try { 
 	$config = new SimpleXMLElement('./config.xml',
@@ -37,7 +47,7 @@ try {
 	$listeBase = array();
 
 	//Définitions dans le fichier de config principal
-	foreach($config->listeBases->base_de_donnee as $base) { 
+	if (isset($config->listeBases)) foreach($config->listeBases->base_de_donnee as $base) { 
 		$listeBase[(string)$base['nom']] = array(
 			'config' => './config.xml',
 			'fichier' => (string)$base->fichier['nom'],
@@ -50,7 +60,7 @@ try {
 	}
 
 	// Définitions dans un fichier de config spécialisé/dédié
-	foreach($config->listeBases->configBD as $configBD) {
+	if (isset($config->listeBases)) foreach($config->listeBases->configBD as $configBD) {
 		$BD = new SimpleXMLElement($configBD['localisation'].'/'.$configBD['fichier'],
                                    LIBXML_DTDATTR|LIBXML_DTDLOAD|LIBXML_DTDVALID
                                    |LIBXML_NOBLANKS|LIBXML_NOCDATA,
@@ -99,7 +109,7 @@ try {
 	ksort($listeBase,SORT_NATURAL | SORT_FLAG_CASE);
 	$listeNoms = array_keys($listeBase);
 } catch(Exception $e) {
-  echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()
+  echo "<p>erreur<br/>Pb (Exception) ! ".htmlspecialchars($e->getMessage())."<br/>".$libxml->afficheErreurs()
        ."<br/></p>";
 }
 
@@ -169,18 +179,29 @@ Released for free under a Creative Commons Attribution 2.5 License
   <script src="./js/prototype.js" type="text/javascript"></script>
   <script src="./js/scriptaculous/scriptaculous.js" type="text/javascript"></script>
   <script type="text/javascript">  
-    listeBases = <?php echo json_encode($listeBase); ?>;
-    noms_bases = <?php echo json_encode($listeNoms); ?>
+    listeBases = <?php
+    // On n'envoie au navigateur ni les chemins des fichiers ni les copies de session
+    $pourClient = array();
+    foreach($listeBase as $n => $b) {
+    	$pourClient[$n] = array(
+    		'référence' => $b['référence'],
+    		'description' => $b['description'],
+    		'tables' => $b['tables']
+    	);
+    }
+    echo json_encode($pourClient, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE); ?>;
+    noms_bases = <?php echo json_encode($listeNoms, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE); ?>;
+    csrf_token = <?php echo json_encode($_SESSION['csrf']); ?>;
   </script>
   <script src="./js/bd_base.js" type="text/javascript"></script>
  
 </head>
 
-<body onload="init()" onunload="end()" onreload="end()">
+<body onload="init()" onunload="end()">
 
 <div id="header">
-	<h1><?php echo $nom_appli;?></h1>
-	<p>Version <?php echo $version;?></p>
+	<h1><?php echo htmlspecialchars($nom_appli);?></h1>
+	<p>Version <?php echo htmlspecialchars($version);?></p>
 </div>
 
 <div id="content">
@@ -207,11 +228,15 @@ Released for free under a Creative Commons Attribution 2.5 License
 		</div>
 	</div>
 	
-	<div id="categories" class="boxed">
+	<div id="bases" class="boxed">
 		<h2 class="heading">Description des bases</h2>
 		<div class="content">
 			<ul>
-		<?php foreach($listeNoms as $nom) echo "<li> <a href='#' onClick='new Effect.Highlight(this); db(\"$nom\");return false;' style='cursor:pointer'><img src='images/Database.png' alt='Base $nom' title='Base $nom' width='32'/> $nom</a></li>";?>
+		<?php foreach($listeNoms as $nom) {
+				$h = htmlspecialchars($nom, ENT_QUOTES);
+				$j = htmlspecialchars(json_encode($nom), ENT_QUOTES);
+				echo "<li> <a href='#' onClick='new Effect.Highlight(this); db($j);return false;' style='cursor:pointer'><img src='images/Database.png' alt='Base $h' title='Base $h' width='32'/> $h</a></li>";
+			}?>
 			</ul>
 		</div>
 	</div>
@@ -240,7 +265,7 @@ Released for free under a Creative Commons Attribution 2.5 License
 		</div>
 	</div>
 	
-	<div id="pages" class="boxed">
+	<div id="liens" class="boxed">
 		<!--h2 class="heading">Liens</h2-->
 		<div class="content">
 			<div id="footer">

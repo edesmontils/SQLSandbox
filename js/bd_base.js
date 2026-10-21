@@ -23,19 +23,17 @@ var RequestSet = Class.create({
         this.nb = this.nb + 1;
     },
     remove: function (i) {
-        for (var j = i; j < this.nb - 1; j++)
-        this.set[i] = this.set[i + 1];
-        this.set[ this.nb - 1] = null;
-        this.nb = this.nb - 1;
+        this.set.splice(i, 1);
+        this.nb = this.set.length;
     },
     show: function () {
         t = '<div class="post"><h2 class="title">Historique</h2>' + '<div class="story"><table cellspacing="5" border="1" cellpadding="2">' + '<thead><th>n°</th><th>Base</th><th>Réussite</th><th>Requête</th><th>Actions</th><th></th></thead>';
         
         for (var i = 0; i < this.nb; i++) {
             r = this.set[i];
-            t = t + '<tr><td> ' + i + ' </td><td>' + r.base + '</td><td>';
+            t = t + '<tr><td> ' + i + ' </td><td>' + r.base.escapeHTML() + '</td><td>';
             if (r.error == 'ok') t = t + "<img src='images/tick_64.png' width='32' alt='ok' title='ok' />"; else t = t + "<img src='images/block_64.png' width='32' alt='ko' title='ko'/>";
-            t = t + "</td><td><pre>" + r.request + "</pre></td><td>";
+            t = t + "</td><td><pre>" + r.request.escapeHTML() + "</pre></td><td>";
             t = t + "<img src='images/gear_64.png' alt='Envoyer la requête' title='Envoyer la requête' width='32' onClick='histo(" + i + "); return false;'  style='cursor:pointer'/>";
             t = t + "<img src='images/pencil_64.png' alt='Éditer la requête' title='Éditer la requête' width='32' onClick='histo_mod(" + i + "); return false;'  style='cursor:pointer'/>";
             t = t + "&nbsp;&nbsp;&nbsp;<img src='images/delete_64.png' alt='Supprimer la requête' title='Supprimer la requête' width='32' onClick='histo_del(" + i + "); return false;'  style='cursor:pointer'/>";
@@ -55,6 +53,7 @@ var RequestSet = Class.create({
 //=================================================================
 
 window.onbeforeunload = function (evt) {
+    if (typeof rs == 'undefined' || rs.nb == 0) return;
     var message = 'Vous allez perdre les requêtes mémorisées !';
     if (typeof evt == 'undefined') {
         evt = window.event;
@@ -98,20 +97,13 @@ function attention() {
 }
 
 function end() {
-    new Ajax.Request('controler.php', {
-        method: 'post',
-        parameters: {
-            Soumettre: 'end'
-        },
-        onSuccess: function (trs) {
-            $('posts').hide();
-            $('posts').update(trs.responseText);
-            $('posts').appear();
-        },
-        onFailure: function () {
-            alert('end: Impossible !')
-        }
-    });
+    // sendBeacon survit à la fermeture de la page, contrairement à un appel AJAX
+    var data = 'Soumettre=end&csrf=' + encodeURIComponent(csrf_token);
+    if (navigator.sendBeacon) {
+        navigator.sendBeacon('controler.php', new Blob([data], {type: 'application/x-www-form-urlencoded'}));
+    } else {
+        new Ajax.Request('controler.php', {method: 'post', asynchronous: false, parameters: data});
+    }
 }
 
 function remember() {
@@ -128,7 +120,7 @@ function query() {
     new Ajax.Request('controler.php', {
         method: 'post',
         parameters: {
-            Soumettre: 'Envoyer', requete: $('requete').getValue(), base: $('base').getValue(), mode: 1
+            Soumettre: 'Envoyer', csrf: csrf_token, requete: $('requete').getValue(), base: $('base').getValue(), mode: 1
         },
         onSuccess: function (trs) {
             current_result = trs.responseText;
@@ -183,7 +175,7 @@ function new_query() {
     t = t + '	<form method="POST" id="SaisieRequete" onSubmit="query(); return false;">';
     t = t + '	<p>Base : <select name="base" id="base">';
     for(var i = 0; i < noms_bases.length;i++) {
-    	t = t + '<option>'+noms_bases[i]+'</option>';
+    	t = t + '<option>'+noms_bases[i].escapeHTML()+'</option>';
     }
     t = t + '</select></p>';
     t = t + '	<p>Entrez votre requête : <br/>';
@@ -207,7 +199,7 @@ function new_query() {
 
 function db(nom) {
 	t = '<a id="matiere"></a><div class="post">';
-	t = t + '	<h2 class="title">Description de la base '+nom+'</h2>';
+	t = t + '	<h2 class="title">Description de la base '+nom.escapeHTML()+'</h2>';
 	t = t + '    <div class="story">';
   	t = t + '<p>'+listeBases[nom]['description']+'</p>';
   	t = t + '<p>Référence : <a href="'+listeBases[nom]['référence']+'">'+listeBases[nom]['référence']+'</a></p>';
@@ -216,7 +208,7 @@ function db(nom) {
 	t = t +  '<a id="matiere"></a><div class="post"><h2 class="title">Sommaire</h2>';
 	t = t +  '    <div class="story"><ul>';
 	for(var i = 0; i < listeBases[nom]['tables'].length;i++) {
-		$ta = listeBases[nom]['tables'][i];
+		var $ta = listeBases[nom]['tables'][i].escapeHTML().replace(/'/g, '&#39;');
 		t = t +  "<li><a href='#"
 		      +$ta+"'><img src='images/down_64.png' alt='"
 		      +$ta+"' title='"

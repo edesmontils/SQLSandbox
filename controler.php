@@ -1,5 +1,8 @@
 <?php 
 
+ini_set('session.cookie_httponly','1');
+ini_set('session.cookie_samesite','Lax');
+ini_set('session.use_strict_mode','1');
 $session_ok = session_start();
 setlocale(LC_TIME,'fr_FR');
 
@@ -27,15 +30,21 @@ if (isset($_SESSION['debug']) && $session_ok) {
 	// Début du traitement des différentes actions demandées		
 	//======================================================
 	if ($Soumettre == 'end') { // supprime les $_SESSION["copie_$nom"];
-		purge_db();
-		//unset($_SESSION['debug']);
-		//session_unset();
-		echo "<p>Bases purgées...</p>";
+		if (jeton_valide()) {
+			purge_db();
+			echo "<p>Bases purgées...</p>";
+		} else {
+			http_response_code(403);
+			echo "<p>Requête refusée.</p>";
+		}
 	} 
 	//======================================================
 	else if ($Soumettre == "Envoyer") {
-		$mode = $_REQUEST['mode'];
-		if (isset($requete) && isset($base)){
+		$mode = isset($_REQUEST['mode']) ? (string)$_REQUEST['mode'] : '1';
+		if (!jeton_valide()) {
+			http_response_code(403);
+			echo "<p>Requête refusée.</p>";
+		} else if (is_string($requete) && is_string($base)){
 			$t=get($requete,$base);  
 			echo (!is_null($t) ? "<img src='images/tick_64.png'  width='32' alt='ok' title='ok'/>"
 			           :"<img src='images/block_64.png' width='32' alt='ko' title='ko'/>");
@@ -56,7 +65,7 @@ if (isset($_SESSION['debug']) && $session_ok) {
 			foreach($config->aides->children() as $c)
 			echo $c->asXML();
 		} catch(Exception $e) {
-  			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
+  			echo "<p>erreur<br/>Pb (Exception) ! ".htmlspecialchars($e->getMessage())."<br/>".$libxml->afficheErreurs()."<br/></p>";
 		}	
 	}
 	//======================================================
@@ -64,7 +73,7 @@ if (isset($_SESSION['debug']) && $session_ok) {
 		try {
 			$config = new SimpleXMLElement('./config.xml',
 		                                LIBXML_DTDATTR|LIBXML_DTDLOAD|LIBXML_DTDVALID
-		                                |LIBXML_NOBLANKS|LIBXML_NOCDATA|LIBXML_NOENT|LIBXML_COMPACT,
+		                                |LIBXML_NOBLANKS|LIBXML_NOCDATA|LIBXML_COMPACT,
 		                                true);
 			$listeMessages = $config->listeMessages->message;
 			foreach($listeMessages as $post_message) {
@@ -76,7 +85,7 @@ if (isset($_SESSION['debug']) && $session_ok) {
 				echo "</div></div>\n";
 			}
 		} catch(Exception $e) {
-  			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
+  			echo "<p>erreur<br/>Pb (Exception) ! ".htmlspecialchars($e->getMessage())."<br/>".$libxml->afficheErreurs()."<br/></p>";
 		}	
 	}
 	//======================================================
@@ -90,7 +99,7 @@ if (isset($_SESSION['debug']) && $session_ok) {
 			foreach($apropos->children() as $c)
 				echo $c->asXML();
 		} catch(Exception $e) {
-  			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
+  			echo "<p>erreur<br/>Pb (Exception) ! ".htmlspecialchars($e->getMessage())."<br/>".$libxml->afficheErreurs()."<br/></p>";
 		}	
 	}
 	//======================================================
@@ -107,7 +116,7 @@ if (isset($_SESSION['debug']) && $session_ok) {
 				echo $c->asXML();
 			echo "</div></div>\n";										
 		} catch(Exception $e) {
-  			echo "<p>erreur<br/>Pb (Exception) ! $e<br/>".$libxml->afficheErreurs()."<br/></p>";
+  			echo "<p>erreur<br/>Pb (Exception) ! ".htmlspecialchars($e->getMessage())."<br/>".$libxml->afficheErreurs()."<br/></p>";
 		}	
 	}
 	//======================================================
