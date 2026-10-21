@@ -24,6 +24,8 @@ location ~ ^/SQLSandbox/(tmp|bdd|lib|tests)/ {
 
 (adapter le préfixe `/SQLSandbox/` au chemin d'installation). L'idéal reste de placer `tmp/` hors de la racine web.
 
+Les sessions PHP sont rangées dans un dossier `sessions-sqlsandbox` créé à côté de la racine web (par exemple `~/sessions-sqlsandbox` chez OVH, hors de `www/`), car le nom d'un fichier de session contient l'identifiant de session. Si ce dossier ne peut pas être créé, elles vont dans `tmp/sessions/`, protégé par `tmp/.htaccess`.
+
 Le serveur intégré de PHP (`php -S`) ne doit pas servir l'application en public : une requête SQL trop longue arrête tout le serveur.
 
 ## Tests

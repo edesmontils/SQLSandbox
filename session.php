@@ -8,13 +8,28 @@ ini_set('session.use_strict_mode','1');
 ini_set('display_errors', '0');
 // Durée de vie des sessions alignée sur celle des copies de bases (seuil de config.xml) :
 // la valeur par défaut de PHP (24 min d'inactivité) coupait les élèves en plein TP.
-// Les sessions sont rangées dans tmp/sessions (protégé par tmp/.htaccess), pour que
-// le nettoyage des autres sites de l'hébergement ne les supprime pas plus tôt ; PHP
-// les nettoie lui-même, le nettoyage du système ne passant pas dans ce dossier.
+// Les sessions ont leur propre dossier, pour que le nettoyage des autres sites de
+// l'hébergement ne les supprime pas plus tôt ; PHP les nettoie lui-même, le nettoyage
+// du système ne passant pas dans ce dossier.
+// Le nom d'un fichier de session contient l'identifiant de session : le dossier est
+// placé hors du site (à côté de la racine web, par exemple ~/sessions-sqlsandbox chez
+// OVH), et à défaut dans tmp/sessions (protégé par tmp/.htaccess et un index.html vide).
 define('DUREE_SESSION', 3 * 60 * 60);
-$dossierSessions = __DIR__.'/tmp/sessions';
-if (!is_dir($dossierSessions)) @mkdir($dossierSessions, 0700);
-if (is_dir($dossierSessions) && is_writable($dossierSessions)) {
+function dossier_sessions() {
+	$candidats = array();
+	if (!empty($_SERVER['DOCUMENT_ROOT']))
+		$candidats[] = dirname(rtrim($_SERVER['DOCUMENT_ROOT'], '/')).'/sessions-sqlsandbox';
+	$candidats[] = __DIR__.'/tmp/sessions';
+	foreach ($candidats as $dossier) {
+		if (!@is_dir($dossier)) @mkdir($dossier, 0700);
+		if (@is_dir($dossier) && @is_writable($dossier)) return $dossier;
+	}
+	return null;
+}
+$dossierSessions = dossier_sessions();
+if (!is_null($dossierSessions)) {
+	if (strpos($dossierSessions, __DIR__) === 0 && !is_file($dossierSessions.'/index.html'))
+		@touch($dossierSessions.'/index.html'); // pas de liste des fichiers sans .htaccess
 	ini_set('session.save_path', $dossierSessions);
 	ini_set('session.gc_probability', '1');
 	ini_set('session.gc_divisor', '100');

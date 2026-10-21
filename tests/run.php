@@ -213,8 +213,9 @@ $entetes = implode("\n", $derniers_entetes);
 verifie('en-têtes de sécurité', stripos($entetes, 'X-Frame-Options: SAMEORIGIN') !== false
                                 && stripos($entetes, 'X-Content-Type-Options: nosniff') !== false, $entetes);
 verifie('index.php répond', $code == 200 && strpos($page, 'csrf_token') !== false);
-$session = dirname(__DIR__).'/tmp/sessions/sess_'.substr($cookie, strlen('PHPSESSID='));
-verifie('session rangée dans tmp/sessions', is_file($session), $session);
+// Serveur lancé avec -t $racine : les sessions vont à côté de la racine web, hors du site
+$session = dirname($racine).'/sessions-sqlsandbox/sess_'.substr($cookie, strlen('PHPSESSID='));
+verifie('session rangée hors du site', is_file($session) && strpos(realpath($session), $racine.'/') !== 0, $session);
 verifie('chemins serveur non exposés', strpos($page, '"fichier"') === false && strpos($page, '"config"') === false);
 verifie('visite : fichiers réservés dans tmp/, mais vides', copies() > $avant && tailles() == 0, tailles());
 preg_match('/csrf_token = "([0-9a-f]+)"/', $page, $m);
