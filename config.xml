@@ -4,7 +4,7 @@
 <!ENTITY seuil '10800'>
 ]>
 
-<mab version="4.9.3" debug="false" name="SQL Sandbox">
+<mab version="5.0" debug="false" name="SQL Sandbox">
 	<!-- numéro de version de l'application -->
 	<!-- durée limite de vie d'une copie de base : 60*60*3 = 3 heures -->
 	<seuil>&seuil;</seuil>
@@ -16,8 +16,8 @@
 			<h2 class="title">A propos de SQL et du SGBD utilisé</h2>
 			<h3 class="posted">par E. Desmontils</h3>
 			<div class="story">
-				<p>Cette petite application est développée sous PHP 5.6.27 min. (<a
-						href="http://www.php.net/">http://www.php.net/</a>), avec SQLite3 3.8.10.2
+				<p>Cette petite application est développée sous PHP 8.0 min. (<a
+						href="http://www.php.net/">http://www.php.net/</a>), avec SQLite3
 					comme SGBD (<a href="http://www.sqlite.org/">http://www.sqlite.org/</a>). Par
 					conséquent la syntaxe de SQL et les fonctions associées sont celles de SQLite.
 					Pour plus de renseignements, consulter <a href="http://www.sqlite.org/lang.html"
@@ -43,9 +43,10 @@
 					donc les colonnes avec un nom "aléatoire". Du coup, l'utilisation des attributs
 					(dans le "select" ou le "where" par exemple), n'est plus possible. Il faut donc
 					préférer la version sans parenthèses.</p>
-				<h3>Guillemets</h3>
-				<p>En SQLite, les valeurs de type chaine de caractères doivent être entourées de
-					guillemets (par exemple "Dupont") et non d'apostrophe (exemple 'Dupont').</p>
+				<h3>Guillemets et apostrophes</h3>
+				<p>Les valeurs de type chaîne de caractères s'écrivent entre apostrophes (par exemple
+					'Dupont'), comme en SQL standard. SQLite accepte aussi les guillemets ("Dupont"),
+					mais ceux-ci désignent normalement des noms de colonnes ou de tables.</p>
 			</div>
 		</div>
 	</aPropos>
@@ -56,8 +57,7 @@
 			mesure où son utilisation n'est pas détournée. L'auteur ne peut être considéré
 			responsable des dysfonctionnements ou pertes de données en cas d'utilisation détournée
 			et se réserve le droit de la supprimer à tout moment.</p>
-		<p>Application développée et testée avec PHP 5.6.27, SQLite 3.8.10.2 et SimpleXML
-			(rev. d7077fc935154236afb4fe70814ba358efdbdca4).</p>
+		<p>Application développée et testée avec PHP 8.3, SQLite 3.45 et SimpleXML.</p>
 		<p>Design adapté du modèle "<a href="http://www.freecsstemplates.org/preview/dusplic/"
 				>dusplic</a>" de <a href="http://www.freecsstemplates.org/"><strong>Free CSS
 					Templates</strong></a>, sous licence <a href="http://creativecommons.org/licenses/by/2.5/">Creative
@@ -138,6 +138,26 @@
 	<listeMessages>
 		<!--message titre="" post=""><p></p>
 		</message-->
+		<message titre="Version 5.0" date="21/10/26" auteur="E. Desmontils">
+			<div>
+				<p>Une nouvelle version de SQLSandbox est en ligne. Elle apporte :</p>
+				<ul>
+					<li>des <b>travaux pratiques</b> : en choisissant une base, la liste de ses TP et de
+						ses questions à thèmes s'affiche ; chaque question propose une aide et permet
+						d'exécuter et de mémoriser sa réponse ;</li>
+					<li>une nouvelle base, <b>tp-mondial</b> ;</li>
+					<li>le contenu des tables d'une base dans un nouvel onglet (icône à côté du titre de
+						la base) ;</li>
+					<li>les chaînes de caractères peuvent maintenant s'écrire entre apostrophes
+						('Dupont'), comme en SQL standard ;</li>
+					<li>des messages plus clairs : avertissement quand seule la première instruction
+						d'une saisie est exécutée, requête trop longue, session expirée ;</li>
+					<li>de nombreuses corrections de sécurité.</li>
+				</ul>
+				<p>Attention : ouvrir l'application dans un second onglet réinitialise les bases du
+					premier.</p>
+			</div>
+		</message>
 		<message titre="Mise à jours technique" date="03/11/16" auteur="E. Desmontils">
 			<p>Une mise à jours technique a été effectuée pour passer à SQLite3.</p>
 		</message>
