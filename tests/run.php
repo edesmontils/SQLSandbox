@@ -82,10 +82,17 @@ foreach (array("create temp table tt(a)", "create temp view tv as select 1",
 	list($r, $o) = execute($q);
 	verifie("refusé : $q", $r === null && strpos($o, 'not authorized') !== false, $o);
 }
-foreach (array("select length(randomblob(400000000))", "select hex(zeroblob(400000000))") as $q) {
+foreach (array("select length(printf('%.*c', 500000000, 'x'))", "select length(randomblob(400000000))") as $q) {
 	list($r, $o) = execute($q);
-	verifie("refusé : $q", $r === null && strpos($o, 'not authorized') !== false, $o);
+	verifie("mémoire de SQLite limitée : $q", $r === null && strpos($o, 'out of memory') !== false, $o);
 }
+list($r, $o) = execute("select hex(zeroblob(4)), length(randomblob(16))");
+verifie('randomblob() et zeroblob() utilisables', $r === true && strpos($o, '<td>00000000</td><td>16</td>') !== false, $o);
+touch($copie, time() - 4 * 3600);
+clearstatcache();
+execute("select 1");
+clearstatcache();
+verifie('date de la copie rafraîchie à chaque ouverture', filemtime($copie) > time() - 60);
 
 echo "Détection de plusieurs instructions\n";
 $cas = array(
@@ -161,7 +168,7 @@ for ($i = 0; $i < 50 && !@fsockopen('127.0.0.1', $port); $i++) usleep(100000);
 
 $cookie = '';
 function http($url, $post = null) {
-	global $cookie;
+	global $cookie, $derniers_entetes;
 	$entetes = "Cookie: $cookie\r\n";
 	if (!is_null($post)) $entetes .= "Content-Type: application/x-www-form-urlencoded\r\n";
 	$ctx = stream_context_create(array('http' => array(
@@ -169,19 +176,24 @@ function http($url, $post = null) {
 		'content' => is_null($post) ? '' : http_build_query($post), 'ignore_errors' => true)));
 	$corps = @file_get_contents($url, false, $ctx);
 	$code = 0;
-	foreach ($http_response_header ?? array() as $h) {
+	$derniers_entetes = $http_response_header ?? array();
+	foreach ($derniers_entetes as $h) {
 		if (preg_match('#^HTTP/\S+ (\d+)#', $h, $m)) $code = (int)$m[1];
 		if (preg_match('#^Set-Cookie: (PHPSESSID=[^;]+)#i', $h, $m)) $cookie = $m[1];
 	}
 	return array($code, (string)$corps);
 }
 function copies() { return count(glob(dirname(__DIR__).'/tmp/copie_*')); }
+function tailles() { return array_sum(array_map('filesize', glob(dirname(__DIR__).'/tmp/copie_*'))); }
 
 $avant = copies();
 list($code, $page) = http("$u/index.php");
+$entetes = implode("\n", $derniers_entetes);
+verifie('en-têtes de sécurité', stripos($entetes, 'X-Frame-Options: SAMEORIGIN') !== false
+                                && stripos($entetes, 'X-Content-Type-Options: nosniff') !== false, $entetes);
 verifie('index.php répond', $code == 200 && strpos($page, 'csrf_token') !== false);
 verifie('chemins serveur non exposés', strpos($page, '"fichier"') === false && strpos($page, '"config"') === false);
-verifie('copies créées dans tmp/', copies() > $avant);
+verifie('visite : fichiers réservés dans tmp/, mais vides', copies() > $avant && tailles() == 0, tailles());
 preg_match('/csrf_token = "([0-9a-f]+)"/', $page, $m);
 $jeton = $m[1] ?? '';
 $requete = array('Soumettre' => 'Envoyer', 'base' => 'cours', 'mode' => '1',
@@ -190,6 +202,7 @@ list($code, $corps) = http("$u/controler.php", $requete);
 verifie('requête sans jeton refusée (403)', $code == 403 && strpos($corps, 'Session expirée') !== false);
 list($code, $corps) = http("$u/controler.php", $requete + array('csrf' => $jeton));
 verifie('requête avec jeton exécutée', $code == 200 && strpos($corps, 'Dupont') !== false, $corps);
+verifie('copie faite à la première requête', tailles() > 0, tailles());
 list($code, $corps) = http("$u/controler.php?Soumettre=inexistante");
 verifie('rubrique inconnue refusée', strpos($corps, 'inconnue') !== false, $corps);
 list($code, $corps) = http("$u/tp.php?base=tp-em&tp=tp-em-01");

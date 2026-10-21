@@ -143,11 +143,14 @@ if ($dossierTmp === false || !is_writable($dossierTmp)) {
 	$listeNoms = array();
 }
 foreach($listeNoms as $nom) {
+	// Seul un nom de fichier (vide) est réservé : la copie est faite à la première
+	// requête sur la base (ouvre_base), pour qu'une simple visite ne coûte rien.
 	// tempnam() se replie silencieusement sur le répertoire temporaire du système :
 	// une copie créée ailleurs que dans tmp/ ne serait jamais purgée.
+	$original = realpath($listeBase[$nom]['fichier']);
 	$copie = @tempnam($dossierTmp, "copie_$nom".'_');
 	if ($copie === false || dirname($copie) !== $dossierTmp
-	    || !@copy($listeBase[$nom]['fichier'], $copie)) {
+	    || $original === false || !is_readable($original)) {
 		if ($copie !== false && is_file($copie)) unlink($copie);
 		$erreursCopie[] = "Impossible de préparer la base ".htmlspecialchars($nom).".";
 		unset($listeBase[$nom]);
@@ -157,10 +160,10 @@ foreach($listeNoms as $nom) {
 	// Fichier de configuration (TP, questions), relu côté serveur sans passer par le navigateur
 	$_SESSION['configs'][$nom] = $listeBase[$nom]['config'];
 	// Base d'origine, pour recréer la copie si elle est purgée pendant un TP
-	$_SESSION['originaux'][$nom] = realpath($listeBase[$nom]['fichier']);
-	if ($debug) echo "<p>Création de ".$_SESSION["copie_$nom"]."</p>";
+	$_SESSION['originaux'][$nom] = $original;
+	if ($debug) echo "<p>Réservation de ".$_SESSION["copie_$nom"]."</p>";
 
-	$tables = get_tables($nom);
+	$tables = get_tables($nom, $original);
 	$listeBase[$nom]['tables'] = $tables;
 }
 $listeNoms = array_keys($listeBase);

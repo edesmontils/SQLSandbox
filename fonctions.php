@@ -27,6 +27,9 @@ define('MAX_LIGNES', 1000);
 define('DELAI_MAX', 10);
 // Taille maximale (octets) d'une copie de base, pour éviter de remplir le disque
 define('TAILLE_MAX_BASE', 20 * 1024 * 1024);
+// Mémoire maximale (octets) de SQLite, qui alloue hors du memory_limit de PHP
+// (printf('%.*c', 500000000, 'x') occupait sinon 500 Mo)
+define('MEMOIRE_MAX_SQLITE', 64 * 1024 * 1024);
 
 // PRAGMA en lecture seule utiles pour consulter la structure des tables
 $GLOBALS['PRAGMAS_AUTORISES'] = array('table_info', 'table_xinfo', 'index_list',
@@ -36,8 +39,7 @@ $GLOBALS['PRAGMAS_AUTORISES'] = array('table_info', 'table_xinfo', 'index_list',
 // permettraient d'écrire des fichiers arbitraires sur le serveur, les autres PRAGMA
 // de modifier le comportement de la base (dont la limite de taille), les objets
 // temporaires de contourner cette limite. fts3_tokenizer() divulgue des adresses
-// mémoire ; randomblob() et zeroblob() font allouer des centaines de Mo à SQLite,
-// hors du memory_limit de PHP (et sont inutiles pour apprendre SQL).
+// mémoire.
 function autorisation_sql($action, $arg1 = null, $arg2 = null) {
 	switch ($action) {
 		case SQLite3::ATTACH:
@@ -52,8 +54,7 @@ function autorisation_sql($action, $arg1 = null, $arg2 = null) {
 			return in_array(strtolower((string)$arg1), $GLOBALS['PRAGMAS_AUTORISES'], true)
 				? SQLite3::OK : SQLite3::DENY;
 		case SQLite3::FUNCTION:
-			return in_array(strtolower((string)$arg2), array('fts3_tokenizer', 'randomblob', 'zeroblob'), true)
-				? SQLite3::DENY : SQLite3::OK;
+			return strtolower((string)$arg2) == 'fts3_tokenizer' ? SQLite3::DENY : SQLite3::OK;
 		default:
 			return SQLite3::OK;
 	}
@@ -109,11 +110,16 @@ function plusieurs_instructions($sql) {
 function ouvre_base($base) {
 	if (!is_string($base) || !isset($_SESSION["copie_$base"])) return null;
 	$fic = $_SESSION["copie_$base"];
-	// Copie purgée (onglet principal fermé) alors qu'un onglet de TP l'utilise encore :
-	// on repart de la base d'origine, comme à l'ouverture de l'application.
-	if (!is_file($fic) && isset($_SESSION['originaux'][$base]))
+	// La copie est faite à la première utilisation (index.php ne réserve qu'un fichier
+	// vide), ou refaite si elle a été purgée (onglet principal fermé pendant un TP).
+	if ((!is_file($fic) || filesize($fic) == 0) && isset($_SESSION['originaux'][$base])) {
 		@copy($_SESSION['originaux'][$base], $fic);
-	if (!is_file($fic)) return null;
+		clearstatcache(true, $fic); // sinon filesize() renvoie encore la taille d'avant la copie
+	}
+	if (!is_file($fic) || filesize($fic) == 0) return null;
+	// Une simple lecture ne change pas la date du fichier : sans cela, la purge des
+	// copies de plus de $seuil secondes (index.php) supprimerait une copie encore utilisée.
+	@touch($fic);
 	try {
 		$db = new SQLite3($fic, SQLITE3_OPEN_READWRITE);
 	} catch (Exception $e) {
@@ -121,7 +127,8 @@ function ouvre_base($base) {
 	}
 	$db->busyTimeout(DELAI_MAX * 1000);
 	$db->enableExceptions(false);
-	// Limite de taille, fixée avant l'autorizer qui interdit ensuite de la modifier
+	$db->exec('PRAGMA hard_heap_limit = '.MEMOIRE_MAX_SQLITE);
+	// Limites fixées avant l'autorizer, qui interdit ensuite de les modifier
 	$taille_page = (int)$db->querySingle('PRAGMA page_size');
 	if ($taille_page > 0) $db->exec('PRAGMA max_page_count = '.(int)(TAILLE_MAX_BASE / $taille_page));
 	$db->setAuthorizer('autorisation_sql');
@@ -207,10 +214,20 @@ function get($requete,$base) {
 	return $ok;
 }
 
-function get_tables($base) {
+// Tables et vues de la copie de session de $base, ou de la base d'origine $fichier
+// (lue sans la copier, pour la page d'accueil)
+function get_tables($base, $fichier = null) {
 	$requete = "SELECT name FROM sqlite_master WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%' ORDER BY lower(name)";
 	$table = array();
-	$db = ouvre_base($base);
+	if (is_null($fichier)) {
+		$db = ouvre_base($base);
+	} else {
+		try {
+			$db = new SQLite3($fichier, SQLITE3_OPEN_READONLY);
+		} catch (Exception $e) {
+			$db = null;
+		}
+	}
 	if (is_null($db)) {
 		echo "<p>Base ".htmlspecialchars($base)." inconnue ou inaccessible</p>";
 		return $table;
