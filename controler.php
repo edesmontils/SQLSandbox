@@ -36,7 +36,6 @@ if (isset($_SESSION['debug']) && $session_ok) {
 	else if ($Soumettre == "Envoyer") {
 		$mode = $_REQUEST['mode'];
 		if (isset($requete) && isset($base)){
-		    $requete = stripslashes($requete);	
 			$t=get($requete,$base);  
 			echo (!is_null($t) ? "<img src='images/tick_64.png'  width='32' alt='ok' title='ok'/>"
 			           :"<img src='images/block_64.png' width='32' alt='ko' title='ko'/>");

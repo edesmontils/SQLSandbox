@@ -113,14 +113,14 @@ if ($debug) {
 }
 
 // Purge de TMP s'il reste des fichiers non supprimés...
-$dir=opendir("./tmp");	
-while ($nom=readdir($dir)) {
-	if (file_exists($nom)) {
-		$file = stat($nom);
-		$delta = time() - $file['atime'];
-		if ((substr($nom,0,6)=='copie_')&&($delta>$seuil)) {
-		    if ($debug) echo "<p>Suppression de $nom (ancien de $delta secondes)</p>";
-			if (file_exists($nom)) unlink($nom);
+$dir=opendir("./tmp");
+while (($nom=readdir($dir)) !== false) {
+	$chemin = "./tmp/".$nom;
+	if (substr($nom,0,6)=='copie_' && is_file($chemin)) {
+		$delta = time() - filemtime($chemin);
+		if ($delta>$seuil) {
+			if ($debug) echo "<p>Suppression de $nom (ancien de $delta secondes)</p>";
+			unlink($chemin);
 		}
 	}
 }
