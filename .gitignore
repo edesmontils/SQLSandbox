@@ -3,3 +3,5 @@ tmp/copie_*
 .idea/SQLSandbox.iml
 .idea/php.xml
 .idea/modules.xml
+tmp/sessions/
+tmp/verrou_*

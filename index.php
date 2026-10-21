@@ -123,7 +123,7 @@ if ($debug) {
 $dir=@opendir("./tmp");
 while ($dir && ($nom=readdir($dir)) !== false) {
 	$chemin = "./tmp/".$nom;
-	if (substr($nom,0,6)=='copie_' && is_file($chemin)) {
+	if ((substr($nom,0,6)=='copie_' || substr($nom,0,7)=='verrou_') && is_file($chemin)) {
 		$delta = time() - filemtime($chemin);
 		if ($delta>$seuil) {
 			if ($debug) echo "<p>Suppression de $nom (ancien de $delta secondes)</p>";

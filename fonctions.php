@@ -24,7 +24,13 @@ function purge_db() {
 // Nombre maximal de lignes affichées pour un résultat
 define('MAX_LIGNES', 1000);
 // Durée maximale (secondes) d'attente d'un verrou et d'exécution PHP
-define('DELAI_MAX', 10);
+define('DELAI_MAX', 5);
+// Requêtes SQL exécutées en même temps depuis une même adresse IP, et attente
+// maximale (secondes) d'une place libre. Une salle de TP derrière un même routeur
+// partage une adresse : les requêtes des élèves sont courtes, elles attendent
+// au plus un instant ; seules des requêtes lentes en rafale sont refusées.
+define('REQUETES_PAR_IP', 4);
+define('ATTENTE_PLACE', 3);
 // Taille maximale (octets) d'une copie de base, pour éviter de remplir le disque
 define('TAILLE_MAX_BASE', 20 * 1024 * 1024);
 // Mémoire maximale (octets) de SQLite, qui alloue hors du memory_limit de PHP
@@ -152,6 +158,31 @@ function arret_requete() {
 	}
 }
 
+// Réserve une place d'exécution pour l'adresse IP du client (verrous flock sur des
+// fichiers tmp/verrou_*). Le verrou est libéré par le système à la fin du processus,
+// même s'il est tué par la limite de durée. Retourne false si aucune place ne se
+// libère à temps.
+function reserve_execution() {
+	static $verrou = null;
+	if (!is_null($verrou)) return true; // déjà réservée par ce processus
+	$ip = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : 'cli';
+	$prefixe = dirname(__FILE__).'/tmp/verrou_'.md5($ip).'_';
+	$fin = microtime(true) + ATTENTE_PLACE;
+	do {
+		for ($i = 0; $i < REQUETES_PAR_IP; $i++) {
+			$f = @fopen($prefixe.$i, 'c');
+			if ($f && flock($f, LOCK_EX | LOCK_NB)) {
+				@touch($prefixe.$i);
+				$verrou = $f;
+				return true;
+			}
+			if ($f) fclose($f);
+		}
+		usleep(100000);
+	} while (microtime(true) < $fin);
+	return false;
+}
+
 // Exécute $requete sur la base $base et affiche le résultat.
 // Retourne true en cas de succès, null sinon.
 function get($requete,$base) {
@@ -159,6 +190,15 @@ function get($requete,$base) {
 	if (is_null($db)) {
 		echo "<script language='javascript'>result_type='ko';</script><p>Base inconnue ou inaccessible. "
 		    ."Rouvrez l'application depuis sa page d'accueil pour réinitialiser les bases.</p>";
+		return null;
+	}
+	// La session n'est plus modifiée : on la libère pour que les autres onglets
+	// de l'élève ne restent pas bloqués pendant l'exécution de la requête
+	if (session_status() == PHP_SESSION_ACTIVE) session_write_close();
+	if (!reserve_execution()) {
+		echo "<script language='javascript'>result_type='ko';</script><p>Trop de requêtes en cours depuis "
+		    ."votre adresse : patientez quelques secondes avant de réessayer.</p>";
+		$db->close();
 		return null;
 	}
 	set_time_limit(DELAI_MAX);

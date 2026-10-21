@@ -94,6 +94,27 @@ execute("select 1");
 clearstatcache();
 verifie('date de la copie rafraîchie à chaque ouverture', filemtime($copie) > time() - 60);
 
+echo "Requêtes simultanées par adresse IP\n";
+// Ce processus a déjà sa place (requêtes ci-dessus) : on simule un autre client
+// dont toutes les places sont occupées par d'autres processus.
+$_SERVER['REMOTE_ADDR'] = '203.0.113.7';
+$occupes = array();
+$prefixe = dirname(__DIR__).'/tmp/verrou_'.md5('203.0.113.7').'_';
+for ($i = 0; $i < REQUETES_PAR_IP; $i++) {
+	$occupes[$i] = fopen($prefixe.$i, 'c');
+	flock($occupes[$i], LOCK_EX);
+}
+$commande = escapeshellarg(PHP_BINARY).' -r '.escapeshellarg(
+	'chdir('.var_export(dirname(__DIR__), true).'); $_SERVER["REMOTE_ADDR"] = "203.0.113.7";'
+	.' include "./fonctions.php"; $t = microtime(true); $r = reserve_execution();'
+	.' echo json_encode(array($r, round(microtime(true) - $t)));');
+list($obtenue, $attente) = json_decode(shell_exec($commande));
+verifie('places occupées : refus après l\'attente', $obtenue === false && $attente >= ATTENTE_PLACE, json_encode(array($obtenue, $attente)));
+flock($occupes[0], LOCK_UN);
+list($obtenue, $attente) = json_decode(shell_exec($commande));
+verifie('une place libérée : exécution acceptée', $obtenue === true, json_encode(array($obtenue, $attente)));
+foreach ($occupes as $i => $f) { fclose($f); unlink($prefixe.$i); }
+
 echo "Détection de plusieurs instructions\n";
 $cas = array(
 	array("select 1", false),
@@ -192,6 +213,8 @@ $entetes = implode("\n", $derniers_entetes);
 verifie('en-têtes de sécurité', stripos($entetes, 'X-Frame-Options: SAMEORIGIN') !== false
                                 && stripos($entetes, 'X-Content-Type-Options: nosniff') !== false, $entetes);
 verifie('index.php répond', $code == 200 && strpos($page, 'csrf_token') !== false);
+$session = dirname(__DIR__).'/tmp/sessions/sess_'.substr($cookie, strlen('PHPSESSID='));
+verifie('session rangée dans tmp/sessions', is_file($session), $session);
 verifie('chemins serveur non exposés', strpos($page, '"fichier"') === false && strpos($page, '"config"') === false);
 verifie('visite : fichiers réservés dans tmp/, mais vides', copies() > $avant && tailles() == 0, tailles());
 preg_match('/csrf_token = "([0-9a-f]+)"/', $page, $m);
@@ -221,6 +244,9 @@ verifie('fin de session : copies purgées', strpos($corps, 'purgées') !== false
 proc_terminate($serveur);
 proc_close($serveur);
 foreach (glob("$tmp/*") as $f) unlink($f);
+// Verrous et session créés par les tests
+foreach (glob(dirname(__DIR__).'/tmp/verrou_*') as $f) unlink($f);
+if (is_file($session)) unlink($session);
 rmdir($tmp);
 
 echo "\n".($total - $echecs)."/$total tests réussis\n";
