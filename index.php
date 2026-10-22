@@ -209,6 +209,7 @@ $listeNoms = array_keys($listeBase);
   <script src="./js/codemirror/codemirror.js"></script>
   <script src="./js/codemirror/sql.js"></script>
   <script src="./js/bd_base.js"></script>
+  <script src="./js/modele.js"></script>
 </head>
 
 <body onload="init()" onunload="end()">

@@ -212,6 +212,36 @@ foreach (glob('./bdd/*/config.xml') as $fic) {
 	$bd->close();
 }
 
+echo "Modèle des bases\n";
+// Toutes les bases déclarent des clés étrangères et leurs données les respectent
+foreach (glob('./bdd/*/config.xml') as $fic) {
+	$c = simplexml_load_file($fic);
+	$fichier = dirname($fic).'/'.(string)$c->fichier['nom'];
+	$copie_modele = "$tmp/copie_modele";
+	copy($fichier, $copie_modele);
+	$_SESSION['copie_modele'] = $copie_modele;
+	$m = modele_base('modele');
+	$nb = 0;
+	foreach ($m['tables'] as $t) $nb += count($t['cles']);
+	$bd = new SQLite3($fichier, SQLITE3_OPEN_READONLY);
+	$violations = 0;
+	$r = $bd->query('PRAGMA foreign_key_check');
+	while ($r->fetchArray()) $violations++;
+	$bd->close();
+	verifie('clés étrangères de '.basename(dirname($fic)), count($m['tables']) > 0 && $nb > 0 && $violations == 0,
+	        count($m['tables'])." tables, $nb clés, $violations violation(s)");
+	unlink($copie_modele);
+}
+unset($_SESSION['copie_modele']);
+// Le modèle est lu sur la copie de l'étudiant : il suit ses créations de tables
+execute("create table modele_essai (a int primary key, b int references etudiants)");
+$m = modele_base('test');
+$essai = array_values(array_filter($m['tables'], function ($t) { return $t['nom'] == 'modele_essai'; }));
+verifie('modèle : table créée par l\'étudiant', count($essai) == 1 && count($essai[0]['cles']) == 1
+        && $essai[0]['cles'][0]['table'] == 'etudiants' && $essai[0]['cles'][0]['references'] == array('noetu'),
+        json_encode($essai));
+verifie('modèle : base inconnue', modele_base('inconnue') === null);
+
 echo "Purge\n";
 $_SESSION['copie_autre'] = "$tmp/copie_autre";
 touch($_SESSION['copie_autre']);
@@ -291,6 +321,11 @@ list($code, $corps) = http("$u/questionsThem.php?base=tp-em&theme=projection");
 verifie('page d\'un thème', substr_count($corps, 'ouvre_question(') == 1, $corps);
 list($code, $corps) = http("$u/controler.php?Soumettre=tp&nom_base=tp-em");
 verifie('liste des TP', strpos($corps, 'page_tp(') !== false && strpos($corps, 'tp-em-02') !== false, $corps);
+list($code, $corps) = http("$u/controler.php?Soumettre=modele&nom_base=tp-cinema");
+$m = json_decode($corps, true);
+verifie('modèle en JSON', $code == 200 && count($m['tables']) == 5 && count($m['sql']) == 5, $corps);
+list($code, $corps) = http("$u/controler.php?Soumettre=modele&nom_base=inconnue");
+verifie('modèle d\'une base inconnue refusé (404)', $code == 404, $corps);
 list($code, $corps) = http("$u/controler.php", array('Soumettre' => 'end', 'csrf' => $jeton));
 verifie('fin de session : copies purgées', strpos($corps, 'purgées') !== false && copies() == $avant);
 

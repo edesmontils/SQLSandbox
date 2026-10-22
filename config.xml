@@ -97,6 +97,11 @@
 					et ses questions à thèmes. « ✏️ Interroger cette base » ouvre l'édition d'une
 					requête sur cette base, « 📋 Voir les tables » affiche le contenu de ses tables
 					dans un nouvel onglet.</p>
+				<p>« 🧩 Modèle de la base » montre son diagramme (tables et liens entre clés
+					étrangères et tables référencées ; survolez une table pour faire ressortir ses
+					liens), son schéma relationnel (clé primaire soulignée, clé étrangère précédée de
+					#), la structure de chaque table et le script SQL de création. Le modèle est lu
+					sur votre copie : une table que vous créez y apparaît.</p>
 				<h3>Les boutons</h3>
 				<ul>
 					<li><strong>▶️ Exécuter</strong> (ou Ctrl+Entrée, Cmd+Entrée sur Mac) : lance la
@@ -132,7 +137,9 @@
 						icônes ;</li>
 					<li>un éditeur SQL avec coloration syntaxique et numéros de ligne ; Ctrl+Entrée
 						exécute la requête ;</li>
-					<li>une requête de départ adaptée à la base choisie.</li>
+					<li>une requête de départ adaptée à la base choisie ;</li>
+					<li>le modèle de chaque base : diagramme, schéma relationnel et script SQL ;</li>
+					<li>des clés étrangères ajoutées aux bases tp-robots et tp-mondial.</li>
 				</ul>
 			</div>
 		</message>

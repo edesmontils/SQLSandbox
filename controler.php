@@ -125,6 +125,18 @@ if (isset($_SESSION['debug']) && $session_ok) {
 		page_tp(param('nom_base'), param('tp_name'));
 	}
 	//======================================================
+	// Modèle d'une base (tables, clés, SQL), en JSON pour le dessin du diagramme
+	else if ($Soumettre == "modele") {
+		$modele = modele_base(param('nom_base'));
+		header('Content-Type: application/json; charset=utf-8');
+		if (is_null($modele)) {
+			http_response_code(404);
+			echo json_encode(array('erreur' => 'Base inconnue ou inaccessible.'));
+		} else {
+			echo json_encode($modele, JSON_UNESCAPED_UNICODE);
+		}
+	}
+	//======================================================
 	else {//echo "<p>liste base $Soumettre</p>";
 		liste_base($Soumettre);
 	}

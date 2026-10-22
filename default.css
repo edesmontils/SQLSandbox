@@ -485,6 +485,153 @@ table.historique td .btn {
 	margin: 0 4px 4px 0;
 }
 
+/* Modèle d'une base */
+
+.modele h3 {
+	margin: 24px 0 10px 0;
+	font-size: 1.15em;
+}
+
+.modele h4 {
+	margin: 18px 0 4px 0;
+}
+
+.legende {
+	font-size: .9em;
+	color: var(--sb-ink-soft);
+}
+
+.legende .separateur {
+	margin: 0 8px;
+	color: var(--sb-border-strong);
+}
+
+.cle-primaire {
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+
+.diagramme {
+	overflow: auto;
+	max-height: 75vh;
+	padding: 8px;
+	background: var(--sb-surface-2);
+	border: 1px solid var(--sb-border);
+	border-radius: var(--sb-radius-md);
+}
+
+.diagramme.ajuste {
+	max-height: none;
+}
+
+.diagramme.ajuste svg {
+	width: 100%;
+	height: auto;
+}
+
+.diagramme svg {
+	display: block;
+	font-family: "Atkinson Hyperlegible Next", "Segoe UI", sans-serif;
+}
+
+.diagramme .cadre {
+	fill: var(--sb-surface);
+	stroke: var(--sb-border-strong);
+	stroke-width: 1.5;
+}
+
+.diagramme .entete {
+	fill: var(--sb-accent);
+}
+
+.diagramme .nom-table {
+	fill: #FFFFFF;
+	font-size: 15px;
+	font-weight: 600;
+	text-anchor: middle;
+}
+
+.diagramme .colonne {
+	fill: var(--sb-ink);
+	font-size: 13px;
+}
+
+.diagramme .colonne.pk {
+	text-decoration: underline;
+	font-weight: 600;
+}
+
+.diagramme .diese {
+	fill: var(--sb-accent-2);
+	font-weight: 600;
+}
+
+.diagramme .type {
+	fill: var(--sb-ink-faint);
+	font-size: 11px;
+	text-anchor: end;
+}
+
+.diagramme .lien {
+	fill: none;
+	stroke: var(--sb-accent-2);
+	stroke-width: 1.6;
+	stroke-opacity: .55;
+}
+
+.diagramme .fleche {
+	fill: var(--sb-accent-2);
+}
+
+/* Survol d'une table : ses liens ressortent, les autres s'estompent */
+.diagramme svg.survol .lien {
+	stroke-opacity: .12;
+}
+
+.diagramme svg.survol .lien.fort {
+	stroke-opacity: 1;
+	stroke-width: 2.4;
+}
+
+.diagramme .boite.fort .cadre {
+	stroke: var(--sb-accent-2);
+	stroke-width: 2.5;
+}
+
+.schema-relationnel {
+	padding-left: 20px;
+	font-family: var(--sb-mono);
+	font-size: .95em;
+}
+
+.schema-relationnel > li {
+	margin-bottom: 6px;
+}
+
+.schema-relationnel strong {
+	font-family: "Atkinson Hyperlegible Next", "Segoe UI", sans-serif;
+}
+
+.references {
+	margin: 2px 0 0 0;
+	padding-left: 18px;
+	list-style: none;
+	font-size: .9em;
+	color: var(--sb-ink-soft);
+}
+
+.volet {
+	margin-top: 16px;
+	padding: 10px 14px;
+	border: 1px solid var(--sb-border);
+	border-radius: var(--sb-radius-sm);
+}
+
+.volet summary {
+	font-weight: 600;
+	cursor: pointer;
+}
+
 /* Aide d'une question */
 
 #div1 {

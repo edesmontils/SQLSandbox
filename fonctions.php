@@ -323,6 +323,63 @@ function get($requete,$base) {
 	return $ok;
 }
 
+// Modèle de la base $base, lu sur la copie de session (il suit donc les CREATE, ALTER et
+// DROP de l'étudiant) : tables avec colonnes, clé primaire et clés étrangères, vues, et
+// instructions SQL de création. Retourne null si la base est inconnue.
+function modele_base($base) {
+	$db = ouvre_base($base);
+	if (is_null($db)) return null;
+	$modele = array('tables' => array(), 'vues' => array(), 'sql' => array());
+	$objets = $db->query("SELECT type, name, sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' "
+	                    ."AND sql IS NOT NULL ORDER BY CASE type WHEN 'table' THEN 1 WHEN 'view' THEN 2 "
+	                    ."WHEN 'index' THEN 3 ELSE 4 END, lower(name)");
+	$liste = array();
+	while ($objets && ($o = $objets->fetchArray(SQLITE3_ASSOC))) $liste[] = $o;
+	foreach ($liste as $o) {
+		$modele['sql'][] = trim($o['sql']).';';
+		if ($o['type'] == 'view') $modele['vues'][] = $o['name'];
+		if ($o['type'] != 'table') continue;
+		$nom = '"'.str_replace('"', '""', $o['name']).'"';
+		$colonnes = array();
+		$r = $db->query("PRAGMA table_info($nom)");
+		while ($r && ($c = $r->fetchArray(SQLITE3_ASSOC))) {
+			$colonnes[] = array('nom' => $c['name'], 'type' => $c['type'],
+			                    'non_nul' => (bool)$c['notnull'], 'pk' => (int)$c['pk']);
+		}
+		// Clés étrangères : une entrée par contrainte, colonnes dans l'ordre de la contrainte
+		$cles = array();
+		$r = $db->query("PRAGMA foreign_key_list($nom)");
+		while ($r && ($f = $r->fetchArray(SQLITE3_ASSOC))) {
+			$id = $f['id'];
+			if (!isset($cles[$id])) $cles[$id] = array('colonnes' => array(), 'table' => $f['table'], 'references' => array());
+			$cles[$id]['colonnes'][$f['seq']] = $f['from'];
+			// Référence implicite (REFERENCES t sans colonne) : la clé primaire de t
+			$cles[$id]['references'][$f['seq']] = $f['to'];
+		}
+		foreach ($cles as &$k) {
+			ksort($k['colonnes']); ksort($k['references']);
+			$k['colonnes'] = array_values($k['colonnes']);
+			$k['references'] = array_values($k['references']);
+		}
+		unset($k);
+		$modele['tables'][] = array('nom' => $o['name'], 'colonnes' => $colonnes, 'cles' => array_values($cles));
+	}
+	// Références implicites complétées par la clé primaire de la table visée
+	$pk = array();
+	foreach ($modele['tables'] as $t) {
+		$cols = array_filter($t['colonnes'], function ($c) { return $c['pk'] > 0; });
+		usort($cols, function ($a, $b) { return $a['pk'] - $b['pk']; });
+		$pk[strtolower($t['nom'])] = array_map(function ($c) { return $c['nom']; }, $cols);
+	}
+	foreach ($modele['tables'] as &$t) foreach ($t['cles'] as &$k) {
+		if (count(array_filter($k['references'], 'is_null')) > 0 && isset($pk[strtolower($k['table'])]))
+			$k['references'] = $pk[strtolower($k['table'])];
+	}
+	unset($t, $k);
+	$db->close();
+	return $modele;
+}
+
 // Tables et vues de la copie de session de $base, ou de la base d'origine $fichier
 // (lue sans la copier, pour la page d'accueil)
 function get_tables($base, $fichier = null) {
@@ -643,6 +700,7 @@ function debut_page() {
   <script src="./js/codemirror/codemirror.js"></script>
   <script src="./js/codemirror/sql.js"></script>
   <script src="./js/bd_base.js"></script>
+  <script src="./js/modele.js"></script>
 </head>
 <body>
 <div class="container">
