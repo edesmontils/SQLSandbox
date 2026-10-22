@@ -38,6 +38,60 @@ location ~ ^/SQLSandbox/(tmp|bdd|lib|tests)/ {
 
 Les copies des bases et les sessions sont rangées hors du site (`sqlsandbox-tmp` et `sessions-sqlsandbox`, voir l'installation), pour que leur protection ne dépende pas d'un `.htaccess` : le nom d'un fichier de session contient l'identifiant de session. `tmp/` n'est utilisé qu'en repli, protégé par `tmp/.htaccess` et un `index.html` vide.
 
+## Déploiement derrière Caddy
+
+Exemple de l'instance du Raspberry Pi : l'application est dans `/home/ed/programmation/SQLSandbox`, servie sous `/SQLSandbox/` par Caddy et PHP-FPM (paquets `php8.4-fpm`, `php8.4-sqlite3` et `php8.4-xml`, à installer avec `--no-install-recommends` pour ne pas tirer Apache).
+
+**Pool PHP-FPM dédié.** `/home/ed` est en `700` : PHP tourne donc sous `ed` plutôt que sous `www-data`, dans son propre pool (`/etc/php/8.4/fpm/pool.d/sqlsandbox.conf`) :
+
+```ini
+[sqlsandbox]
+user = ed
+group = ed
+listen = /run/php/sqlsandbox.sock
+listen.owner = caddy
+listen.group = caddy
+listen.mode = 0660
+pm = ondemand
+pm.max_children = 8
+pm.process_idle_timeout = 60s
+pm.max_requests = 500
+request_terminate_timeout = 60s
+php_admin_value[expose_php] = Off
+```
+
+puis `sudo php-fpm8.4 -t && sudo systemctl reload php8.4-fpm`.
+
+**Accès de Caddy aux fichiers statiques.** Caddy (utilisateur `caddy`) sert lui-même les CSS, JS et polices : il doit pouvoir traverser `/home/ed`, sans pouvoir en lister le contenu :
+
+```sh
+sudo setfacl -m u:caddy:x /home/ed
+```
+
+**Route Caddy**, dans le bloc du site :
+
+```caddy
+redir /SQLSandbox /SQLSandbox/ 308
+handle /SQLSandbox/* {
+	root * /home/ed/programmation
+	@interdit path_regexp ^/SQLSandbox/(tmp|bdd|lib|tests)(/|$)
+	respond @interdit 403
+	php_fastcgi unix//run/php/sqlsandbox.sock
+	file_server
+}
+```
+
+Caddy ignore les `.htaccess` : la règle `@interdit` les remplace. Utiliser `handle` et non `handle_path`, qui retirerait le préfixe et changerait le `DOCUMENT_ROOT`. Celui-ci vaut ici `/home/ed/programmation` : les dossiers de travail sont donc créés dans `/home/ed` (`/home/ed/sqlsandbox-tmp` et `/home/ed/sessions-sqlsandbox`), ce que permet le pool sous `ed`. Valider avant de recharger : `caddy validate --config /etc/caddy/Caddyfile`, puis `sudo systemctl reload caddy`.
+
+**Envoi des fichiers**, depuis la copie de travail, sans le contenu de `tmp/` (verrous ou copies de bases laissés par des essais en local) :
+
+```sh
+rsync -av --delete --exclude .git --exclude .github --exclude .gitlab-ci.yml --exclude tests --exclude .idea --exclude .claude --exclude .DS_Store --exclude 'tmp/*' ./ ed@<serveur>:/home/ed/programmation/SQLSandbox/
+ssh ed@<serveur> chmod a-w /home/ed/programmation/SQLSandbox/tmp
+```
+
+`tmp/` est ainsi créé vide et laissé en lecture seule : l'application ne peut pas s'y replier, et un problème de dossier de travail se voit tout de suite (message « Problème d'installation »). Pour vérifier : `https://<site>/SQLSandbox/bdd/em/em.db` doit répondre 403, et une session ouverte doit apparaître dans `/home/ed/sessions-sqlsandbox`.
+
 ## Plusieurs installations sur un même hébergement
 
 Le nom du cookie de session et des dossiers de travail vient de la constante `INSTANCE` de `dossiers.php` : `sqlsandbox` par défaut (cookie `sqlsandbox`, dossiers `sqlsandbox-tmp` et `sessions-sqlsandbox`). Pour faire fonctionner deux installations côte à côte, par exemple une version de test dans `/SQLSandbox6/`, donner à chacune un nom d'`INSTANCE` différent : sinon elles partagent cookie et sessions, et ouvrir l'une réinitialise les bases de l'autre.
