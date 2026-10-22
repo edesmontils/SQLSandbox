@@ -253,11 +253,13 @@ function http($url, $post = null) {
 }
 // Serveur lancé avec -t $racine : son dossier de travail est à côté de la racine web
 $travail = dirname($racine).'/sqlsandbox-tmp';
-function copies() { global $travail; return count(glob("$travail/copie_*")); }
-function tailles() { global $travail; return array_sum(array_map('filesize', glob("$travail/copie_*"))); }
+// Seuls les fichiers créés pendant les tests comptent : des copies laissées par un essai
+// précédent peuvent être supprimées entre-temps par la purge de index.php (plus de 3 h)
+$deja_presentes = glob("$travail/copie_*");
+function nouvelles() { global $travail, $deja_presentes; clearstatcache(); return array_diff(glob("$travail/copie_*"), $deja_presentes); }
+function copies() { return count(nouvelles()); }
+function tailles() { return array_sum(array_map('filesize', nouvelles())); }
 
-$avant = copies();
-$taille_avant = tailles(); // copies éventuellement laissées par un essai précédent
 list($code, $page) = http("$u/index.php");
 $entetes = implode("\n", $derniers_entetes);
 verifie('en-têtes de sécurité', stripos($entetes, 'X-SQLSandbox: 1') !== false
@@ -268,7 +270,7 @@ verifie('index.php répond', $code == 200 && strpos($page, 'csrf_token') !== fal
 $session = dirname($racine).'/sessions-sqlsandbox/sess_'.substr($cookie, strlen('PHPSESSID='));
 verifie('session rangée hors du site', is_file($session) && strpos(realpath($session), $racine.'/') !== 0, $session);
 verifie('chemins serveur non exposés', strpos($page, '"fichier"') === false && strpos($page, '"config"') === false);
-verifie('visite : fichiers réservés hors du site, mais vides', copies() > $avant && tailles() == $taille_avant, tailles());
+verifie('visite : fichiers réservés hors du site, mais vides', copies() > 0 && tailles() == 0, tailles());
 verifie('aucune copie dans tmp/ du site', count(glob($racine.'/tmp/copie_*')) == 0);
 preg_match('/csrf_token = "([0-9a-f]+)"/', $page, $m);
 $jeton = $m[1] ?? '';
@@ -278,7 +280,7 @@ list($code, $corps) = http("$u/controler.php", $requete);
 verifie('requête sans jeton refusée (403)', $code == 403 && strpos($corps, 'Session expirée') !== false);
 list($code, $corps) = http("$u/controler.php", $requete + array('csrf' => $jeton));
 verifie('requête avec jeton exécutée', $code == 200 && strpos($corps, 'Dupont') !== false, $corps);
-verifie('copie faite à la première requête', tailles() > $taille_avant, tailles());
+verifie('copie faite à la première requête', tailles() > 0, tailles());
 list($code, $corps) = http("$u/controler.php?Soumettre=inexistante");
 verifie('rubrique inconnue refusée', strpos($corps, 'inconnue') !== false, $corps);
 list($code, $corps) = http("$u/tp.php?base=tp-em&tp=tp-em-01");
@@ -292,7 +294,7 @@ verifie('page d\'un thème', substr_count($corps, 'ouvre_question(') == 1, $corp
 list($code, $corps) = http("$u/controler.php?Soumettre=tp&nom_base=tp-em");
 verifie('liste des TP', strpos($corps, 'page_tp(') !== false && strpos($corps, 'tp-em-02') !== false, $corps);
 list($code, $corps) = http("$u/controler.php", array('Soumettre' => 'end', 'csrf' => $jeton));
-verifie('fin de session : copies purgées', strpos($corps, 'purgées') !== false && copies() == $avant);
+verifie('fin de session : copies purgées', strpos($corps, 'purgées') !== false && copies() == 0);
 
 proc_terminate($serveur);
 proc_close($serveur);
