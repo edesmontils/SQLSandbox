@@ -4,7 +4,7 @@
 <!ENTITY seuil '10800'>
 ]>
 
-<mab version="6.0-dev" debug="false" name="SQL Sandbox">
+<mab version="6.0" debug="false" name="SQL Sandbox">
 	<!-- numéro de version de l'application -->
 	<!-- durée limite de vie d'une copie de base : 60*60*3 = 3 heures -->
 	<seuil>&seuil;</seuil>
@@ -134,22 +134,32 @@
 	<listeMessages>
 		<!--message titre="" post=""><p></p>
 		</message-->
-		<message titre="Version 6.0 (en préparation)" date="22/10/26" auteur="E. Desmontils">
+		<message titre="Version 6.0" date="22/10/26" auteur="E. Desmontils">
 			<div>
-				<p>Cette version de test modernise l'interface :</p>
+				<p>SQL Sandbox fait peau neuve. Cette version apporte :</p>
 				<ul>
-					<li>une nouvelle présentation, commune avec QueryCraft, lisible sur téléphone et
-						tablette ;</li>
-					<li>des onglets et de vrais boutons, avec leur libellé, à la place des
-						icônes ;</li>
-					<li>un éditeur SQL avec coloration syntaxique et numéros de ligne ; Ctrl+Entrée
-						exécute la requête ;</li>
-					<li>une requête de départ adaptée à la base choisie ;</li>
-					<li>le modèle de chaque base : diagramme, schéma relationnel et script SQL ;</li>
-					<li>des clés étrangères ajoutées aux bases tp-robots et tp-mondial ;</li>
-					<li>des clés étrangères désormais vérifiées : une modification qui ne les
-						respecte pas est refusée.</li>
+					<li>une <b>nouvelle présentation</b>, commune avec QueryCraft, lisible sur
+						ordinateur, tablette et téléphone, avec une police conçue pour la
+						lisibilité ;</li>
+					<li>des <b>onglets</b> (Accueil, Requête, Mémoire, Aide), les bases en pastilles
+						et de vrais <b>boutons avec leur libellé</b> à la place des icônes ;</li>
+					<li>un <b>éditeur SQL</b> avec coloration syntaxique et numéros de ligne :
+						Ctrl+Entrée (Cmd+Entrée sur Mac) exécute la requête ;</li>
+					<li>une <b>requête de départ adaptée à la base choisie</b>, qui suit le changement
+						de base tant que vous ne l'avez pas modifiée ;</li>
+					<li>le <b>modèle de chaque base</b> (bouton « 🧩 Modèle de la base ») : diagramme
+						des tables et de leurs liens, schéma relationnel, structure des tables et
+						script SQL de création ; il est lu sur votre copie et suit donc vos CREATE,
+						ALTER et DROP ;</li>
+					<li>des <b>clés étrangères</b> dans toutes les bases (ajoutées à tp-robots et
+						tp-mondial, dont les données ont été corrigées) et désormais <b>vérifiées</b> :
+						une modification qui ne les respecte pas est refusée, avec une explication ;</li>
+					<li>des messages plus clairs : réussite et échec des requêtes, session expirée
+						expliquée une seule fois avec un bouton pour recharger l'application ;</li>
+					<li>une aide entièrement réécrite (onglet « ❓ Aide »).</li>
 				</ul>
+				<p>Attention : ouvrir l'application dans un second onglet réinitialise toujours les
+					bases du premier.</p>
 			</div>
 		</message>
 		<message titre="Version 5.0" date="21/10/26" auteur="E. Desmontils">

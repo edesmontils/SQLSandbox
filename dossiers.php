@@ -1,12 +1,12 @@
 <?php
 // Nom de cette installation : il donne le nom du cookie de session et des dossiers de
-// travail. Deux installations sur un même hébergement (la 5.0 en service et la 6.0 en
-// test) doivent avoir des noms différents, sinon elles partagent cookie et sessions,
-// et l'ouverture de l'une réinitialise les bases de l'autre.
-if (!defined('INSTANCE')) define('INSTANCE', 'sqlsandbox6');
+// travail. Deux installations sur un même hébergement (par exemple une version de test
+// à côté de celle en service) doivent avoir des noms différents, sinon elles partagent
+// cookie et sessions, et l'ouverture de l'une réinitialise les bases de l'autre.
+if (!defined('INSTANCE')) define('INSTANCE', 'sqlsandbox');
 
 // Dossiers de travail de l'application (copies des bases, verrous, sessions).
-// Ils sont placés hors du site, à côté de la racine web (par exemple ~/sqlsandbox6-tmp
+// Ils sont placés hors du site, à côté de la racine web (par exemple ~/sqlsandbox-tmp
 // chez OVH), pour ne pas dépendre d'un .htaccess : un fichier caché se perd facilement
 // lors d'un envoi par FTP. À défaut, on se replie sur un dossier du site ($repli).
 function dossier_prive($nom, $repli) {
