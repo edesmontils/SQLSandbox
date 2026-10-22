@@ -192,6 +192,9 @@ function ouvre_base($base) {
 	// Limites fixées avant l'autorizer, qui interdit ensuite de les modifier
 	$taille_page = (int)$db->querySingle('PRAGMA page_size');
 	if ($taille_page > 0) $db->exec('PRAGMA max_page_count = '.(int)(TAILLE_MAX_BASE / $taille_page));
+	// Clés étrangères vérifiées, comme dans les autres SGBD : SQLite ne le fait pas par
+	// défaut, et l'étudiant ne peut pas l'activer lui-même (PRAGMA refusé)
+	$db->exec('PRAGMA foreign_keys = ON');
 	$db->setAuthorizer('autorisation_sql');
 	return $db;
 }
@@ -201,6 +204,10 @@ function message_erreur($db) {
 	$m = htmlspecialchars($db->lastErrorMsg()).' ('.$db->lastErrorCode().')';
 	if ($db->lastErrorCode() == 13) // SQLITE_FULL
 		$m .= ' : la base a atteint sa taille maximale ('.(TAILLE_MAX_BASE / 1024 / 1024).' Mo).';
+	if (stripos($db->lastErrorMsg(), 'FOREIGN KEY constraint failed') !== false)
+		$m .= '<br/>Une clé étrangère n\'est pas respectée : soit la ligne fait référence à une valeur '
+		     .'absente de la table référencée, soit la ligne supprimée ou modifiée est encore '
+		     .'référencée par une autre table. Le bouton « 🧩 Modèle » montre les clés de la base.';
 	return $m;
 }
 

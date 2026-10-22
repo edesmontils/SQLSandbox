@@ -43,6 +43,13 @@
 					donc les colonnes avec un nom "aléatoire". Du coup, l'utilisation des attributs
 					(dans le "select" ou le "where" par exemple), n'est plus possible. Il faut donc
 					préférer la version sans parenthèses.</p>
+				<h3>Clés étrangères</h3>
+				<p>SQLite ne vérifie pas les clés étrangères par défaut. SQL Sandbox active cette
+					vérification sur votre copie de la base, comme le font les autres SGBD : une
+					insertion qui fait référence à une valeur absente, ou la suppression d'une ligne
+					encore référencée, est refusée (« FOREIGN KEY constraint failed »). Pour supprimer
+					une table référencée par d'autres, supprimez d'abord les lignes ou les tables qui
+					la référencent.</p>
 				<h3>Guillemets et apostrophes</h3>
 				<p>Les valeurs de type chaîne de caractères s'écrivent entre apostrophes (par exemple
 					'Dupont'), comme en SQL standard. SQLite accepte aussi les guillemets ("Dupont"),
@@ -139,7 +146,9 @@
 						exécute la requête ;</li>
 					<li>une requête de départ adaptée à la base choisie ;</li>
 					<li>le modèle de chaque base : diagramme, schéma relationnel et script SQL ;</li>
-					<li>des clés étrangères ajoutées aux bases tp-robots et tp-mondial.</li>
+					<li>des clés étrangères ajoutées aux bases tp-robots et tp-mondial ;</li>
+					<li>des clés étrangères désormais vérifiées : une modification qui ne les
+						respecte pas est refusée.</li>
 				</ul>
 			</div>
 		</message>

@@ -50,6 +50,12 @@ verifie('INSERT exécuté une seule fois', $db->querySingle("select count(*) fro
 $db->close();
 list($r, $o) = execute("insert into etudiants values(null, null, null)");
 verifie('violation de contrainte signalée', $r === null && strpos($o, 'NOT NULL') !== false, $o);
+// Clés étrangères vérifiées sur la copie (désactivées par défaut dans SQLite)
+list($r, $o) = execute("insert into notes (noe, codemat) values ('inconnu', 'inconnu')");
+verifie('clé étrangère : insertion orpheline refusée', $r === null && strpos($o, 'FOREIGN KEY') !== false
+        && strpos($o, 'Une clé étrangère') !== false, $o);
+list($r, $o) = execute("delete from etudiants where noetu in (select noe from notes)");
+verifie('clé étrangère : suppression d\'une ligne référencée refusée', $r === null && strpos($o, 'FOREIGN KEY') !== false, $o);
 list($r, $o) = execute("select '<script>x</script>' as \"<b>\"");
 verifie('sortie échappée', strpos($o, '<script>x') === false && strpos($o, '&lt;script&gt;') !== false
                            && strpos($o, '<b>') === false, $o);
