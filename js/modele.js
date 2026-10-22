@@ -61,7 +61,8 @@ function affiche_modele(nom, m) {
     }
     t += '<p class="legende"><span class="cle-primaire">souligné</span> : clé primaire'
         + '<span class="separateur">·</span><strong>#</strong> : clé étrangère'
-        + '<span class="separateur">·</span>flèche : de la clé étrangère vers la table qu\'elle référence</p>';
+        + '<span class="separateur">·</span>flèche : de la clé étrangère vers la table qu\'elle référence '
+        + '(une flèche par colonne pour une clé étrangère composée)</p>';
 
     t += '<h3>Diagramme</h3>';
     t += '<div class="actions"><button type="button" class="btn secondaire petit" onclick="bascule_ajustement(this)">'
@@ -299,33 +300,37 @@ function dessine_modele(m) {
     s += '<defs><marker id="fleche" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" '
         + 'orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="fleche"/></marker></defs>';
 
-    // Liens (sous les boîtes)
+    // Liens (sous les boîtes). Une clé étrangère composée, comme resultats(numep, compet) →
+    // epreuves(numep, compet), a une flèche par colonne : chacune part de la colonne de la
+    // table qui référence et arrive sur la colonne référencée.
     boites.forEach(function (b) {
         b.table.cles.forEach(function (k) {
             var p = index[k.table.toLowerCase()];
             if (p === undefined) return; // table référencée absente
             var c = boites[p];
-            var y1 = y_colonne(b, k.colonnes[0]);
-            var y2 = y_colonne(c, k.references[0]);
-            var x1, x2, d;
-            if (c === b) { // la table se référence elle-même
-                x1 = b.x + b.l; x2 = b.x + b.l;
-                d = 'M' + x1 + ',' + y1 + ' C' + (x1 + 45) + ',' + y1 + ' ' + (x2 + 45) + ',' + y2 + ' ' + x2 + ',' + y2;
-            } else if (Math.abs(c.x - b.x) < 1) { // même colonne : boucle par la droite
-                x1 = b.x + b.l; x2 = c.x + c.l;
-                var dx = 40 + Math.abs(y2 - y1) / 6;
-                d = 'M' + x1 + ',' + y1 + ' C' + (x1 + dx) + ',' + y1 + ' ' + (x2 + dx) + ',' + y2 + ' ' + x2 + ',' + y2;
-            } else {
-                var gauche = c.x < b.x;
-                x1 = gauche ? b.x : b.x + b.l;
-                x2 = gauche ? c.x + c.l : c.x;
-                var e = Math.max(30, Math.abs(x2 - x1) / 2) * (gauche ? -1 : 1);
-                d = 'M' + x1 + ',' + y1 + ' C' + (x1 + e) + ',' + y1 + ' ' + (x2 - e) + ',' + y2 + ' ' + x2 + ',' + y2;
-            }
-            s += '<path class="lien" data-de="' + echappe(b.table.nom).replace(/"/g, '&quot;') + '" data-vers="'
-                + echappe(c.table.nom).replace(/"/g, '&quot;') + '" d="' + d + '" marker-end="url(#fleche)">'
-                + '<title>' + echappe(b.table.nom) + '(' + liste_colonnes(k.colonnes) + ') → '
-                + echappe(c.table.nom) + '(' + liste_colonnes(k.references) + ')</title></path>';
+            k.colonnes.forEach(function (colonne, i) {
+                var y1 = y_colonne(b, colonne);
+                var y2 = y_colonne(c, k.references[i] === undefined ? k.references[0] : k.references[i]);
+                var x1, x2, d;
+                if (c === b) { // la table se référence elle-même
+                    x1 = b.x + b.l; x2 = b.x + b.l;
+                    d = 'M' + x1 + ',' + y1 + ' C' + (x1 + 45) + ',' + y1 + ' ' + (x2 + 45) + ',' + y2 + ' ' + x2 + ',' + y2;
+                } else if (Math.abs(c.x - b.x) < 1) { // même colonne : boucle par la droite
+                    x1 = b.x + b.l; x2 = c.x + c.l;
+                    var dx = 40 + Math.abs(y2 - y1) / 6;
+                    d = 'M' + x1 + ',' + y1 + ' C' + (x1 + dx) + ',' + y1 + ' ' + (x2 + dx) + ',' + y2 + ' ' + x2 + ',' + y2;
+                } else {
+                    var gauche = c.x < b.x;
+                    x1 = gauche ? b.x : b.x + b.l;
+                    x2 = gauche ? c.x + c.l : c.x;
+                    var e = Math.max(30, Math.abs(x2 - x1) / 2) * (gauche ? -1 : 1);
+                    d = 'M' + x1 + ',' + y1 + ' C' + (x1 + e) + ',' + y1 + ' ' + (x2 - e) + ',' + y2 + ' ' + x2 + ',' + y2;
+                }
+                s += '<path class="lien" data-de="' + echappe(b.table.nom).replace(/"/g, '&quot;') + '" data-vers="'
+                    + echappe(c.table.nom).replace(/"/g, '&quot;') + '" d="' + d + '" marker-end="url(#fleche)">'
+                    + '<title>' + echappe(b.table.nom) + '(' + liste_colonnes(k.colonnes) + ') → '
+                    + echappe(c.table.nom) + '(' + liste_colonnes(k.references) + ')</title></path>';
+            });
         });
     });
 
