@@ -192,6 +192,9 @@ function ouvre_base($base) {
 	// Limites fixées avant l'autorizer, qui interdit ensuite de les modifier
 	$taille_page = (int)$db->querySingle('PRAGMA page_size');
 	if ($taille_page > 0) $db->exec('PRAGMA max_page_count = '.(int)(TAILLE_MAX_BASE / $taille_page));
+	// Clés étrangères vérifiées, comme dans les autres SGBD : SQLite ne le fait pas par
+	// défaut, et l'étudiant ne peut pas l'activer lui-même (PRAGMA refusé)
+	$db->exec('PRAGMA foreign_keys = ON');
 	$db->setAuthorizer('autorisation_sql');
 	return $db;
 }
@@ -201,6 +204,10 @@ function message_erreur($db) {
 	$m = htmlspecialchars($db->lastErrorMsg()).' ('.$db->lastErrorCode().')';
 	if ($db->lastErrorCode() == 13) // SQLITE_FULL
 		$m .= ' : la base a atteint sa taille maximale ('.(TAILLE_MAX_BASE / 1024 / 1024).' Mo).';
+	if (stripos($db->lastErrorMsg(), 'FOREIGN KEY constraint failed') !== false)
+		$m .= '<br/>Une clé étrangère n\'est pas respectée : soit la ligne fait référence à une valeur '
+		     .'absente de la table référencée, soit la ligne supprimée ou modifiée est encore '
+		     .'référencée par une autre table. Le bouton « 🧩 Modèle » montre les clés de la base.';
 	return $m;
 }
 
@@ -208,7 +215,7 @@ function message_erreur($db) {
 function arret_requete() {
 	$e = error_get_last();
 	if ($e && $e['type'] == E_ERROR && strpos($e['message'], 'Maximum execution time') !== false) {
-		echo "<script language='javascript'>result_type='ko';</script>"
+		echo "<script>result_type='ko';</script>"
 		    ."<p>Requête interrompue : durée maximale d'exécution dépassée (".DELAI_MAX." s).</p>";
 	}
 }
@@ -244,7 +251,7 @@ function reserve_execution() {
 function get($requete,$base) {
 	$db = ouvre_base($base);
 	if (is_null($db)) {
-		echo "<script language='javascript'>result_type='ko';</script><p>Base inconnue ou inaccessible. "
+		echo "<script>result_type='ko';</script><p>Base inconnue ou inaccessible. "
 		    ."Rouvrez l'application depuis sa page d'accueil pour réinitialiser les bases.</p>";
 		return null;
 	}
@@ -252,7 +259,7 @@ function get($requete,$base) {
 	// de l'élève ne restent pas bloqués pendant l'exécution de la requête
 	if (session_status() == PHP_SESSION_ACTIVE) session_write_close();
 	if (!reserve_execution()) {
-		echo "<script language='javascript'>result_type='ko';</script><p>Trop de requêtes en cours depuis "
+		echo "<script>result_type='ko';</script><p>Trop de requêtes en cours depuis "
 		    ."votre adresse : patientez quelques secondes avant de réessayer.</p>";
 		$db->close();
 		return null;
@@ -264,13 +271,13 @@ function get($requete,$base) {
 		$arret_enregistre = true;
 	}
 	if (strlen($requete) > LONGUEUR_MAX_REQUETE) {
-		echo "<script language='javascript'>result_type='ko';</script><p>Requête trop longue (au plus "
+		echo "<script>result_type='ko';</script><p>Requête trop longue (au plus "
 		    .(LONGUEUR_MAX_REQUETE / 1024)." Ko).</p>";
 		$db->close();
 		return null;
 	}
 	if (!sqlite_recent() && utilise_fenetrage($requete)) {
-		echo "<script language='javascript'>result_type='ko';</script><p>Les fonctions de fenêtrage "
+		echo "<script>result_type='ko';</script><p>Les fonctions de fenêtrage "
 		    ."(OVER, WINDOW) ne sont pas disponibles sur ce serveur : sa version de SQLite (".html(SQLite3::version()['versionString'])
 		    .") a des failles connues dans ces fonctions.</p>";
 		$db->close();
@@ -286,9 +293,9 @@ function get($requete,$base) {
 		if ($nbcol == 0) {
 			// Requête sans résultat tabulaire (INSERT, UPDATE, CREATE...) : déjà exécutée
 			$nb = $db->changes();
-			echo "<script language='javascript'>result_type='ok';</script><p>Requête exécutée ($nb ligne(s) modifiée(s))</p>";
+			echo "<script>result_type='ok';</script><p>Requête exécutée ($nb ligne(s) modifiée(s))</p>";
 		} else {
-			echo '<table cellspacing="5" border="2" cellpadding="2"><thead><tr>';
+			echo '<table class="resultat"><thead><tr>';
 			for ($i = 0; $i < $nbcol; $i++) {
 				echo '<th>'.htmlspecialchars($result->columnName($i)).'</th>';
 			}
@@ -306,9 +313,9 @@ function get($requete,$base) {
 			}
 			echo '</tbody></table>';
 			if ($db->lastErrorCode() != 0 && $db->lastErrorCode() != 100 && $db->lastErrorCode() != 101) {
-				echo '<script language="javascript">result_type=\'ko\';</script><p>'.message_erreur($db).'</p>';
+				echo '<script>result_type=\'ko\';</script><p>'.message_erreur($db).'</p>';
 			} else {
-				echo "<script language='javascript'>result_type='ok';</script><p> $nbtuples ligne(s) obtenue(s)"
+				echo "<script>result_type='ok';</script><p> $nbtuples ligne(s) obtenue(s)"
 				     .($tronque ? ' (affichage limité aux '.MAX_LIGNES.' premières lignes)' : '').'</p>';
 				$ok = true;
 			}
@@ -317,10 +324,67 @@ function get($requete,$base) {
 		if (is_null($ok) && $nbcol == 0) $ok = true;
 	} else {
 		echo '<p>Problème dans la requête</p>';
-		echo "<script language='javascript'>result_type='ko';</script><p>".message_erreur($db)."</p>";
+		echo "<script>result_type='ko';</script><p>".message_erreur($db)."</p>";
 	}
 	$db->close();
 	return $ok;
+}
+
+// Modèle de la base $base, lu sur la copie de session (il suit donc les CREATE, ALTER et
+// DROP de l'étudiant) : tables avec colonnes, clé primaire et clés étrangères, vues, et
+// instructions SQL de création. Retourne null si la base est inconnue.
+function modele_base($base) {
+	$db = ouvre_base($base);
+	if (is_null($db)) return null;
+	$modele = array('tables' => array(), 'vues' => array(), 'sql' => array());
+	$objets = $db->query("SELECT type, name, sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' "
+	                    ."AND sql IS NOT NULL ORDER BY CASE type WHEN 'table' THEN 1 WHEN 'view' THEN 2 "
+	                    ."WHEN 'index' THEN 3 ELSE 4 END, lower(name)");
+	$liste = array();
+	while ($objets && ($o = $objets->fetchArray(SQLITE3_ASSOC))) $liste[] = $o;
+	foreach ($liste as $o) {
+		$modele['sql'][] = trim($o['sql']).';';
+		if ($o['type'] == 'view') $modele['vues'][] = $o['name'];
+		if ($o['type'] != 'table') continue;
+		$nom = '"'.str_replace('"', '""', $o['name']).'"';
+		$colonnes = array();
+		$r = $db->query("PRAGMA table_info($nom)");
+		while ($r && ($c = $r->fetchArray(SQLITE3_ASSOC))) {
+			$colonnes[] = array('nom' => $c['name'], 'type' => $c['type'],
+			                    'non_nul' => (bool)$c['notnull'], 'pk' => (int)$c['pk']);
+		}
+		// Clés étrangères : une entrée par contrainte, colonnes dans l'ordre de la contrainte
+		$cles = array();
+		$r = $db->query("PRAGMA foreign_key_list($nom)");
+		while ($r && ($f = $r->fetchArray(SQLITE3_ASSOC))) {
+			$id = $f['id'];
+			if (!isset($cles[$id])) $cles[$id] = array('colonnes' => array(), 'table' => $f['table'], 'references' => array());
+			$cles[$id]['colonnes'][$f['seq']] = $f['from'];
+			// Référence implicite (REFERENCES t sans colonne) : la clé primaire de t
+			$cles[$id]['references'][$f['seq']] = $f['to'];
+		}
+		foreach ($cles as &$k) {
+			ksort($k['colonnes']); ksort($k['references']);
+			$k['colonnes'] = array_values($k['colonnes']);
+			$k['references'] = array_values($k['references']);
+		}
+		unset($k);
+		$modele['tables'][] = array('nom' => $o['name'], 'colonnes' => $colonnes, 'cles' => array_values($cles));
+	}
+	// Références implicites complétées par la clé primaire de la table visée
+	$pk = array();
+	foreach ($modele['tables'] as $t) {
+		$cols = array_filter($t['colonnes'], function ($c) { return $c['pk'] > 0; });
+		usort($cols, function ($a, $b) { return $a['pk'] - $b['pk']; });
+		$pk[strtolower($t['nom'])] = array_map(function ($c) { return $c['nom']; }, $cols);
+	}
+	foreach ($modele['tables'] as &$t) foreach ($t['cles'] as &$k) {
+		if (count(array_filter($k['references'], 'is_null')) > 0 && isset($pk[strtolower($k['table'])]))
+			$k['references'] = $pk[strtolower($k['table'])];
+	}
+	unset($t, $k);
+	$db->close();
+	return $modele;
 }
 
 // Tables et vues de la copie de session de $base, ou de la base d'origine $fichier
@@ -367,17 +431,17 @@ function liste_base($base) {
 		echo '	<h2 class="title">'."Table $nom".'</h2>';
 		echo '    <div class="story">';
 		get('select * from "'.str_replace('"','""',$ta).'" order by 1',$base);
-		echo "<p><a href='#matiere'><img src='images/up_64.png' alt='Sommaire' title='Sommaire' width='32'/></a></p>";
+		echo "<p class='retour-sommaire'><a href='#matiere'>⬆️ Retour au sommaire</a></p>";
 		echo '</div></div>';
 	}
 }
 
 // Sommaire des tables d'une base
 function sommaire($tables) {
-	echo "<a id='matiere'></a><div class='post'><h2 class='title'>Sommaire</h2><div class='story'><ul>";
+	echo "<a id='matiere'></a><div class='post'><h2 class='title'>Sommaire</h2><div class='story'><ul class='sommaire'>";
 	foreach($tables as $ta) {
 		$nom = htmlspecialchars($ta, ENT_QUOTES);
-		echo "<li><a href='#$nom'><img src='images/down_64.png' alt='' width='16'/>&nbsp;&nbsp;$nom</a></li>";
+		echo "<li><a class='pastille' href='#$nom'>$nom</a></li>";
 	}
 	echo "</ul></div></div>";
 }
@@ -503,7 +567,7 @@ function liste_TP($base) {
 		foreach($conf->{'liste-TP'}->TP as $tp) {
 			$nb++;
 			echo "<li><a href='#' onClick='page_tp(".args_js($base, (string)$tp['nom']).");return false;'>"
-			    ."<img src='images/down_64.png' height='16' width='16' alt=''/> ".html($tp['nom'])."</a></li>";
+			    .html($tp['nom'])."</a></li>";
 		}
 	}
 	echo "</ul>";
@@ -525,22 +589,21 @@ function page_tp($base, $nom_tp) {
 
 	echo "<div class='post'><h2 class='title'>".html($tp['nom'])."</h2>";
 	echo contenu_xml($tp->{'objectif-pédagogique'});
-	echo "<p><a class='btnPopup' href='tp.php?base=".html(urlencode($base))."&amp;tp=".html(urlencode($tp['nom']))."' target='_blank'>Commencer</a></p>";
+	echo "<p class='actions'><a class='btn' href='tp.php?base=".html(urlencode($base))."&amp;tp=".html(urlencode($tp['nom']))."' target='_blank'>🚀 Commencer le TP</a></p>";
 	echo "</div>";
 	echo "<div class='post'><h2 class='title'>Nombre de questions : ".count($questions)."</h2></div>";
 	echo "<div class='post'><h2 class='title'>Mots clés</h2><h3 class='indicateur'>";
 	foreach(array_keys($themes) as $t) echo html(nom_theme($t))."<br/>";
 	echo "</h3></div>";
-	echo "<div class='post'><h2 class='title'>Icônes utilisés : <a href='aides.php' target='_blank'>"
-	    ."<img src='images/help_64.png' width='20' alt='Aide'/></a></h2></div>";
 	echo "<div class='post'><h2 class='title'>Déroulement</h2><ul>"
-	    ."<li>Pour débuter le TP, appuyez sur le bouton « Commencer » : la liste des questions s'ouvre dans un nouvel onglet.</li>"
-	    ."<li>Pour commencer une question, cliquez sur le crayon.</li>"
-	    ."<li>Lors d'une question, plusieurs choix se proposent à vous :<ul>"
-	    ."<li>retourner au menu des questions avec la flèche, en mémorisant votre réponse ;</li>"
-	    ."<li>mémoriser votre réponse grâce au panier ;</li>"
-	    ."<li>exécuter votre requête grâce à la roue crantée (sauf pour les questions où il faut trouver l'intention).</li>"
-	    ."</ul></li></ul></div>";
+	    ."<li>Pour débuter le TP, appuyez sur « 🚀 Commencer le TP » : la liste des questions s'ouvre dans un nouvel onglet.</li>"
+	    ."<li>Pour traiter une question, cliquez sur « ✏️ Répondre ».</li>"
+	    ."<li>Dans une question :<ul>"
+	    ."<li>« ▶️ Exécuter » (ou Ctrl+Entrée) lance votre requête (sauf pour les questions où il faut trouver l'intention) ;</li>"
+	    ."<li>« 🧺 Mémoriser la réponse » garde votre réponse ;</li>"
+	    ."<li>« ⬅️ Retour aux questions » revient à la liste, en mémorisant votre réponse.</li>"
+	    ."</ul></li></ul>"
+	    ."<p><a href='aides.php' target='_blank'>❓ Aide de l'application</a></p></div>";
 }
 
 // Thèmes disponibles pour le travail thématique d'une base, avec leur difficulté
@@ -549,7 +612,7 @@ function themes_dispo($base) {
 	echo "<div class='post'><h2 class='title'>Questions à thèmes</h2><ul>";
 	foreach($themes as $t => $poids) {
 		echo "<li><a href='questionsThem.php?base=".html(urlencode($base))."&amp;theme=".html(urlencode($t))."' target='_blank'>"
-		    ."<img src='images/down_64.png' height='16' width='16' alt=''/> ".html(nom_theme($t))."</a></li>";
+		    .html(nom_theme($t))."</a></li>";
 	}
 	echo "</ul>";
 	if (count($themes) == 0) {
@@ -574,9 +637,9 @@ function bouton_question($q, $base, $numero) {
 		'sql' => texte_sql($q->getName() == 'rq-trou' && count($sql) > 1 ? $sql[1] : $sql[0]),
 		'aide' => contenu_xml($q->aide)
 	);
-	echo "<p><a>Question $numero</a> ";
-	echo "<img src='images/pencil_64.png' alt='Répondre' title='Répondre à la question' width='32' "
-	    ."onClick='ouvre_question(".args_js($question)."); return false;' style='cursor:pointer'/></p>";
+	echo "<p class='question'><span>Question $numero</span> ";
+	echo "<button type='button' class='btn petit' title='Répondre à la question' "
+	    ."onclick='ouvre_question(".args_js($question).")'>✏️ Répondre</button></p>";
 }
 
 // Liste des questions d'un TP (page tp.php)
@@ -592,11 +655,11 @@ function liste_question($base, $nom_tp) {
 	if ((string)$tp['statut'] == 'note') {
 		// TP noté : compte à rebours d'une heure
 		echo "<h3 class='indicateur'>Temps restant : <span id='countdown'></span></h3>";
-		echo "<script type='text/javascript'>
+		echo "<script>
 			var temps_restant = 60 * 60;
 			function compte_a_rebours() {
 				var s = temps_restant % 60;
-				$('countdown').update(Math.floor(temps_restant / 60) + ' min ' + (s < 10 ? '0' : '') + s + ' s');
+				$('countdown').textContent = (Math.floor(temps_restant / 60) + ' min ' + (s < 10 ? '0' : '') + s + ' s');
 				if (temps_restant > 0) temps_restant--;
 			}
 			compte_a_rebours();
@@ -628,34 +691,52 @@ function liste_question_thema($base, $theme) {
 
 // En-tête commun des pages ouvertes dans un nouvel onglet (TP, thèmes, tables, aide)
 function debut_page() {
-	?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
+	?><!DOCTYPE html>
+<html lang="fr">
 <head>
-  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SQL Sandbox</title>
-  <link href="default.css" rel="stylesheet" type="text/css" />
-  <script src="./js/prototype.js" type="text/javascript"></script>
-  <script src="./js/scriptaculous/scriptaculous.js" type="text/javascript"></script>
-  <script type="text/javascript">
+  <link rel="icon" href="images/favicon.svg" type="image/svg+xml">
+  <link href="js/codemirror/codemirror.css" rel="stylesheet">
+  <link href="default.css" rel="stylesheet">
+  <script>
     csrf_token = <?php echo json_encode(isset($_SESSION['csrf']) ? $_SESSION['csrf'] : ''); ?>;
   </script>
-  <script src="./js/bd_base.js" type="text/javascript"></script>
+  <!-- Éditeur SQL : CodeMirror 5 (licence MIT, js/codemirror/LICENSE) -->
+  <script src="./js/codemirror/codemirror.js"></script>
+  <script src="./js/codemirror/sql.js"></script>
+  <script src="./js/bd_base.js"></script>
+  <script src="./js/modele.js"></script>
 </head>
 <body>
-<div id="content">
+<div class="container">
+<header class="entete compacte">
+  <div class="marque">
+    <img src="images/logo.svg" alt="">
+    <h1>SQL Sandbox</h1>
+  </div>
+</header>
+<main id="contenu">
   <div id="posts">
 <?php
 }
 
 function fin_page() {
-	echo "  </div>\n</div>\n</body>\n</html>\n";
+	echo "  </div>\n</main>\n"
+	    ."<footer class='pied'><p>© 2010-2026 E. Desmontils, Nantes Université"
+	    ."<span class='separateur'>·</span> Logiciel libre sous licence GPL v3</p></footer>\n"
+	    ."</div>\n</body>\n</html>\n";
 }
 
 // Vérifie que la session a été initialisée par index.php (copies des bases)
 function session_initialisee() {
 	if (isset($_SESSION['debug'])) return true;
-	echo "<div class='post'><h2 class='title'>Session non initialisée</h2><div class='story'>"
-	    ."<p>Ouvrez d'abord l'application depuis sa page d'accueil, puis relancez cette page.</p></div></div>";
+	echo "<div class='post'><h2 class='title'>Session expirée ou absente</h2><div class='story'>"
+	    ."<p class='message'>Le serveur ne reconnaît pas votre session : l'application n'a pas encore été "
+	    ."ouverte dans ce navigateur, ou la session a expiré (elle dure 3 heures).</p>"
+	    ."<p>Ouvrez l'application depuis sa page d'accueil, puis rouvrez cette page (TP, thème ou tables).</p>"
+	    ."<p class='actions'><a class='btn' href='index.php'>🏠 Ouvrir l'application</a></p></div></div>";
 	return false;
 }
 ?>

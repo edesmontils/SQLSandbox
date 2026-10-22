@@ -16,7 +16,7 @@ ini_set('display_errors', '0');
 // vide, et protégé par tmp/.htaccess quand celui-ci est pris en compte).
 define('DUREE_SESSION', 3 * 60 * 60);
 require_once __DIR__.'/dossiers.php';
-$dossierSessions = dossier_prive('sessions-sqlsandbox', __DIR__.'/tmp/sessions');
+$dossierSessions = dossier_prive('sessions-'.INSTANCE, __DIR__.'/tmp/sessions');
 if (!is_null($dossierSessions)) {
 	if (strpos($dossierSessions, __DIR__) === 0 && !is_file($dossierSessions.'/index.html'))
 		@touch($dossierSessions.'/index.html'); // pas de liste des fichiers sans .htaccess
@@ -27,6 +27,9 @@ if (!is_null($dossierSessions)) {
 ini_set('session.gc_maxlifetime', (string)DUREE_SESSION);
 // Cookie réservé à HTTPS quand le site est servi en HTTPS
 ini_set('session.cookie_secure', (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? '1' : '0');
+// Cookie propre à l'installation (INSTANCE) : avec le nom par défaut, PHPSESSID, deux
+// installations du même domaine se volaient la session
+session_name(INSTANCE);
 $session_ok = session_start();
 // L'application ne doit pas être affichée dans un cadre d'un autre site (clickjacking)
 header('X-Frame-Options: SAMEORIGIN');

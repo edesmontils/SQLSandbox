@@ -1,5 +1,7 @@
 
-CREATE TABLE City (Name VARCHAR(35), Country VARCHAR(4), Province VARCHAR(35), Population INT, Longitude FLOAT, Latitude FLOAT, CONSTRAINT CityKey PRIMARY KEY (Name, Country, Province));
+CREATE TABLE City (Name VARCHAR(35), Country VARCHAR(4), Province VARCHAR(35), Population INT, Longitude FLOAT, Latitude FLOAT, CONSTRAINT CityKey PRIMARY KEY (Name, Country, Province),
+  FOREIGN KEY (Country) REFERENCES Country(Code),
+  FOREIGN KEY (Province, Country) REFERENCES Province(Name, Country));
 
 INSERT INTO 'City' ('Name', 'Country', 'Province', 'Population', 'Longitude', 'Latitude') VALUES ('Tirane', 'AL', 'Albania', '192000', '19.8', '41.3');
 INSERT INTO 'City' ('Name', 'Country', 'Province', 'Population', 'Longitude', 'Latitude') VALUES ('Shkoder', 'AL', 'Albania', '62000', '19.2', '42.2');
@@ -3121,7 +3123,9 @@ INSERT INTO 'Continent' ('Name', 'Area') VALUES ('Australia/Oceania', '8503474.0
 INSERT INTO 'Continent' ('Name', 'Area') VALUES ('Africa', '30254708.0');
 INSERT INTO 'Continent' ('Name', 'Area') VALUES ('America', '39872000.0');
 
-CREATE TABLE Country ( Name VARCHAR(35) NOT NULL UNIQUE, Code VARCHAR(4), Capital VARCHAR(35), Province VARCHAR(35), Area FLOAT, Population INT, CONSTRAINT CountryKey PRIMARY KEY(Code));
+CREATE TABLE Country ( Name VARCHAR(35) NOT NULL UNIQUE, Code VARCHAR(4), Capital VARCHAR(35), Province VARCHAR(35), Area FLOAT, Population INT, CONSTRAINT CountryKey PRIMARY KEY(Code),
+  FOREIGN KEY (Capital, Province, Code) REFERENCES City(Name, Province, Country),
+  FOREIGN KEY (Province, Code) REFERENCES Province(Name, Country));
 
 INSERT INTO 'Country' ('Name', 'Code', 'Capital', 'Province', 'Area', 'Population') VALUES ('Albania', 'AL', 'Tirane', 'Albania', '28750.0', '3249136');
 INSERT INTO 'Country' ('Name', 'Code', 'Capital', 'Province', 'Area', 'Population') VALUES ('Greece', 'GR', 'Athens', 'Attiki', '131940.0', '10538594');
@@ -3431,7 +3435,8 @@ INSERT INTO 'Desert' ('Name', 'Area', 'Longitude', 'Latitude') VALUES ('Baja Cal
 INSERT INTO 'Desert' ('Name', 'Area', 'Longitude', 'Latitude') VALUES ('Atacama', '181300.0', '-69.25', '-24.5');
 
 
-CREATE TABLE Economy (Country VARCHAR(4), GDP FLOAT, Agriculture FLOAT, Service FLOAT, Industry FLOAT, Inflation FLOAT, CONSTRAINT EconomyKey PRIMARY KEY(Country));
+CREATE TABLE Economy (Country VARCHAR(4), GDP FLOAT, Agriculture FLOAT, Service FLOAT, Industry FLOAT, Inflation FLOAT, CONSTRAINT EconomyKey PRIMARY KEY(Country),
+  FOREIGN KEY (Country) REFERENCES Country(Code));
 
 
 INSERT INTO 'Economy' ('Country', 'GDP', 'Agriculture', 'Service', 'Industry', 'Inflation') VALUES ('AL', '4100.0', '55.0', NULL, NULL, '16.0');
@@ -3674,7 +3679,8 @@ INSERT INTO 'Economy' ('Country', 'GDP', 'Agriculture', 'Service', 'Industry', '
 INSERT INTO 'Economy' ('Country', 'GDP', 'Agriculture', 'Service', 'Industry', 'Inflation') VALUES ('SY', '430.0', NULL, NULL, NULL, '3.9');
 
 
-CREATE TABLE EthnicGroup (Country VARCHAR(4), Name VARCHAR(50), Percentage FLOAT, CONSTRAINT EthnicKey PRIMARY KEY (Name, Country));
+CREATE TABLE EthnicGroup (Country VARCHAR(4), Name VARCHAR(50), Percentage FLOAT, CONSTRAINT EthnicKey PRIMARY KEY (Name, Country),
+  FOREIGN KEY (Country) REFERENCES Country(Code));
 
 INSERT INTO 'EthnicGroup' ('Country', 'Name', 'Percentage') VALUES ('AL', 'Greeks', '3.0');
 INSERT INTO 'EthnicGroup' ('Country', 'Name', 'Percentage') VALUES ('AL', 'Albanian', '95.0');
@@ -4499,7 +4505,8 @@ INSERT INTO 'Island' ('Name', 'Islands', 'Area', 'Height', 'Type', 'Longitude', 
 INSERT INTO 'Island' ('Name', 'Islands', 'Area', 'Height', 'Type', 'Longitude', 'Latitude') VALUES ('Te Waka-a-Maui (South Island)', 'New Zealand', '151757.0', '3754.0', NULL, '170.4', '-44.0');
 
 
-CREATE TABLE Lake (Name VARCHAR(35), Area FLOAT, Depth FLOAT, Altitude FLOAT, Type VARCHAR(10), River VARCHAR(35), Longitude FLOAT, Latitude FLOAT, CONSTRAINT LakeKey PRIMARY KEY(Name));
+CREATE TABLE Lake (Name VARCHAR(35), Area FLOAT, Depth FLOAT, Altitude FLOAT, Type VARCHAR(10), River VARCHAR(35), Longitude FLOAT, Latitude FLOAT, CONSTRAINT LakeKey PRIMARY KEY(Name),
+  FOREIGN KEY (River) REFERENCES River(Name));
 
 
 INSERT INTO 'Lake' ('Name', 'Area', 'Depth', 'Altitude', 'Type', 'River', 'Longitude', 'Latitude') VALUES ('Inari', '1040.0', '92.0', '119.0', NULL, 'Paatsjoki', '27.7', '68.95');
@@ -4572,7 +4579,7 @@ INSERT INTO 'Lake' ('Name', 'Area', 'Depth', 'Altitude', 'Type', 'River', 'Longi
 INSERT INTO 'Lake' ('Name', 'Area', 'Depth', 'Altitude', 'Type', 'River', 'Longitude', 'Latitude') VALUES ('Chew Bahir', '800.0', '7.5', '520.0', 'salt', NULL, '36.85', '4.7');
 INSERT INTO 'Lake' ('Name', 'Area', 'Depth', 'Altitude', 'Type', 'River', 'Longitude', 'Latitude') VALUES ('Lake Turkana', '6405.0', '73.0', '375.0', 'salt', NULL, '36.1', '3.6');
 INSERT INTO 'Lake' ('Name', 'Area', 'Depth', 'Altitude', 'Type', 'River', 'Longitude', 'Latitude') VALUES ('Lake Tana', '3000.0', '14.0', '1830.0', NULL, 'Blue Nile', '37.3', '12.0');
-INSERT INTO 'Lake' ('Name', 'Area', 'Depth', 'Altitude', 'Type', 'River', 'Longitude', 'Latitude') VALUES ('Lake Sese Seko/Albertsee', '5347.0', '48.0', '619.0', NULL, 'Bahr el-Djebel/Albert- Nil', '30.9', '1.7');
+INSERT INTO 'Lake' ('Name', 'Area', 'Depth', 'Altitude', 'Type', 'River', 'Longitude', 'Latitude') VALUES ('Lake Sese Seko/Albertsee', '5347.0', '48.0', '619.0', NULL, 'Bahr el-Djebel/Albert-Nil', '30.9', '1.7');
 INSERT INTO 'Lake' ('Name', 'Area', 'Depth', 'Altitude', 'Type', 'River', 'Longitude', 'Latitude') VALUES ('Rutanzige/Eduardsee', '2325.0', '112.0', '920.0', NULL, 'Semliki', '29.6', '-0.35');
 INSERT INTO 'Lake' ('Name', 'Area', 'Depth', 'Altitude', 'Type', 'River', 'Longitude', 'Latitude') VALUES ('Lake Kioga', '1720.0', '5.7', '914.0', NULL, 'Victoria Nile', '33.0', '1.5');
 INSERT INTO 'Lake' ('Name', 'Area', 'Depth', 'Altitude', 'Type', 'River', 'Longitude', 'Latitude') VALUES ('Lake Victoria', '68870.0', '85.0', '1134.0', NULL, 'Victoria Nile', '33.0', '-1.0');
@@ -4634,7 +4641,8 @@ INSERT INTO 'Lake' ('Name', 'Area', 'Depth', 'Altitude', 'Type', 'River', 'Longi
 INSERT INTO 'Lake' ('Name', 'Area', 'Depth', 'Altitude', 'Type', 'River', 'Longitude', 'Latitude') VALUES ('Lake Hume', '202.0', NULL, NULL, NULL, 'Murray River', '147.0', '-36.1');
 
 
-CREATE TABLE Language (Country VARCHAR(4), Name VARCHAR(50), Percentage FLOAT, CONSTRAINT LanguageKey PRIMARY KEY (Name, Country));
+CREATE TABLE Language (Country VARCHAR(4), Name VARCHAR(50), Percentage FLOAT, CONSTRAINT LanguageKey PRIMARY KEY (Name, Country),
+  FOREIGN KEY (Country) REFERENCES Country(Code));
 
 INSERT INTO 'Language' ('Country', 'Name', 'Percentage') VALUES ('MK', 'Albanian', '21.0');
 INSERT INTO 'Language' ('Country', 'Name', 'Percentage') VALUES ('MK', 'Macedonian', '70.0');
@@ -5024,7 +5032,9 @@ INSERT INTO 'Mountain' ('Name', 'Mountains', 'Height', 'Type', 'Longitude', 'Lat
 INSERT INTO 'Mountain' ('Name', 'Mountains', 'Height', 'Type', 'Longitude', 'Latitude') VALUES ('Pico de Agulhas Negras', 'Brazilian Highlands', '2791.0', NULL, '-44.65', '-22.4');
 
 
-CREATE TABLE MountainOnIsland (Mountain VARCHAR(35), Island VARCHAR(35), CONSTRAINT MntIslKey PRIMARY KEY (Mountain, Island) );
+CREATE TABLE MountainOnIsland (Mountain VARCHAR(35), Island VARCHAR(35), CONSTRAINT MntIslKey PRIMARY KEY (Mountain, Island),
+  FOREIGN KEY (Mountain) REFERENCES Mountain(Name),
+  FOREIGN KEY (Island) REFERENCES Island(Name));
 
 INSERT INTO 'MountainOnIsland' ('Mountain', 'Island') VALUES ('Oeraefajoekull', 'Iceland');
 INSERT INTO 'MountainOnIsland' ('Mountain', 'Island') VALUES ('Snoefell', 'Iceland');
@@ -5095,7 +5105,9 @@ INSERT INTO 'MountainOnIsland' ('Mountain', 'Island') VALUES ('Morne Diablotins'
 INSERT INTO 'MountainOnIsland' ('Mountain', 'Island') VALUES ('Pelee', 'Martinique');
 
 
-CREATE TABLE Organization (Abbreviation VARCHAR(12) PRIMARY KEY, Name VARCHAR(80) NOT NULL, City VARCHAR(35) , Country VARCHAR(4) , Province VARCHAR(35) , Established DATE, CONSTRAINT OrgNameUnique UNIQUE (Name));
+CREATE TABLE Organization (Abbreviation VARCHAR(12) PRIMARY KEY, Name VARCHAR(80) NOT NULL, City VARCHAR(35) , Country VARCHAR(4) , Province VARCHAR(35) , Established DATE, CONSTRAINT OrgNameUnique UNIQUE (Name),
+  FOREIGN KEY (Country) REFERENCES Country(Code),
+  FOREIGN KEY (City, Province, Country) REFERENCES City(Name, Province, Country));
 
 
 INSERT INTO 'Organization' ('Abbreviation', 'Name', 'City', 'Country', 'Province', 'Established') VALUES ('ACP', 'African, Caribbean, and Pacific Countries', 'Brussels', 'B', 'Brabant', '1976-04-01');
@@ -5249,9 +5261,13 @@ INSERT INTO 'Organization' ('Abbreviation', 'Name', 'City', 'Country', 'Province
 INSERT INTO 'Organization' ('Abbreviation', 'Name', 'City', 'Country', 'Province', 'Established') VALUES ('WMO', 'World Meteorological Organization', 'Geneva', 'CH', 'GE', '1947-10-11');
 INSERT INTO 'Organization' ('Abbreviation', 'Name', 'City', 'Country', 'Province', 'Established') VALUES ('WToO', 'World Tourism Organization', 'Madrid', 'E', 'Madrid', '1975-01-02');
 INSERT INTO 'Organization' ('Abbreviation', 'Name', 'City', 'Country', 'Province', 'Established') VALUES ('WTrO', 'World Trade Organization', NULL, NULL, NULL, '1994-04-15');
+INSERT INTO 'Organization' ('Abbreviation', 'Name', 'City', 'Country', 'Province', 'Established') VALUES ('IOC', 'International Olympic Committee', NULL, NULL, NULL, NULL);
+INSERT INTO 'Organization' ('Abbreviation', 'Name', 'City', 'Country', 'Province', 'Established') VALUES ('ZC', 'Zangger Committee', NULL, NULL, NULL, NULL);
 
 
-CREATE TABLE Politics (Country VARCHAR(4), Independence DATE, Dependent VARCHAR(4), Government VARCHAR(120), CONSTRAINT PoliticsKey PRIMARY KEY(Country));
+CREATE TABLE Politics (Country VARCHAR(4), Independence DATE, Dependent VARCHAR(4), Government VARCHAR(120), CONSTRAINT PoliticsKey PRIMARY KEY(Country),
+  FOREIGN KEY (Country) REFERENCES Country(Code),
+  FOREIGN KEY (Dependent) REFERENCES Country(Code));
 
 
 INSERT INTO 'Politics' ('Country', 'Independence', 'Dependent', 'Government') VALUES ('AL', '1912-11-28', NULL, 'emerging democracy');
@@ -5494,7 +5510,8 @@ INSERT INTO 'Politics' ('Country', 'Independence', 'Dependent', 'Government') VA
 INSERT INTO 'Politics' ('Country', 'Independence', 'Dependent', 'Government') VALUES ('SY', '1976-06-29', NULL, 'republic');
 
 
-CREATE TABLE Population (Country VARCHAR(4), Population_Growth FLOAT, Infant_Mortality FLOAT, CONSTRAINT PopKey PRIMARY KEY(Country));
+CREATE TABLE Population (Country VARCHAR(4), Population_Growth FLOAT, Infant_Mortality FLOAT, CONSTRAINT PopKey PRIMARY KEY(Country),
+  FOREIGN KEY (Country) REFERENCES Country(Code));
 
 
 INSERT INTO 'Population' ('Country', 'Population_Growth', 'Infant_Mortality') VALUES ('AL', '1.34', '49.2');
@@ -5736,7 +5753,9 @@ INSERT INTO 'Population' ('Country', 'Population_Growth', 'Infant_Mortality') VA
 INSERT INTO 'Population' ('Country', 'Population_Growth', 'Infant_Mortality') VALUES ('STP', '2.58', '61.1');
 INSERT INTO 'Population' ('Country', 'Population_Growth', 'Infant_Mortality') VALUES ('SY', '0.76', '12.5');
 
-CREATE TABLE Province (Name VARCHAR(35) NOT NULL, Country VARCHAR(4) NOT NULL , Population INT, Area FLOAT, Capital VARCHAR(35), CapProv VARCHAR(35), CONSTRAINT PrKey PRIMARY KEY (Name, Country));
+CREATE TABLE Province (Name VARCHAR(35) NOT NULL, Country VARCHAR(4) NOT NULL , Population INT, Area FLOAT, Capital VARCHAR(35), CapProv VARCHAR(35), CONSTRAINT PrKey PRIMARY KEY (Name, Country),
+  FOREIGN KEY (Country) REFERENCES Country(Code),
+  FOREIGN KEY (Capital, CapProv, Country) REFERENCES City(Name, Province, Country));
 
 
 INSERT INTO 'Province' ('Name', 'Country', 'Population', 'Area', 'Capital', 'CapProv') VALUES ('Albania', 'AL', '3249136', NULL, 'Tirane', 'Albania');
@@ -7190,7 +7209,8 @@ INSERT INTO 'Province' ('Name', 'Country', 'Population', 'Area', 'Capital', 'Cap
 INSERT INTO 'Province' ('Name', 'Country', 'Population', 'Area', 'Capital', 'CapProv') VALUES ('Sao Tome and Principe', 'STP', '144128', NULL, 'Sao Tome', 'Sao Tome and Principe');
 INSERT INTO 'Province' ('Name', 'Country', 'Population', 'Area', 'Capital', 'CapProv') VALUES ('Seychelles', 'SY', '77575', NULL, 'Victoria', 'Seychelles');
 
-CREATE TABLE Religion (Country VARCHAR(4), Name VARCHAR(50), Percentage FLOAT, CONSTRAINT ReligionKey PRIMARY KEY (Name, Country));
+CREATE TABLE Religion (Country VARCHAR(4), Name VARCHAR(50), Percentage FLOAT, CONSTRAINT ReligionKey PRIMARY KEY (Name, Country),
+  FOREIGN KEY (Country) REFERENCES Country(Code));
 
 
 INSERT INTO 'Religion' ('Country', 'Name', 'Percentage') VALUES ('AL', 'Muslim', '70.0');
@@ -7649,7 +7669,10 @@ INSERT INTO 'Religion' ('Country', 'Name', 'Percentage') VALUES ('SY', 'Roman Ca
 INSERT INTO 'Religion' ('Country', 'Name', 'Percentage') VALUES ('SY', 'Anglican', '8.0');
 
 
-CREATE TABLE River (Name VARCHAR(35), River VARCHAR(35), Lake VARCHAR(35), Sea VARCHAR(35), Length FLOAT, SourceLongitude FLOAT, SourceLatitude FLOAT, Mountains VARCHAR(35), SourceAltitude FLOAT, EstuaryLongitude FLOAT, EstuaryLatitude FLOAT, CONSTRAINT RiverKey PRIMARY KEY(Name));
+CREATE TABLE River (Name VARCHAR(35), River VARCHAR(35), Lake VARCHAR(35), Sea VARCHAR(35), Length FLOAT, SourceLongitude FLOAT, SourceLatitude FLOAT, Mountains VARCHAR(35), SourceAltitude FLOAT, EstuaryLongitude FLOAT, EstuaryLatitude FLOAT, CONSTRAINT RiverKey PRIMARY KEY(Name),
+  FOREIGN KEY (River) REFERENCES River(Name),
+  FOREIGN KEY (Lake) REFERENCES Lake(Name),
+  FOREIGN KEY (Sea) REFERENCES Sea(Name));
 
 
 INSERT INTO 'River' ('Name', 'River', 'Lake', 'Sea', 'Length', 'SourceLongitude', 'SourceLatitude', 'Mountains', 'SourceAltitude', 'EstuaryLongitude', 'EstuaryLatitude') VALUES ('Thjorsa', NULL, NULL, 'Atlantic Ocean', '230.0', '-18.0', '65.0', NULL, NULL, '-20.8', '63.9');
@@ -7779,7 +7802,7 @@ INSERT INTO 'River' ('Name', 'River', 'Lake', 'Sea', 'Length', 'SourceLongitude'
 INSERT INTO 'River' ('Name', 'River', 'Lake', 'Sea', 'Length', 'SourceLongitude', 'SourceLatitude', 'Mountains', 'SourceAltitude', 'EstuaryLongitude', 'EstuaryLatitude') VALUES ('Saluen', NULL, NULL, 'Andaman Sea', '2980.0', '91.9', '32.5', NULL, '5450.0', '97.5', '17.0');
 INSERT INTO 'River' ('Name', 'River', 'Lake', 'Sea', 'Length', 'SourceLongitude', 'SourceLatitude', 'Mountains', 'SourceAltitude', 'EstuaryLongitude', 'EstuaryLatitude') VALUES ('Irawaddy', NULL, NULL, 'Andaman Sea', '2170.0', '98.0', '29.0', NULL, '4300.0', '96.0', '17.0');
 INSERT INTO 'River' ('Name', 'River', 'Lake', 'Sea', 'Length', 'SourceLongitude', 'SourceLatitude', 'Mountains', 'SourceAltitude', 'EstuaryLongitude', 'EstuaryLatitude') VALUES ('Ganges', NULL, NULL, 'Gulf of Bengal', '2511.0', '79.5', '30.5', NULL, NULL, '90.0', '22.0');
-INSERT INTO 'River' ('Name', 'River', 'Lake', 'Sea', 'Length', 'SourceLongitude', 'SourceLatitude', 'Mountains', 'SourceAltitude', 'EstuaryLongitude', 'EstuaryLatitude') VALUES ('Brahmaputra', NULL, NULL, 'Ganges', '2896.0', '81.33', '31.06', NULL, '6000.0', '89.8', '23.8');
+INSERT INTO 'River' ('Name', 'River', 'Lake', 'Sea', 'Length', 'SourceLongitude', 'SourceLatitude', 'Mountains', 'SourceAltitude', 'EstuaryLongitude', 'EstuaryLatitude') VALUES ('Brahmaputra', 'Ganges', NULL, NULL, '2896.0', '81.33', '31.06', NULL, '6000.0', '89.8', '23.8');
 INSERT INTO 'River' ('Name', 'River', 'Lake', 'Sea', 'Length', 'SourceLongitude', 'SourceLatitude', 'Mountains', 'SourceAltitude', 'EstuaryLongitude', 'EstuaryLatitude') VALUES ('Indus', NULL, NULL, 'Arabian Sea', '3180.0', '79.7', '32.45', NULL, '5300.0', '67.4', '24.0');
 INSERT INTO 'River' ('Name', 'River', 'Lake', 'Sea', 'Length', 'SourceLongitude', 'SourceLatitude', 'Mountains', 'SourceAltitude', 'EstuaryLongitude', 'EstuaryLatitude') VALUES ('Asahan', NULL, NULL, 'Malakka Strait', '150.0', '98.7', '2.7', NULL, '905.0', '99.2', '3.1');
 INSERT INTO 'River' ('Name', 'River', 'Lake', 'Sea', 'Length', 'SourceLongitude', 'SourceLatitude', 'Mountains', 'SourceAltitude', 'EstuaryLongitude', 'EstuaryLatitude') VALUES ('Yukon River', NULL, NULL, 'Bering Sea', '3185.0', '-134.5', '60.54', NULL, '668.0', '-163.98', '62.574');
@@ -7912,7 +7935,9 @@ INSERT INTO 'Sea' ('Name', 'Depth') VALUES ('Sulawesi Sea', '6218.0');
 
 
 
-CREATE TABLE borders (Country1 VARCHAR(4), Country2 VARCHAR(4), Length FLOAT, CONSTRAINT BorderKey PRIMARY KEY (Country1,Country2));
+CREATE TABLE borders (Country1 VARCHAR(4), Country2 VARCHAR(4), Length FLOAT, CONSTRAINT BorderKey PRIMARY KEY (Country1,Country2),
+  FOREIGN KEY (Country1) REFERENCES Country(Code),
+  FOREIGN KEY (Country2) REFERENCES Country(Code));
 
 
 INSERT INTO 'borders' ('Country1', 'Country2', 'Length') VALUES ('AL', 'GR', '282.0');
@@ -8237,7 +8262,9 @@ INSERT INTO 'borders' ('Country1', 'Country2', 'Length') VALUES ('MOC', 'MW', '1
 INSERT INTO 'borders' ('Country1', 'Country2', 'Length') VALUES ('MOC', 'SD', '105.0');
 
 
-CREATE TABLE encompasses (Country VARCHAR(4) NOT NULL, Continent VARCHAR(20) NOT NULL, Percentage FLOAT, CONSTRAINT EncompassesKey PRIMARY KEY (Country,Continent));
+CREATE TABLE encompasses (Country VARCHAR(4) NOT NULL, Continent VARCHAR(20) NOT NULL, Percentage FLOAT, CONSTRAINT EncompassesKey PRIMARY KEY (Country,Continent),
+  FOREIGN KEY (Country) REFERENCES Country(Code),
+  FOREIGN KEY (Continent) REFERENCES Continent(Name));
 
 
 
@@ -8486,7 +8513,9 @@ INSERT INTO 'encompasses' ('Country', 'Continent', 'Percentage') VALUES ('SY', '
 
 
 
-CREATE TABLE geo_Desert (Desert VARCHAR(35) , Country VARCHAR(4) , Province VARCHAR(35) , CONSTRAINT GDesertKey PRIMARY KEY (Province, Country, Desert) );
+CREATE TABLE geo_Desert (Desert VARCHAR(35) , Country VARCHAR(4) , Province VARCHAR(35) , CONSTRAINT GDesertKey PRIMARY KEY (Province, Country, Desert),
+  FOREIGN KEY (Desert) REFERENCES Desert(Name),
+  FOREIGN KEY (Province, Country) REFERENCES Province(Name, Country));
 
 
 
@@ -8646,7 +8675,9 @@ INSERT INTO 'geo_Desert' ('Desert', 'Country', 'Province') VALUES ('Baja Califor
 INSERT INTO 'geo_Desert' ('Desert', 'Country', 'Province') VALUES ('Atacama', 'RCH', 'Chile');
 
 
-CREATE TABLE geo_Estuary (River VARCHAR(35) , Country VARCHAR(4) , Province VARCHAR(35) , CONSTRAINT GEstuaryKey PRIMARY KEY (Province, Country, River) );
+CREATE TABLE geo_Estuary (River VARCHAR(35) , Country VARCHAR(4) , Province VARCHAR(35) , CONSTRAINT GEstuaryKey PRIMARY KEY (Province, Country, River),
+  FOREIGN KEY (River) REFERENCES River(Name),
+  FOREIGN KEY (Province, Country) REFERENCES Province(Name, Country));
 
 
 INSERT INTO 'geo_Estuary' ('River', 'Country', 'Province') VALUES ('Thjorsa', 'IS', 'Iceland');
@@ -8916,7 +8947,9 @@ INSERT INTO 'geo_Estuary' ('River', 'Country', 'Province') VALUES ('Darling Rive
 INSERT INTO 'geo_Estuary' ('River', 'Country', 'Province') VALUES ('Murrumbidgee River', 'AUS', 'New South Wales');
 
 
-CREATE TABLE geo_Island (Island VARCHAR(35) , Country VARCHAR(4) , Province VARCHAR(35) , CONSTRAINT GIslandKey PRIMARY KEY (Province, Country, Island) );
+CREATE TABLE geo_Island (Island VARCHAR(35) , Country VARCHAR(4) , Province VARCHAR(35) , CONSTRAINT GIslandKey PRIMARY KEY (Province, Country, Island),
+  FOREIGN KEY (Island) REFERENCES Island(Name),
+  FOREIGN KEY (Province, Country) REFERENCES Province(Name, Country));
 
 
 
@@ -9342,7 +9375,9 @@ INSERT INTO 'geo_Island' ('Island', 'Country', 'Province') VALUES ('Te Waka-a-Ma
 
 
 
-CREATE TABLE geo_Lake (Lake VARCHAR(35) , Country VARCHAR(4) , Province VARCHAR(35) , CONSTRAINT GLakeKey PRIMARY KEY (Province, Country, Lake) );
+CREATE TABLE geo_Lake (Lake VARCHAR(35) , Country VARCHAR(4) , Province VARCHAR(35) , CONSTRAINT GLakeKey PRIMARY KEY (Province, Country, Lake),
+  FOREIGN KEY (Lake) REFERENCES Lake(Name),
+  FOREIGN KEY (Province, Country) REFERENCES Province(Name, Country));
 
 
 
@@ -9601,7 +9636,9 @@ INSERT INTO 'geo_Lake' ('Lake', 'Country', 'Province') VALUES ('Lake Hume', 'AUS
 INSERT INTO 'geo_Lake' ('Lake', 'Country', 'Province') VALUES ('Lake Hume', 'AUS', 'Victoria');
 
 
-CREATE TABLE geo_Mountain (Mountain VARCHAR(35) , Country VARCHAR(4) , Province VARCHAR(35) , CONSTRAINT GMountainKey PRIMARY KEY (Province,Country,Mountain) );
+CREATE TABLE geo_Mountain (Mountain VARCHAR(35) , Country VARCHAR(4) , Province VARCHAR(35) , CONSTRAINT GMountainKey PRIMARY KEY (Province,Country,Mountain),
+  FOREIGN KEY (Mountain) REFERENCES Mountain(Name),
+  FOREIGN KEY (Province, Country) REFERENCES Province(Name, Country));
 
 
 
@@ -9902,7 +9939,9 @@ INSERT INTO 'geo_Mountain' ('Mountain', 'Country', 'Province') VALUES ('Pico de 
 INSERT INTO 'geo_Mountain' ('Mountain', 'Country', 'Province') VALUES ('Pico de Agulhas Negras', 'BR', 'Rio de Janeiro');
 
 
-CREATE TABLE geo_River (River VARCHAR(35) , Country VARCHAR(4) , Province VARCHAR(35) , CONSTRAINT GRiverKey PRIMARY KEY (Province ,Country, River) );
+CREATE TABLE geo_River (River VARCHAR(35) , Country VARCHAR(4) , Province VARCHAR(35) , CONSTRAINT GRiverKey PRIMARY KEY (Province ,Country, River),
+  FOREIGN KEY (River) REFERENCES River(Name),
+  FOREIGN KEY (Province, Country) REFERENCES Province(Name, Country));
 
 
 INSERT INTO 'geo_River' ('River', 'Country', 'Province') VALUES ('Thjorsa', 'IS', 'Iceland');
@@ -10759,7 +10798,9 @@ INSERT INTO 'geo_River' ('River', 'Country', 'Province') VALUES ('Murrumbidgee R
 
 
 
-CREATE TABLE geo_Sea (Sea VARCHAR(35) , Country VARCHAR(4) , Province VARCHAR(35) , CONSTRAINT GSeaKey PRIMARY KEY (Province, Country, Sea) );
+CREATE TABLE geo_Sea (Sea VARCHAR(35) , Country VARCHAR(4) , Province VARCHAR(35) , CONSTRAINT GSeaKey PRIMARY KEY (Province, Country, Sea),
+  FOREIGN KEY (Sea) REFERENCES Sea(Name),
+  FOREIGN KEY (Province, Country) REFERENCES Province(Name, Country));
 
 
 INSERT INTO 'geo_Sea' ('Sea', 'Country', 'Province') VALUES ('Skagerrak', 'DK', 'Denmark');
@@ -11499,7 +11540,9 @@ INSERT INTO 'geo_Sea' ('Sea', 'Country', 'Province') VALUES ('Sulawesi Sea', 'RI
 INSERT INTO 'geo_Sea' ('Sea', 'Country', 'Province') VALUES ('Sulawesi Sea', 'RP', 'Philippines');
 
 
-CREATE TABLE geo_Source (River VARCHAR(35) , Country VARCHAR(4) , Province VARCHAR(35) , CONSTRAINT GSourceKey PRIMARY KEY (Province, Country, River) );
+CREATE TABLE geo_Source (River VARCHAR(35) , Country VARCHAR(4) , Province VARCHAR(35) , CONSTRAINT GSourceKey PRIMARY KEY (Province, Country, River),
+  FOREIGN KEY (River) REFERENCES River(Name),
+  FOREIGN KEY (Province, Country) REFERENCES Province(Name, Country));
 
 
 INSERT INTO 'geo_Source' ('River', 'Country', 'Province') VALUES ('Thjorsa', 'IS', 'Iceland');
@@ -11723,7 +11766,9 @@ INSERT INTO 'geo_Source' ('River', 'Country', 'Province') VALUES ('Darling River
 INSERT INTO 'geo_Source' ('River', 'Country', 'Province') VALUES ('Murrumbidgee River', 'AUS', 'New South Wales');
 
 
-CREATE TABLE isMember (Country VARCHAR(4), Organization VARCHAR(12), Type VARCHAR(35) DEFAULT 'member', CONSTRAINT MemberKey PRIMARY KEY (Country,Organization) );
+CREATE TABLE isMember (Country VARCHAR(4), Organization VARCHAR(12), Type VARCHAR(35) DEFAULT 'member', CONSTRAINT MemberKey PRIMARY KEY (Country,Organization),
+  FOREIGN KEY (Country) REFERENCES Country(Code),
+  FOREIGN KEY (Organization) REFERENCES Organization(Abbreviation));
 
 
 INSERT INTO 'isMember' ('Country', 'Organization', 'Type') VALUES ('TL', 'ACP', 'member');
@@ -19736,7 +19781,11 @@ INSERT INTO 'isMember' ('Country', 'Organization', 'Type') VALUES ('AUS', 'ZC', 
 INSERT INTO 'isMember' ('Country', 'Organization', 'Type') VALUES ('RSA', 'ZC', 'member');
 
 
-CREATE TABLE islandIn (Island VARCHAR(35) , Sea VARCHAR(35) , Lake VARCHAR(35) , River VARCHAR(35) );
+CREATE TABLE islandIn (Island VARCHAR(35) , Sea VARCHAR(35) , Lake VARCHAR(35) , River VARCHAR(35),
+  FOREIGN KEY (Island) REFERENCES Island(Name),
+  FOREIGN KEY (Sea) REFERENCES Sea(Name),
+  FOREIGN KEY (Lake) REFERENCES Lake(Name),
+  FOREIGN KEY (River) REFERENCES River(Name));
 
 
 INSERT INTO 'islandIn' ('Island', 'Sea', 'Lake', 'River') VALUES ('Svalbard', 'Norwegian Sea', NULL, NULL);
@@ -20090,7 +20139,11 @@ INSERT INTO 'islandIn' ('Island', 'Sea', 'Lake', 'River') VALUES ('Manitoulin', 
 INSERT INTO 'islandIn' ('Island', 'Sea', 'Lake', 'River') VALUES ('Isla da Ometepe', NULL, 'Lake Nicaragua', NULL);
 
 
-CREATE TABLE located (City VARCHAR(35) , Province VARCHAR(35) , Country VARCHAR(4) , River VARCHAR(35), Lake VARCHAR(35), Sea VARCHAR(35) );
+CREATE TABLE located (City VARCHAR(35) , Province VARCHAR(35) , Country VARCHAR(4) , River VARCHAR(35), Lake VARCHAR(35), Sea VARCHAR(35),
+  FOREIGN KEY (City, Province, Country) REFERENCES City(Name, Province, Country),
+  FOREIGN KEY (River) REFERENCES River(Name),
+  FOREIGN KEY (Lake) REFERENCES Lake(Name),
+  FOREIGN KEY (Sea) REFERENCES Sea(Name));
 
 
 INSERT INTO 'located' ('City', 'Province', 'Country', 'River', 'Lake', 'Sea') VALUES ('Shkoder', 'Albania', 'AL', NULL, 'Lake Skutari', NULL);
@@ -20952,7 +21005,9 @@ INSERT INTO 'located' ('City', 'Province', 'Country', 'River', 'Lake', 'Sea') VA
 INSERT INTO 'located' ('City', 'Province', 'Country', 'River', 'Lake', 'Sea') VALUES ('Victoria', 'Seychelles', 'SY', NULL, NULL, 'Indian Ocean');
 
 
-CREATE TABLE locatedOn (City VARCHAR(35) , Province VARCHAR(35) , Country VARCHAR(4) , Island VARCHAR(35) , CONSTRAINT locatedOnKey PRIMARY KEY (City, Province, Country, Island) );
+CREATE TABLE locatedOn (City VARCHAR(35) , Province VARCHAR(35) , Country VARCHAR(4) , Island VARCHAR(35) , CONSTRAINT locatedOnKey PRIMARY KEY (City, Province, Country, Island),
+  FOREIGN KEY (City, Province, Country) REFERENCES City(Name, Province, Country),
+  FOREIGN KEY (Island) REFERENCES Island(Name));
 
 
 
@@ -21392,7 +21447,9 @@ INSERT INTO 'locatedOn' ('City', 'Province', 'Country', 'Island') VALUES ('Sao T
 INSERT INTO 'locatedOn' ('City', 'Province', 'Country', 'Island') VALUES ('Victoria', 'Seychelles', 'SY', 'Mahe');
 
 
-CREATE TABLE mergesWith (Sea1 VARCHAR(35) , Sea2 VARCHAR(35) , CONSTRAINT MergesWithKey PRIMARY KEY (Sea1, Sea2) );
+CREATE TABLE mergesWith (Sea1 VARCHAR(35) , Sea2 VARCHAR(35) , CONSTRAINT MergesWithKey PRIMARY KEY (Sea1, Sea2),
+  FOREIGN KEY (Sea1) REFERENCES Sea(Name),
+  FOREIGN KEY (Sea2) REFERENCES Sea(Name));
 
 
 

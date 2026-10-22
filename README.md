@@ -38,6 +38,10 @@ location ~ ^/SQLSandbox/(tmp|bdd|lib|tests)/ {
 
 Les copies des bases et les sessions sont rangées hors du site (`sqlsandbox-tmp` et `sessions-sqlsandbox`, voir l'installation), pour que leur protection ne dépende pas d'un `.htaccess` : le nom d'un fichier de session contient l'identifiant de session. `tmp/` n'est utilisé qu'en repli, protégé par `tmp/.htaccess` et un `index.html` vide.
 
+## Plusieurs installations sur un même hébergement
+
+Le nom du cookie de session et des dossiers de travail vient de la constante `INSTANCE` de `dossiers.php` : `sqlsandbox` par défaut (cookie `sqlsandbox`, dossiers `sqlsandbox-tmp` et `sessions-sqlsandbox`). Pour faire fonctionner deux installations côte à côte, par exemple une version de test dans `/SQLSandbox6/`, donner à chacune un nom d'`INSTANCE` différent : sinon elles partagent cookie et sessions, et ouvrir l'une réinitialise les bases de l'autre.
+
 Le serveur intégré de PHP (`php -S`) ne doit pas servir l'application en public : une requête SQL trop longue arrête tout le serveur.
 
 ## Tests
@@ -53,8 +57,6 @@ Les tests sont lancés automatiquement par GitHub Actions (`.github/workflows/te
 Le code de SQLSandbox est un logiciel libre, distribué sous la licence GNU GPL version 3 (fichier `LICENSE`).
 
 Éléments tiers, sous leur propre licence :
-- [Prototype](http://prototypejs.org/) et [script.aculo.us](http://script.aculo.us/) (`js/`) : licence MIT ;
-- design adapté du modèle « dusplic » de [Free CSS Templates](http://www.freecsstemplates.org/) (`default.css`, `images/img*.jpg`) : Creative Commons Attribution 2.5 ;
-- icônes du jeu « Basic set » de [PixelMixer](http://pixel-mixer.com/) (`images/*_64.png`) : Creative Commons BY-SA ;
-- images de la bibliothèque Prototip de Nick Stakenburg (`images/prototip/`, non utilisées par l'application) : Creative Commons BY-NC-ND 3.0 ;
+- éditeur SQL [CodeMirror 5](https://codemirror.net/5/) (`js/codemirror/`, version 5.65.21) : licence MIT (`js/codemirror/LICENSE`) ;
+- police [Atkinson Hyperlegible Next](https://www.brailleinstitute.org/freefont/) du Braille Institute of America (`fonts/`) : utilisation libre, sans modification des fichiers (`fonts/LICENCE.txt`) ;
 - base MONDIAL (`bdd/mondial/`) : voir les conditions de sa [page de référence](http://www.dbis.informatik.uni-goettingen.de/Mondial/).

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Base de données (cylindre) posée sur un tas de sable -->
+  <ellipse cx="48" cy="18" rx="26" ry="9"/>
+  <path d="M22 18v40c0 5 11.6 9 26 9s26-4 26-9V18"/>
+  <path d="M22 31c0 5 11.6 9 26 9s26-4 26-9"/>
+  <path d="M22 44c0 5 11.6 9 26 9s26-4 26-9"/>
+  <path d="M6 88c8-12 22-17 42-17s34 5 42 17z" fill="#ffffff" fill-opacity=".35"/>
+  <circle cx="30" cy="82" r="1.5" fill="#ffffff" stroke="none"/>
+  <circle cx="48" cy="79" r="1.5" fill="#ffffff" stroke="none"/>
+  <circle cx="64" cy="83" r="1.5" fill="#ffffff" stroke="none"/>
+</svg>

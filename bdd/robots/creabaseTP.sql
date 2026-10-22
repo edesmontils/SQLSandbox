@@ -11,7 +11,9 @@ create table inscriptions
 (nom varchar(6),
 compet varchar(4),
 montant real,
-primary key (nom, compet));
+primary key (nom, compet),
+foreign key (nom) references robots(nom),
+foreign key (compet) references competitions(compet));
 
 
 create table competitions
@@ -26,7 +28,8 @@ compet varchar(4),
 cat int,
 titre varchar(12),
 demij char(2),
-primary key (numep, compet) );
+primary key (numep, compet),
+foreign key (compet) references competitions(compet) );
 
 create table resultats
 (nom varchar(6),
@@ -34,7 +37,9 @@ numep int,
 compet varchar(4),
 nbpts int,
 gain real,
-primary key(nom, numep, compet) );
+primary key(nom, numep, compet),
+foreign key (nom) references robots(nom),
+foreign key (numep, compet) references epreuves(numep, compet) );
 
 -- (c) E. Desmontils, Falculté des sciences et des techniques de Nantes, Université de Nantes, Mars 2003
 -- #e -mail : Emmanuel.Desmontils@info.univ-nantes.fr

@@ -50,6 +50,12 @@ verifie('INSERT exécuté une seule fois', $db->querySingle("select count(*) fro
 $db->close();
 list($r, $o) = execute("insert into etudiants values(null, null, null)");
 verifie('violation de contrainte signalée', $r === null && strpos($o, 'NOT NULL') !== false, $o);
+// Clés étrangères vérifiées sur la copie (désactivées par défaut dans SQLite)
+list($r, $o) = execute("insert into notes (noe, codemat) values ('inconnu', 'inconnu')");
+verifie('clé étrangère : insertion orpheline refusée', $r === null && strpos($o, 'FOREIGN KEY') !== false
+        && strpos($o, 'Une clé étrangère') !== false, $o);
+list($r, $o) = execute("delete from etudiants where noetu in (select noe from notes)");
+verifie('clé étrangère : suppression d\'une ligne référencée refusée', $r === null && strpos($o, 'FOREIGN KEY') !== false, $o);
 list($r, $o) = execute("select '<script>x</script>' as \"<b>\"");
 verifie('sortie échappée', strpos($o, '<script>x') === false && strpos($o, '&lt;script&gt;') !== false
                            && strpos($o, '<b>') === false, $o);
@@ -196,7 +202,7 @@ verifie('texte SQL reconstruit', texte_sql($q->SQL) === "SELECT nom_f\nFROM Fleu
 ob_start(); liste_question('tp-em', '<script>x</script>'); $o = ob_get_clean();
 verifie('nom de TP non reconnu non affiché', strpos($o, '<script>x') === false && strpos($o, 'TP inconnu') !== false, $o);
 ob_start(); bouton_question(cherche_question($conf, 'tr-em-01'), 'tp-em', 1); $o = ob_get_clean();
-verifie('données de question encodées dans l\'attribut', preg_match("/onClick='ouvre_question\\(([^']*)\\);/", $o, $m)
+verifie('données de question encodées dans l\'attribut', preg_match("/onclick='ouvre_question\\(([^']*)\\)/i", $o, $m)
         && json_decode(html_entity_decode($m[1], ENT_QUOTES))->sql === "SELECT \nFROM Fleuve\nWHERE longueur>1000", $o);
 
 // Chaque requête de référence des fichiers de configuration doit s'exécuter sur sa base
@@ -211,6 +217,36 @@ foreach (glob('./bdd/*/config.xml') as $fic) {
 	}
 	$bd->close();
 }
+
+echo "Modèle des bases\n";
+// Toutes les bases déclarent des clés étrangères et leurs données les respectent
+foreach (glob('./bdd/*/config.xml') as $fic) {
+	$c = simplexml_load_file($fic);
+	$fichier = dirname($fic).'/'.(string)$c->fichier['nom'];
+	$copie_modele = "$tmp/copie_modele";
+	copy($fichier, $copie_modele);
+	$_SESSION['copie_modele'] = $copie_modele;
+	$m = modele_base('modele');
+	$nb = 0;
+	foreach ($m['tables'] as $t) $nb += count($t['cles']);
+	$bd = new SQLite3($fichier, SQLITE3_OPEN_READONLY);
+	$violations = 0;
+	$r = $bd->query('PRAGMA foreign_key_check');
+	while ($r->fetchArray()) $violations++;
+	$bd->close();
+	verifie('clés étrangères de '.basename(dirname($fic)), count($m['tables']) > 0 && $nb > 0 && $violations == 0,
+	        count($m['tables'])." tables, $nb clés, $violations violation(s)");
+	unlink($copie_modele);
+}
+unset($_SESSION['copie_modele']);
+// Le modèle est lu sur la copie de l'étudiant : il suit ses créations de tables
+execute("create table modele_essai (a int primary key, b int references etudiants)");
+$m = modele_base('test');
+$essai = array_values(array_filter($m['tables'], function ($t) { return $t['nom'] == 'modele_essai'; }));
+verifie('modèle : table créée par l\'étudiant', count($essai) == 1 && count($essai[0]['cles']) == 1
+        && $essai[0]['cles'][0]['table'] == 'etudiants' && $essai[0]['cles'][0]['references'] == array('noetu'),
+        json_encode($essai));
+verifie('modèle : base inconnue', modele_base('inconnue') === null);
 
 echo "Purge\n";
 $_SESSION['copie_autre'] = "$tmp/copie_autre";
@@ -247,12 +283,12 @@ function http($url, $post = null) {
 	$derniers_entetes = $http_response_header ?? array();
 	foreach ($derniers_entetes as $h) {
 		if (preg_match('#^HTTP/\S+ (\d+)#', $h, $m)) $code = (int)$m[1];
-		if (preg_match('#^Set-Cookie: (PHPSESSID=[^;]+)#i', $h, $m)) $cookie = $m[1];
+		if (preg_match('#^Set-Cookie: ('.INSTANCE.'=[^;]+)#i', $h, $m)) $cookie = $m[1];
 	}
 	return array($code, (string)$corps);
 }
 // Serveur lancé avec -t $racine : son dossier de travail est à côté de la racine web
-$travail = dirname($racine).'/sqlsandbox-tmp';
+$travail = dirname($racine).'/'.INSTANCE.'-tmp';
 // Seuls les fichiers créés pendant les tests comptent : des copies laissées par un essai
 // précédent peuvent être supprimées entre-temps par la purge de index.php (plus de 3 h)
 $deja_presentes = glob("$travail/copie_*");
@@ -267,7 +303,7 @@ verifie('en-têtes de sécurité', stripos($entetes, 'X-SQLSandbox: 1') !== fals
                                 && stripos($entetes, 'X-Content-Type-Options: nosniff') !== false, $entetes);
 verifie('index.php répond', $code == 200 && strpos($page, 'csrf_token') !== false);
 // Serveur lancé avec -t $racine : les sessions vont à côté de la racine web, hors du site
-$session = dirname($racine).'/sessions-sqlsandbox/sess_'.substr($cookie, strlen('PHPSESSID='));
+$session = dirname($racine).'/sessions-'.INSTANCE.'/sess_'.substr($cookie, strlen(INSTANCE.'='));
 verifie('session rangée hors du site', is_file($session) && strpos(realpath($session), $racine.'/') !== 0, $session);
 verifie('chemins serveur non exposés', strpos($page, '"fichier"') === false && strpos($page, '"config"') === false);
 verifie('visite : fichiers réservés hors du site, mais vides', copies() > 0 && tailles() == 0, tailles());
@@ -293,6 +329,11 @@ list($code, $corps) = http("$u/questionsThem.php?base=tp-em&theme=projection");
 verifie('page d\'un thème', substr_count($corps, 'ouvre_question(') == 1, $corps);
 list($code, $corps) = http("$u/controler.php?Soumettre=tp&nom_base=tp-em");
 verifie('liste des TP', strpos($corps, 'page_tp(') !== false && strpos($corps, 'tp-em-02') !== false, $corps);
+list($code, $corps) = http("$u/controler.php?Soumettre=modele&nom_base=tp-cinema");
+$m = json_decode($corps, true);
+verifie('modèle en JSON', $code == 200 && count($m['tables']) == 5 && count($m['sql']) == 5, $corps);
+list($code, $corps) = http("$u/controler.php?Soumettre=modele&nom_base=inconnue");
+verifie('modèle d\'une base inconnue refusé (404)', $code == 404, $corps);
 list($code, $corps) = http("$u/controler.php", array('Soumettre' => 'end', 'csrf' => $jeton));
 verifie('fin de session : copies purgées', strpos($corps, 'purgées') !== false && copies() == 0);
 

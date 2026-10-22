@@ -40,11 +40,11 @@ if (isset($_SESSION['debug']) && $session_ok) {
 			echo "<p>Session expirée : l'application a sans doute été ouverte ou rechargée dans un autre onglet. Rechargez cette page pour continuer.</p>";
 		} else if (is_string($requete) && is_string($base)){
 			$t=get($requete,$base);  
-			echo (!is_null($t) ? "<img src='images/tick_64.png'  width='32' alt='ok' title='ok'/>"
-			           :"<img src='images/block_64.png' width='32' alt='ko' title='ko'/>");
+			echo (!is_null($t) ? "<p class='statut ok'>✅ Requête réussie</p>"
+			           : "<p class='statut ko'>❌ Échec de la requête</p>");
 			           
 			if ($mode == '1') 
-				echo '<img src="images/add_64.png" id="memoriser" name="Mémoriser" alt="Mémoriser" title="Mémoriser" width="32" onClick="remember(); 							return false;" style="cursor:pointer"/>';
+				echo '<button type="button" class="btn secondaire" id="memoriser" title="Garder cette requête et son résultat dans l\'onglet Mémoire" onclick="remember()">🧺 Mémoriser</button>';
 		} else { 
 		   echo "<p>Pas de requête ou/et de base proposée !</p>";
 		}
@@ -125,12 +125,32 @@ if (isset($_SESSION['debug']) && $session_ok) {
 		page_tp(param('nom_base'), param('tp_name'));
 	}
 	//======================================================
+	// Modèle d'une base (tables, clés, SQL), en JSON pour le dessin du diagramme
+	else if ($Soumettre == "modele") {
+		$modele = modele_base(param('nom_base'));
+		header('Content-Type: application/json; charset=utf-8');
+		if (is_null($modele)) {
+			http_response_code(404);
+			echo json_encode(array('erreur' => 'Base inconnue ou inaccessible.'));
+		} else {
+			echo json_encode($modele, JSON_UNESCAPED_UNICODE);
+		}
+	}
+	//======================================================
 	else {//echo "<p>liste base $Soumettre</p>";
 		liste_base($Soumettre);
 	}
-} else {//Envoyer sur index.php5 ?
-	echo "<div class='post'><h2 class='title'>Problème d'initialisation ou de session</h2><h3 class='posted'>E. Desmontils</h3><div class='story'>";
-	echo "<p>Veuillez relancer l'application (éventuellement en relancant le navigateur).</p>";
-	echo "</div></div>\n";
+} else {
+	// Session inconnue du serveur (expirée, cookie effacé...) : code 401, pour que le
+	// JavaScript affiche ce message une seule fois au lieu d'une erreur par rubrique
+	http_response_code(401);
+	echo "<div class='post' id='session-perdue'><h2 class='title'>Session expirée</h2><div class='story'>"
+	    ."<p class='message'>Le serveur ne reconnaît plus votre session, ni donc vos copies des bases. "
+	    ."Cela arrive quand la page est restée ouverte longtemps sans être utilisée (une session dure "
+	    ."3 heures) ou quand le navigateur a effacé ses cookies.</p>"
+	    ."<p>Rechargez l'application pour repartir avec des bases neuves. Les requêtes de l'onglet "
+	    ."Mémoire seront perdues : copiez d'abord celles que vous voulez garder.</p>"
+	    ."<p class='actions'><a class='btn' href='index.php'>🔄 Recharger l'application</a></p>"
+	    ."</div></div>\n";
 }
 ?>

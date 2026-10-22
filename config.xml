@@ -4,7 +4,7 @@
 <!ENTITY seuil '10800'>
 ]>
 
-<mab version="5.0" debug="false" name="SQL Sandbox">
+<mab version="6.0-dev" debug="false" name="SQL Sandbox">
 	<!-- numéro de version de l'application -->
 	<!-- durée limite de vie d'une copie de base : 60*60*3 = 3 heures -->
 	<seuil>&seuil;</seuil>
@@ -43,6 +43,13 @@
 					donc les colonnes avec un nom "aléatoire". Du coup, l'utilisation des attributs
 					(dans le "select" ou le "where" par exemple), n'est plus possible. Il faut donc
 					préférer la version sans parenthèses.</p>
+				<h3>Clés étrangères</h3>
+				<p>SQLite ne vérifie pas les clés étrangères par défaut. SQL Sandbox active cette
+					vérification sur votre copie de la base, comme le font les autres SGBD : une
+					insertion qui fait référence à une valeur absente, ou la suppression d'une ligne
+					encore référencée, est refusée (« FOREIGN KEY constraint failed »). Pour supprimer
+					une table référencée par d'autres, supprimez d'abord les lignes ou les tables qui
+					la référencent.</p>
 				<h3>Guillemets et apostrophes</h3>
 				<p>Les valeurs de type chaîne de caractères s'écrivent entre apostrophes (par exemple
 					'Dupont'), comme en SQL standard. SQLite accepte aussi les guillemets ("Dupont"),
@@ -58,75 +65,67 @@
 			dysfonctionnements ou pertes de données et se réserve le droit de la supprimer à tout
 			moment.</p>
 		<p>Application développée et testée avec PHP 8.3, SQLite 3.45 et SimpleXML.</p>
-		<p>Design adapté du modèle "<a href="http://www.freecsstemplates.org/preview/dusplic/"
-				>dusplic</a>" de <a href="http://www.freecsstemplates.org/"><strong>Free CSS
-					Templates</strong></a>, sous licence <a href="http://creativecommons.org/licenses/by/2.5/">Creative
-			Commons Attribution 2.5</a>.</p>
-		<p>Icônes prises sur <a href="http://www.iconspedia.com/">http://www.iconspedia.com/</a>
-			dans le jeu "<a href="http://www.iconspedia.com/pack/basic-set-2061/">Basic set</a>" de
-			PixelMixer (<a href="http://pixel-mixer.com/">http://pixel-mixer.com/</a>) sous licence
-				CC-by-sa.<br/><!--img src="http://www.iconspedia.com/common/images/logo.jpg"
-				width="100" alt="CC-by-sa"/--></p>
-		<p>Effets et développement JavaScript grâce aux frameworks <a
-				href="http://www.prototypejs.org">prototypejs.org<!--img
-					src="http://www.prototypejs.org/images/logo-home.gif" alt="prototypejs.org"
-				/--></a> et <a href="http://www.script.aculo.us">script.aculo.us<!--img
-					src="http://www.script.aculo.us/scriptaculous_logo.png" width="300"
-					alt="script.aculo.us"/--></a>.</p>
+		<p>Charte graphique commune avec <a href="https://pedago.desmontils.net/querycraft/">QueryCraft</a>,
+			du même auteur. Police <a href="https://www.brailleinstitute.org/freefont/">Atkinson
+				Hyperlegible Next</a>, du Braille Institute of America, utilisée sans modification
+			comme le prévoit sa licence.</p>
 		<!--p>Projet soutenu par le Conseil Régional Des Pays de La Loire dans le cadre des projets
 			ENRC 2008-2009.<br/><img src="./images/RVB-PDL_Institutionnel.jpg" width="25%"
 				alt="Région Pays de la Loire"/></p-->
 		<p>Le code de SQLSandbox est un logiciel libre, distribué sous la licence <a rel="license"
 				href="https://www.gnu.org/licenses/gpl-3.0.fr.html">GNU GPL version 3</a>. Il est
 			disponible sur <a href="https://github.com/edesmontils/SQLSandbox"
-				>https://github.com/edesmontils/SQLSandbox</a>. Les bibliothèques Prototype et
-			script.aculo.us sont sous licence MIT ; le design et les icônes restent sous les
-			licences indiquées ci-dessus.</p>
+				>https://github.com/edesmontils/SQLSandbox</a>.</p>
+		<p>Éditeur SQL : <a href="https://codemirror.net/5/">CodeMirror 5</a>, sous licence
+			MIT.</p>
 	</mentions>
 
 	<aides>
 		<div class="post">
-			<h2 class="title">Icônes utilisés</h2>
+			<h2 class="title">Utiliser SQL Sandbox</h2>
 			<div class="story">
-				<p><img src="images/home_64.png" width="32" alt="aide"/> : permet de consulter les
-					informations sur l'application.</p>
-				<p><img src="images/pencil_64.png" width="32" alt="éditer"/> : permet d'éditer une
-					requête :</p><ul>
-					<li>depuis la barre de menu, pour une nouvelle requête, celle présentée est la
-						dernière faite ;</li>
-					<li>depuis l'historique, pour retravailler une requête déjà proposée.</li>
-					 <li>depuis la liste des questions d'un TP, permet d'accéder à la question.</li>
+				<p>Chaque étudiant travaille sur sa propre copie des bases : vous pouvez les
+					interroger, mais aussi les modifier (INSERT, UPDATE, CREATE...). Ces
+					modifications sont perdues à la fermeture de la page ; les bases d'origine
+					restent intactes.</p>
+				<h3>Les onglets</h3>
+				<ul>
+					<li><strong>🏠 Accueil</strong> : les nouvelles de l'application.</li>
+					<li><strong>✏️ Requête</strong> : écrire et exécuter une requête sur la base
+						choisie. Une requête est proposée selon la base ; elle suit le choix de la
+						base tant que vous ne l'avez pas modifiée.</li>
+					<li><strong>🧺 Mémoire</strong> : les requêtes mémorisées pendant la session,
+						avec leur état (✅ réussite ou ❌ échec). Attention, recharger la page les
+						efface.</li>
+					<li><strong>❓ Aide</strong> : cette page.</li>
 				</ul>
-				<p><img src="images/add_64.png" width="32" alt="aide"/> : permet de mémoriser une
-					requête.</p>
-				<p><img src="images/buy_64.png" width="32" alt="mémoire"/> : permet d'accéder au
-					requêtes mémorisées durant la session courante. Il propose un tableau où, pour
-					chaque requête, est indiqué son état (réussite <img src="images/tick_64.png"
-						width="16" alt="ok"/> ou échec <img src="images/block_64.png" width="16"
-						alt="ko"/>) et où il est possible de l'exécuter à nouveau, de l'éditer ou de
-					la supprimer. Attention, un rechargement de la page perdra ces requêtes
-					mémorisées.</p>
-				<p><img src="images/help_64.png" width="32" alt="aide"/> : permet de consulter cette
-					aide.</p>
-				<p><img src="images/gear_64.png" width="32" alt="exécuter"/> :</p><ul>
-					<li>depuis l'édition d'une requête pour lancer son exécution, l'affichage du
-						résultat est alors fait juste en dessous ;</li>
-					<li>depuis l'historique, pour exécuter à nouveau une requête déjà proposée (un
-						nouveau clic efface le résultat).</li>
-					<li>depuis une question pour lancer son exécution, l'affichage du
-                        résultat est alors fait juste en dessous.</li>
+				<h3>Les bases</h3>
+				<p>Cliquez sur le nom d'une base pour lire sa description, ses travaux pratiques
+					et ses questions à thèmes. « ✏️ Interroger cette base » ouvre l'édition d'une
+					requête sur cette base, « 📋 Voir les tables » affiche le contenu de ses tables
+					dans un nouvel onglet.</p>
+				<p>« 🧩 Modèle de la base » montre son diagramme (tables et liens entre clés
+					étrangères et tables référencées ; survolez une table pour faire ressortir ses
+					liens), son schéma relationnel (clé primaire soulignée, clé étrangère précédée de
+					#), la structure de chaque table et le script SQL de création. Le modèle est lu
+					sur votre copie : une table que vous créez y apparaît.</p>
+				<h3>Les boutons</h3>
+				<ul>
+					<li><strong>▶️ Exécuter</strong> (ou Ctrl+Entrée, Cmd+Entrée sur Mac) : lance la
+						requête ; le résultat s'affiche juste en dessous.</li>
+					<li><strong>🧺 Mémoriser</strong> : garde la requête et son résultat dans
+						l'onglet Mémoire (ou, dans un TP, garde votre réponse).</li>
+					<li>Dans l'onglet Mémoire, <strong>👁️ Résultat</strong> affiche ou masque le
+						résultat obtenu, <strong>✏️ Modifier</strong> reprend la requête dans
+						l'éditeur, <strong>🗑️ Supprimer</strong> l'efface.</li>
+					<li>Dans un TP, <strong>✏️ Répondre</strong> ouvre une question et
+						<strong>⬅️ Retour aux questions</strong> revient à la liste en mémorisant
+						votre réponse ; <strong>💡 Aide</strong> affiche un indice quand la
+						question en propose un.</li>
 				</ul>
-				<p><img src="images/delete_64.png" width="32" alt="supprimer"/> : permet, dans
-					l'historique, de supprimer une requête.</p>
-				<p><img src="images/Database.png" width="32" alt="base de données"/>UneBase : permet
-					de consulter la description et le contenu d'une base de données.</p>
-				<p><img src="images/info_64.png" width="32" alt="base de données"/> : Propose
-					quelques informations concernant SQLite, ses particularités et ses
-					limitations.</p>
-				<p><img src="images/shield_64.png" width="32" alt="base de données"/> : Énonce les
-					différentes mentions légales liées à cette application.</p>
-				<p><img src="images/left_64.png" width="32" alt="base de données"/> : Lors d'un TP 
-                    permet de retourner à la liste des questions.</p>
+				<p>En bas de page : <strong>ℹ️ À propos de SQL et SQLite</strong> présente les
+					particularités du SGBD utilisé, <strong>🛡️ Mentions légales</strong> les
+					conditions d'utilisation et les licences.</p>
 			</div>
 		</div>
 	</aides>
@@ -135,6 +134,24 @@
 	<listeMessages>
 		<!--message titre="" post=""><p></p>
 		</message-->
+		<message titre="Version 6.0 (en préparation)" date="22/10/26" auteur="E. Desmontils">
+			<div>
+				<p>Cette version de test modernise l'interface :</p>
+				<ul>
+					<li>une nouvelle présentation, commune avec QueryCraft, lisible sur téléphone et
+						tablette ;</li>
+					<li>des onglets et de vrais boutons, avec leur libellé, à la place des
+						icônes ;</li>
+					<li>un éditeur SQL avec coloration syntaxique et numéros de ligne ; Ctrl+Entrée
+						exécute la requête ;</li>
+					<li>une requête de départ adaptée à la base choisie ;</li>
+					<li>le modèle de chaque base : diagramme, schéma relationnel et script SQL ;</li>
+					<li>des clés étrangères ajoutées aux bases tp-robots et tp-mondial ;</li>
+					<li>des clés étrangères désormais vérifiées : une modification qui ne les
+						respecte pas est refusée.</li>
+				</ul>
+			</div>
+		</message>
 		<message titre="Version 5.0" date="21/10/26" auteur="E. Desmontils">
 			<div>
 				<p>Une nouvelle version de SQLSandbox est en ligne. Elle apporte :</p>
