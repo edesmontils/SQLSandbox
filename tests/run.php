@@ -247,6 +247,16 @@ verifie('modèle : table créée par l\'étudiant', count($essai) == 1 && count(
         && $essai[0]['cles'][0]['table'] == 'etudiants' && $essai[0]['cles'][0]['references'] == array('noetu'),
         json_encode($essai));
 verifie('modèle : base inconnue', modele_base('inconnue') === null);
+// Diagramme (JavaScript) : testé avec node quand il est installé (ceci est une vérification de
+// js/modele.js, que PHP ne peut pas exécuter)
+$node = trim((string)@shell_exec('command -v node 2>/dev/null'));
+if ($node !== '') {
+	$sortie = array();
+	exec(escapeshellarg($node).' '.escapeshellarg(__DIR__.'/modele.js').' 2>&1', $sortie, $code);
+	verifie('diagramme : une flèche par colonne d\'une clé étrangère composée', $code == 0, implode(' | ', $sortie));
+} else {
+	echo "  --   diagramme : node absent, test ignoré\n";
+}
 
 echo "Purge\n";
 $_SESSION['copie_autre'] = "$tmp/copie_autre";
