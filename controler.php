@@ -128,9 +128,17 @@ if (isset($_SESSION['debug']) && $session_ok) {
 	else {//echo "<p>liste base $Soumettre</p>";
 		liste_base($Soumettre);
 	}
-} else {//Envoyer sur index.php5 ?
-	echo "<div class='post'><h2 class='title'>Problème d'initialisation ou de session</h2><h3 class='posted'>E. Desmontils</h3><div class='story'>";
-	echo "<p>Veuillez relancer l'application (éventuellement en relancant le navigateur).</p>";
-	echo "</div></div>\n";
+} else {
+	// Session inconnue du serveur (expirée, cookie effacé...) : code 401, pour que le
+	// JavaScript affiche ce message une seule fois au lieu d'une erreur par rubrique
+	http_response_code(401);
+	echo "<div class='post' id='session-perdue'><h2 class='title'>Session expirée</h2><div class='story'>"
+	    ."<p class='message'>Le serveur ne reconnaît plus votre session, ni donc vos copies des bases. "
+	    ."Cela arrive quand la page est restée ouverte longtemps sans être utilisée (une session dure "
+	    ."3 heures) ou quand le navigateur a effacé ses cookies.</p>"
+	    ."<p>Rechargez l'application pour repartir avec des bases neuves. Les requêtes de l'onglet "
+	    ."Mémoire seront perdues : copiez d'abord celles que vous voulez garder.</p>"
+	    ."<p class='actions'><a class='btn' href='index.php'>🔄 Recharger l'application</a></p>"
+	    ."</div></div>\n";
 }
 ?>

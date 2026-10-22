@@ -667,8 +667,11 @@ function fin_page() {
 // Vérifie que la session a été initialisée par index.php (copies des bases)
 function session_initialisee() {
 	if (isset($_SESSION['debug'])) return true;
-	echo "<div class='post'><h2 class='title'>Session non initialisée</h2><div class='story'>"
-	    ."<p>Ouvrez d'abord l'application depuis sa page d'accueil, puis relancez cette page.</p></div></div>";
+	echo "<div class='post'><h2 class='title'>Session expirée ou absente</h2><div class='story'>"
+	    ."<p class='message'>Le serveur ne reconnaît pas votre session : l'application n'a pas encore été "
+	    ."ouverte dans ce navigateur, ou la session a expiré (elle dure 3 heures).</p>"
+	    ."<p>Ouvrez l'application depuis sa page d'accueil, puis rouvrez cette page (TP, thème ou tables).</p>"
+	    ."<p class='actions'><a class='btn' href='index.php'>🏠 Ouvrir l'application</a></p></div></div>";
 	return false;
 }
 ?>

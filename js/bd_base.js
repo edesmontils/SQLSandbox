@@ -306,7 +306,9 @@ function query() {
 function query_failed(trs) {
     var message;
     var de_l_application = trs && trs.getHeader('X-SQLSandbox');
-    if (trs && trs.status == 403 && de_l_application) {
+    // Jeton périmé (403) ou session inconnue (401) : le message vient de l'application
+    if (trs && (trs.status == 403 || trs.status == 401) && de_l_application) {
+        result_type = 'ko';
         maj($('results'), trs.responseText);
         return;
     }
@@ -427,15 +429,24 @@ function description_base(nom) {
     return t;
 }
 
+// Session inconnue du serveur (code 401 de l'application) : affiche son message une
+// seule fois, à la suite de la page. Retourne false pour une autre erreur.
+function session_perdue(trs) {
+    if (!trs || trs.status != 401 || !trs.getHeader('X-SQLSandbox')) return false;
+    if (!$('session-perdue')) ajoute($('posts'), trs.responseText);
+    return true;
+}
+
 // Ajoute à la page le résultat d'une rubrique du contrôleur, puis appelle suite()
+// (pas de suite si la rubrique n'a pas pu être obtenue)
 function insere_rubrique(parametres, suite) {
     appel('get', parametres,
         function (trs) {
             ajoute($('posts'), trs.responseText);
             if (suite) suite();
         },
-        function () {
-            alert('Impossible d\'obtenir la rubrique !')
+        function (trs) {
+            if (!session_perdue(trs)) alert('Impossible d\'obtenir la rubrique !')
         });
 }
 
@@ -561,7 +572,8 @@ function rubrique(soumettre, memoire, nom_erreur, onglet) {
                 maj($('posts'), window[memoire]);
                 apparait($('posts'));
             },
-            function () {
+            function (trs) {
+                if (session_perdue(trs)) return;
                 alert(nom_erreur + ': Impossible d\'obtenir la rubrique !')
             });
     } else {
