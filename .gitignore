@@ -5,3 +5,5 @@ tmp/copie_*
 .idea/modules.xml
 tmp/sessions/
 tmp/verrou_*
+.github/.DS_Store
+.DS_Store

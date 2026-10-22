@@ -38,7 +38,7 @@ try {
 	if ($debug) ini_set('display_errors', '1');
 	
 	//Gestion du seuil de vie des copies de base //60 * 60 * 24;
-	$seuil = (integer)$config->seuil;
+	$seuil = (int)$config->seuil;
 	
 	//Gestion des bases
 	$listeBase = array();
