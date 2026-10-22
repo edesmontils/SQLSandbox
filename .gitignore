@@ -5,3 +5,4 @@ tmp/copie_*
 .idea/modules.xml
 tmp/sessions/
 tmp/verrou_*
+.DS_Store
