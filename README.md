@@ -74,23 +74,30 @@ sudo setfacl -m u:caddy:x /home/ed
 redir /SQLSandbox /SQLSandbox/ 308
 handle /SQLSandbox/* {
 	root * /home/ed/programmation
-	@interdit path_regexp ^/SQLSandbox/(tmp|bdd|lib|tests)(/|$)
+	@interdit path_regexp ^/SQLSandbox/(\.[^/]*|tmp|bdd|lib|tests)(/|$)
 	respond @interdit 403
 	php_fastcgi unix//run/php/sqlsandbox.sock
 	file_server
 }
 ```
 
-Caddy ignore les `.htaccess` : la règle `@interdit` les remplace. Utiliser `handle` et non `handle_path`, qui retirerait le préfixe et changerait le `DOCUMENT_ROOT`. Celui-ci vaut ici `/home/ed/programmation` : les dossiers de travail sont donc créés dans `/home/ed` (`/home/ed/sqlsandbox-tmp` et `/home/ed/sessions-sqlsandbox`), ce que permet le pool sous `ed`. Valider avant de recharger : `caddy validate --config /etc/caddy/Caddyfile`, puis `sudo systemctl reload caddy`.
+Caddy ignore les `.htaccess` : la règle `@interdit` les remplace, et interdit aussi les fichiers cachés, dont `.git/`. Utiliser `handle` et non `handle_path`, qui retirerait le préfixe et changerait le `DOCUMENT_ROOT`. Celui-ci vaut ici `/home/ed/programmation` : les dossiers de travail sont donc créés dans `/home/ed` (`/home/ed/sqlsandbox-tmp` et `/home/ed/sessions-sqlsandbox`), ce que permet le pool sous `ed`. Valider avant de recharger : `caddy validate --config /etc/caddy/Caddyfile`, puis `sudo systemctl reload caddy`.
 
-**Envoi des fichiers**, depuis la copie de travail, sans le contenu de `tmp/` (verrous ou copies de bases laissés par des essais en local) :
+**Installation et mises à jour par git.** Le dossier est un clone du dépôt public (HTTPS, sans clé) :
 
 ```sh
-rsync -av --delete --exclude .git --exclude .github --exclude .gitlab-ci.yml --exclude tests --exclude .idea --exclude .claude --exclude .DS_Store --exclude 'tmp/*' ./ ed@<serveur>:/home/ed/programmation/SQLSandbox/
-ssh ed@<serveur> chmod a-w /home/ed/programmation/SQLSandbox/tmp
+cd /home/ed/programmation && git clone https://github.com/edesmontils/SQLSandbox.git
 ```
 
-`tmp/` est ainsi créé vide et laissé en lecture seule : l'application ne peut pas s'y replier, et un problème de dossier de travail se voit tout de suite (message « Problème d'installation »). Pour vérifier : `https://<site>/SQLSandbox/bdd/em/em.db` doit répondre 403, et une session ouverte doit apparaître dans `/home/ed/sessions-sqlsandbox`.
+Pour passer à la dernière version poussée sur GitHub :
+
+```sh
+cd /home/ed/programmation/SQLSandbox && git pull --ff-only
+```
+
+Rien à recharger ensuite : PHP relit les fichiers modifiés. Les copies des bases et les sessions étant hors du clone, celui-ci reste propre (`git status` vide) et `git pull` ne rencontre pas de conflit ; ne pas modifier les fichiers directement sur le serveur. `tests/`, `.github/` et `.git/` sont présents dans le dossier mais interdits par la règle `@interdit`. Les dossiers de travail existant, `tmp/` ne sert pas.
+
+Pour vérifier : `https://<site>/SQLSandbox/bdd/em/em.db` et `https://<site>/SQLSandbox/.git/config` doivent répondre 403, et une session ouverte doit apparaître dans `/home/ed/sessions-sqlsandbox`.
 
 ## Plusieurs installations sur un même hébergement
 
