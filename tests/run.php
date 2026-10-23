@@ -236,6 +236,9 @@ foreach (glob('./bdd/*/config.xml') as $fic) {
 	$bd->close();
 	verifie('clés étrangères de '.basename(dirname($fic)), count($m['tables']) > 0 && $nb > 0 && $violations == 0,
 	        count($m['tables'])." tables, $nb clés, $violations violation(s)");
+	// Modèle écrit pour tests/modele.js (disposition du diagramme)
+	@mkdir("$tmp/modeles");
+	file_put_contents("$tmp/modeles/".(string)$c['nom'].'.json', json_encode($m, JSON_UNESCAPED_UNICODE));
 	unlink($copie_modele);
 }
 unset($_SESSION['copie_modele']);
@@ -252,8 +255,11 @@ verifie('modèle : base inconnue', modele_base('inconnue') === null);
 $node = trim((string)@shell_exec('command -v node 2>/dev/null'));
 if ($node !== '') {
 	$sortie = array();
-	exec(escapeshellarg($node).' '.escapeshellarg(__DIR__.'/modele.js').' 2>&1', $sortie, $code);
-	verifie('diagramme : une flèche par colonne d\'une clé étrangère composée', $code == 0, implode(' | ', $sortie));
+	exec(escapeshellarg($node).' '.escapeshellarg(__DIR__.'/modele.js').' '.escapeshellarg("$tmp/modeles").' 2>&1', $sortie, $code);
+	$ok = array_filter($sortie, function ($l) { return strpos($l, '  ok   ') === 0; });
+	$echecs_node = array_filter($sortie, function ($l) { return strpos($l, '  ECHEC ') === 0; });
+	verifie('diagramme : '.count($ok).' vérifications (clés composées, cas limites, disposition des bases)',
+	        $code == 0 && count($echecs_node) == 0 && count($ok) >= 31, implode(' | ', $echecs_node ?: $sortie));
 } else {
 	echo "  --   diagramme : node absent, test ignoré\n";
 }
@@ -349,6 +355,8 @@ verifie('fin de session : copies purgées', strpos($corps, 'purgées') !== false
 
 proc_terminate($serveur);
 proc_close($serveur);
+foreach (glob("$tmp/modeles/*") as $f) unlink($f);
+@rmdir("$tmp/modeles");
 foreach (glob("$tmp/*") as $f) unlink($f);
 // Verrous et session créés par les tests
 foreach (array_merge(glob(DOSSIER_TMP.'/verrou_*'), glob("$travail/verrou_*")) as $f) unlink($f);

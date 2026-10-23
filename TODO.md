@@ -1,22 +1,21 @@
 # À faire
 
-## Diagramme du modèle : disposition (topographie) du graphe
+## Diagramme du modèle : pistes d'amélioration de la disposition
 
-Le placement des tables dans le diagramme (`place_tables()` et `dessine_modele()` dans
-`js/modele.js`) laisse des liens qui traversent des tables.
+La disposition en couches avec points de passage (`disposition_tables()` dans `js/modele.js`)
+est en place : plus aucun lien ne traverse une table, et `tests/modele.js` le vérifie, avec un
+plafond de croisements, sur les 7 bases du dépôt. Ce qui reste, par ordre d'intérêt :
 
-Exemple sur `tp-robots` : la flèche `resultats → robots` passe sur les tables `epreuves`
-et `inscriptions`, parce que `robots` est dans la première colonne et `resultats` dans la
-dernière, avec deux colonnes de tables entre elles.
-
-Pistes :
-- ordonner les tables d'une colonne pour réduire les croisements de liens (par exemple
-  placer `robots` près de `resultats` plutôt qu'en bas de la première colonne) ;
-- faire contourner les boîtes aux courbes, par exemple en passant dans l'espace libre entre
-  deux colonnes (`ecart_x`) ;
-- ou répartir les tables en tenant compte des liens de chaque table, et non plus seulement
-  de leur niveau (le plus long chemin vers les tables référencées).
-
-À vérifier sur les bases du dépôt (`tp-robots`, `tp-em`, `tp-vols`, `tp-cinema`,
-`tp-Lutins`, `tp-mondial`) : le test `tests/modele.js` contrôle le nombre de flèches ; un
-test de la disposition pourrait compter les liens qui traversent une boîte.
+- **tp-mondial** (33 tables, 75 liens) garde environ 240 croisements, contre 339 avant. Les
+  tables très connectées (`Country`, `Province`, `City`) en laissent forcément beaucoup, mais
+  on peut encore gagner :
+  - le cycle `Country → City → Province → Country` : le lien qui remonte vers la gauche est
+    choisi d'après le nombre de références ; essayer d'autres coupures et garder la meilleure ;
+  - aligner chaque table sur la hauteur moyenne des tables qu'elle référence, au lieu de les
+    empiler (liens plus droits, moins de dénivelés) ;
+  - le diagramme est plus étroit (5 colonnes au lieu de 17) mais plus haut (environ 1740 px
+    au lieu de 1130) : limiter la hauteur d'une couche si cela gêne.
+- **tp-em, tp-cinema** : 1 croisement chacun, qui est le minimum pour l'ordre des tables dans
+  les couches ; seul un autre découpage en couches pourrait faire mieux.
+- Le test utilise une largeur de texte fixe (7 px par caractère) ; dans un navigateur, la
+  largeur des boîtes dépend de la police et peut modifier légèrement la disposition.
