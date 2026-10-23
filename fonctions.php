@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__.'/dossiers.php';
+require_once __DIR__.'/ia.php';
 
 // Paramètre de la requête HTTP, s'il est une chaîne (les tableaux, comme base[]=x, sont ignorés)
 function param($nom) {

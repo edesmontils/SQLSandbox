@@ -212,6 +212,8 @@ $listeNoms = array_keys($listeBase);
     noms_bases = <?php echo json_encode($listeNoms, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE); ?>;
     csrf_token = <?php echo json_encode($_SESSION['csrf']); ?>;
     duree_session = <?php echo (int)DUREE_SESSION; ?>;
+    ia_disponible = <?php echo ia_config() ? 'true' : 'false'; ?>;
+    ia_lignes_max = <?php $ia = ia_config(); echo $ia ? (int)$ia['lignes_max'] : 0; ?>;
   </script>
   <!-- Éditeur SQL : CodeMirror 5 (licence MIT, js/codemirror/LICENSE) -->
   <script src="<?php echo url_fichier("./js/codemirror/codemirror.js");?>"></script>
@@ -219,6 +221,7 @@ $listeNoms = array_keys($listeBase);
   <script src="<?php echo url_fichier("./js/coloration.js");?>"></script>
   <script src="<?php echo url_fichier("./js/bd_base.js");?>"></script>
   <script src="<?php echo url_fichier("./js/modele.js");?>"></script>
+  <script src="<?php echo url_fichier("./js/ia.js");?>"></script>
 </head>
 
 <body onload="init()">

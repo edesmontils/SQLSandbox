@@ -99,6 +99,16 @@ Rien à recharger ensuite : PHP relit les fichiers modifiés. Les copies des bas
 
 Pour vérifier : `https://<site>/SQLSandbox/bdd/em/em.db` et `https://<site>/SQLSandbox/.git/config` doivent répondre 403, et une session ouverte doit apparaître dans `/home/ed/sessions-sqlsandbox`.
 
+## Génération de données par IA (facultatif)
+
+Le bouton « ✨ Remplir » (page d'une base et édition d'une requête) fait générer par une IA des lignes pour une table, ou le contenu d'une colonne ajoutée avec `ALTER TABLE`. Le modèle ne produit pas de SQL : il renvoie des lignes en JSON, qui sont contrôlées sur la copie de l'étudiant (types, contraintes, clés étrangères) et présentées en aperçu ; rien n'est écrit tant que l'étudiant ne le valide pas.
+
+La fonction passe par un ProxyIAg (proxy compatible OpenAI qui garde les vraies clés des providers et applique des quotas) et **n'existe que si le fichier de réglages est présent**. Copier `ia.ini.exemple` **hors du site**, à côté de la racine web, sous le nom `sqlsandbox-ia.ini` (`~/sqlsandbox-ia.ini` chez OVH, droits `600`), et y renseigner l'URL du proxy (HTTPS obligatoire hors `localhost`), une clé `sk-…` propre à l'application et l'alias du modèle. La variable d'environnement `SQLSANDBOX_IA_INI` permet de placer le fichier ailleurs. Prérequis : l'extension `curl` de PHP.
+
+Comme la clé est unique, le quota de ProxyIAg est commun à tous les étudiants : l'application limite donc elle-même chaque session (`par_session` générations par jour, `delai` secondes entre deux, `lignes_max` lignes par génération) et l'ensemble de l'installation (`plafond_global` par jour, compté dans un fichier `ia_compteur` du dossier de travail). Les messages d'erreur du proxy ne sont jamais montrés aux étudiants ; ils vont dans le journal d'erreurs de PHP.
+
+Modèles essayés (essai du 2026-10-23, 40 générations relues) : `gemma-4-31b` est le plus fiable mais lent (~9 s) ; `mistral-small-24b` (~4,5 s) est un bon compromis. Les données générées peuvent rester approximatives : l'aperçu sert à les vérifier.
+
 ## Plusieurs installations sur un même hébergement
 
 Le nom du cookie de session et des dossiers de travail vient de la constante `INSTANCE` de `dossiers.php` : `sqlsandbox` par défaut (cookie `sqlsandbox`, dossiers `sqlsandbox-tmp` et `sessions-sqlsandbox`). Pour faire fonctionner deux installations côte à côte, par exemple une version de test dans `/SQLSandbox6/`, donner à chacune un nom d'`INSTANCE` différent : sinon elles partagent cookie et sessions, et ouvrir l'une réinitialise les bases de l'autre.

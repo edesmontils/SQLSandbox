@@ -1,0 +1,20 @@
+; Génération de données par IA (voir ia.php).
+; À copier HORS du site, à côté de la racine web, sous le nom sqlsandbox-ia.ini
+; (~/sqlsandbox-ia.ini chez OVH), avec des droits restreints (chmod 600).
+; Sans ce fichier, le bouton « Remplir » n'apparaît pas.
+; Ne jamais mettre la vraie clé dans le dépôt.
+
+; Point d'entrée de ProxyIAg (HTTPS obligatoire, sauf pour localhost)
+url = "https://pedago.desmontils.net/proxyiag/v1"
+; Clé propre à l'application (créée avec : proxyiag-keys add --name SQLSandbox ...)
+cle = "sk-..."
+; Alias du modèle (gemma-4-31b : le plus fiable ; mistral-small-24b : deux fois plus rapide)
+modele = "proxyiag/mistral-small-24b"
+
+; Réglages facultatifs (valeurs par défaut indiquées)
+; par_session = 20       ; générations par session et par jour
+; delai = 5              ; secondes minimum entre deux générations d'une session
+; lignes_max = 30        ; lignes par génération
+; plafond_global = 500   ; générations par jour pour toute l'application (0 = sans limite)
+; max_tokens = 3000      ; longueur maximale de la réponse
+; delai_appel = 60       ; secondes d'attente de la réponse

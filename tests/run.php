@@ -87,6 +87,178 @@ list($r, $o) = execute("select 1");
 ob_start(); $r = get('select 1', 'inconnue'); $o = ob_get_clean();
 verifie('base inconnue refusée', $r === null && strpos($o, 'inconnue') !== false, $o);
 
+echo "Génération par IA (faux ProxyIAg)\n";
+$port_faux = 19000 + getmypid() % 1000;
+$reponse_faux = "$tmp/faux_reponse";
+function faux($code, $contenu, $fin = 'stop') {
+	global $reponse_faux;
+	$corps = is_array($contenu) || is_null($contenu) ? json_encode($contenu) : $contenu;
+	if ($code == 200) {
+		$corps = json_encode(array('choices' => array(array('message' => array('content' => $corps), 'finish_reason' => $fin)),
+		                           'usage' => array('total_tokens' => 123)));
+	}
+	file_put_contents($reponse_faux, "$code\n$corps");
+}
+file_put_contents("$tmp/ia.ini", "url = \"http://127.0.0.1:$port_faux/v1\"\ncle = \"sk-cle-de-test\"\nmodele = \"proxyiag/test\"\n"
+                  ."delai = 0\npar_session = 30\nplafond_global = 0\nlignes_max = 5\n");
+putenv("SQLSANDBOX_IA_INI=$tmp/ia.ini");
+$env_serveurs = array_merge(getenv(), array('FAUX_REPONSE' => $reponse_faux, 'SQLSANDBOX_IA_INI' => "$tmp/ia.ini"));
+$faux_serveur = proc_open(array(PHP_BINARY, '-S', "127.0.0.1:$port_faux", "$racine/tests/faux_proxy.php"),
+                          array(array('file', '/dev/null', 'r'), array('file', '/dev/null', 'w'), array('file', '/dev/null', 'w')),
+                          $tubes_faux, $racine, $env_serveurs);
+for ($i = 0; $i < 50 && !@fsockopen('127.0.0.1', $port_faux); $i++) usleep(100000);
+$compteur_existait = is_file(DOSSIER_TMP.'/ia_compteur');
+$conf = ia_config();
+verifie('IA : configuration lue', is_array($conf) && $conf['modele'] === 'proxyiag/test' && $conf['lignes_max'] == 5, json_encode($conf));
+verifie('IA : fichier absent -> fonction désactivée', is_null(ia_lit_ini("$tmp/inexistant.ini")));
+file_put_contents("$tmp/ia2.ini", "url = \"http://serveur-distant.example/v1\"\ncle = \"sk-x\"\nmodele = \"m\"\n");
+verifie('IA : clé jamais envoyée en HTTP vers une autre machine', is_null(ia_lit_ini("$tmp/ia2.ini")));
+file_put_contents("$tmp/ia2.ini", "url = \"https://serveur-distant.example/v1/\"\ncle = \"sk-x\"\nmodele = \"m\"\n");
+$c2 = ia_lit_ini("$tmp/ia2.ini");
+verifie('IA : HTTPS accepté, valeurs par défaut', $c2 && $c2['url'] === 'https://serveur-distant.example/v1'
+        && $c2['par_session'] == IA_PAR_SESSION && $c2['lignes_max'] == IA_LIGNES_MAX);
+file_put_contents("$tmp/ia2.ini", "url = \"https://serveur-distant.example/v1\"\ncle = \"\"\nmodele = \"m\"\n");
+verifie('IA : clé vide -> désactivée', is_null(ia_lit_ini("$tmp/ia2.ini")));
+unlink("$tmp/ia2.ini");
+
+$copie_ia = "$tmp/copie_ia";
+copy('./bdd/cours/cours', $copie_ia);
+$_SESSION['copie_ia'] = $copie_ia;
+unset($_SESSION['ia']);
+function nb_etudiants() { global $copie_ia; $d = new SQLite3($copie_ia); $n = $d->querySingle('select count(*) from etudiants'); $d->close(); return $n; }
+$cols = array('noetu', 'nom', 'prenom');
+$lignes_ok = array(
+	array('noetu' => '11111A', 'nom' => 'Durand', 'prenom' => 'Zoé'),
+	array('noetu' => '22222B', 'nom' => 'Leroy', 'prenom' => 'Hugo'),
+	array('noetu' => '28936E', 'nom' => 'Doublon', 'prenom' => 'Clé'),   // clé primaire déjà prise
+	array('noetu' => '33333C', 'nom' => null, 'prenom' => 'Sans nom'),  // nom NOT NULL
+	array('noetu' => '44444D', 'nom' => 'Petit', 'prenom' => 'Léa'),
+	array('noetu' => '55555E', 'nom' => 'En trop', 'prenom' => 'X'));
+faux(200, array('lignes' => $lignes_ok));
+$r = ia_generer('ia', 'etudiants', 'ajouter', $cols, 5, 'des prénoms bretons');
+verifie('IA : aperçu produit', isset($r['ok']) && count($r['lignes']) == 5 && $r['ignorees'] == 1, json_encode($r));
+$etats = array_column($r['lignes'], 'ok');
+verifie('IA : lignes contrôlées (clé en double et NOT NULL refusés)', $etats === array(true, true, false, false, true), json_encode($etats));
+verifie('IA : message de contrainte conservé', strpos($r['lignes'][2]['erreur'], 'UNIQUE') !== false
+        && strpos($r['lignes'][3]['erreur'], 'NOT NULL') !== false, json_encode(array_column($r['lignes'], 'erreur')));
+verifie('IA : l\'aperçu n\'écrit rien dans la base', nb_etudiants() == 6, nb_etudiants());
+$requete_faux = (string)file_get_contents($reponse_faux.'.requete');
+verifie('IA : clé envoyée au proxy', strpos($requete_faux, 'Bearer sk-cle-de-test') === 0);
+verifie('IA : schéma, consigne et clés existantes dans le prompt', strpos($requete_faux, 'CREATE TABLE etudiants') !== false
+        && strpos($requete_faux, 'prénoms bretons') !== false && strpos($requete_faux, '28936E') !== false, substr($requete_faux, 0, 400));
+verifie('IA : la clé n\'est pas renvoyée au navigateur', strpos(json_encode($r), 'sk-cle-de-test') === false);
+verifie('IA : générations restantes comptées', $r['restantes'] == 29, $r['restantes']);
+$bonnes = array();
+foreach ($r['lignes'] as $l) if ($l['ok']) $bonnes[] = $l['valeurs'];
+$w = ia_appliquer('ia', 'etudiants', 'ajouter', $cols, $bonnes);
+verifie('IA : écriture des lignes validées', $w['ok'] && $w['ecrites'] == 3 && nb_etudiants() == 9, json_encode($w));
+$w = ia_appliquer('ia', 'etudiants', 'ajouter', $cols, array($lignes_ok[2], $lignes_ok[0]));
+verifie('IA : à l\'écriture, une ligne refusée n\'empêche pas les autres', $w['ecrites'] == 0 && count($w['refusees']) == 2, json_encode($w)); // 11111A existe déjà
+$w = ia_appliquer('ia', 'etudiants', 'ajouter', $cols, array_fill(0, 6, $lignes_ok[0]));
+verifie('IA : trop de lignes refusé', isset($w['erreur']) && $w['statut'] == 400, json_encode($w));
+
+// Clés étrangères : les valeurs possibles des tables référencées sont dans le prompt, et contrôlées
+faux(200, array('lignes' => array(
+	array('noe' => '11111A', 'codemat' => 'MIAS2I5', 'noteex' => 12, 'notecc' => 14),
+	array('noe' => 'inconnu', 'codemat' => 'MIAS2I5', 'noteex' => 12, 'notecc' => 14),
+	array('noe' => '11111A', 'codemat' => 'MIAS2I6', 'noteex' => 25, 'notecc' => 3))));
+$r = ia_generer('ia', 'notes', 'ajouter', array('noe', 'codemat', 'noteex', 'notecc'), 3, '');
+verifie('IA : clé étrangère et CHECK contrôlés', array_column($r['lignes'], 'ok') === array(true, false, false), json_encode($r));
+$requete_faux = (string)file_get_contents($reponse_faux.'.requete');
+verifie('IA : valeurs des tables référencées dans le prompt', strpos($requete_faux, 'MIAS2I5') !== false && strpos($requete_faux, '28936E') !== false);
+
+// Compléter une colonne ajoutée par ALTER TABLE
+$d = new SQLite3($copie_ia); $d->exec('ALTER TABLE etudiants ADD COLUMN email varchar(40)'); $d->close();
+faux(200, array('lignes' => array(
+	array('noetu' => '28936E', 'email' => 'franck.dupont@exemple.fr'),
+	array('noetu' => 'absent', 'email' => 'x@exemple.fr'),
+	array('noetu' => '11111A', 'email' => array('liste')))));
+$r = ia_generer('ia', 'etudiants', 'modifier', array('email', 'noetu'), 3, '');
+verifie('IA : compléter -> la clé primaire n\'est jamais une colonne à remplir', isset($r['ok']) && $r['ecrire'] === array('email')
+        && $r['colonnes'] === array('noetu', 'email'), json_encode($r));
+verifie('IA : compléter -> ligne inconnue et valeur non simple refusées', array_column($r['lignes'], 'ok') === array(true, false, false)
+        && strpos($r['lignes'][1]['erreur'], 'identifiant') !== false && strpos($r['lignes'][2]['erreur'], 'non simple') !== false, json_encode($r['lignes']));
+$requete_faux = (string)file_get_contents($reponse_faux.'.requete');
+verifie('IA : compléter -> les lignes existantes sont envoyées', strpos($requete_faux, 'Dupont') === false && strpos($requete_faux, '28936E') !== false);
+$w = ia_appliquer('ia', 'etudiants', 'modifier', array('email'), array(array('noetu' => '28936E', 'email' => 'franck.dupont@exemple.fr')));
+$d = new SQLite3($copie_ia);
+verifie('IA : compléter -> colonne remplie', $w['ecrites'] == 1 && $d->querySingle("select email from etudiants where noetu = '28936E'") === 'franck.dupont@exemple.fr', json_encode($w));
+$d->exec("update etudiants set email = 'x'");
+$d->close();
+$r = ia_generer('ia', 'etudiants', 'modifier', array('email'), 3, '');
+verifie('IA : compléter -> rien à faire si plus de valeur vide', isset($r['erreur']) && $r['statut'] == 400 && strpos($r['erreur'], 'rien à compléter') !== false, json_encode($r));
+
+// Formes de réponse acceptées
+$un = array('noetu' => '77777G', 'nom' => 'Texte', 'prenom' => 'Autour');
+foreach (array('liste seule' => json_encode(array($un)), 'avec texte autour' => "Voici :\n```json\n".json_encode(array('lignes' => array($un)))."\n```\nBonne chance",
+               'autre clé' => json_encode(array('etudiants' => array($un)))) as $nom => $texte) {
+	faux(200, $texte);
+	$r = ia_generer('ia', 'etudiants', 'ajouter', $cols, 1, '');
+	verifie("IA : réponse acceptée ($nom)", isset($r['ok']) && count($r['lignes']) == 1 && $r['lignes'][0]['ok'], json_encode($r));
+}
+faux(200, 'désolé, je ne peux pas');
+$avant = ia_restantes(ia_config());
+$r = ia_generer('ia', 'etudiants', 'ajouter', $cols, 1, '');
+verifie('IA : réponse inutilisable signalée', isset($r['erreur']) && $r['statut'] == 502, json_encode($r));
+faux(200, array('lignes' => array($un)), 'length');
+$r = ia_generer('ia', 'etudiants', 'ajouter', $cols, 1, '');
+verifie('IA : réponse tronquée signalée', isset($r['erreur']) && $r['statut'] == 502, json_encode($r));
+
+// Pannes du proxy : message sans détail technique, et la génération est rendue
+$avant = ia_restantes(ia_config());
+foreach (array(array(500, 503), array(429, 429), array(401, 503), array(403, 503)) as $cas) {
+	faux($cas[0], '{"detail":"secret technique sk-interne"}');
+	$r = ia_generer('ia', 'etudiants', 'ajouter', $cols, 1, '');
+	verifie("IA : proxy en code {$cas[0]} -> statut {$cas[1]}, sans détail technique", isset($r['erreur']) && $r['statut'] == $cas[1]
+	        && strpos($r['erreur'], 'secret') === false && strpos($r['erreur'], 'sk-') === false, json_encode($r));
+}
+verifie('IA : générations rendues après une panne', ia_restantes(ia_config()) == $avant, ia_restantes(ia_config()).' / '.$avant);
+// 400 : le proxy refuse response_format, la demande est refaite sans
+faux(400, '{"detail":"response_format non supporté"}');
+$r = ia_generer('ia', 'etudiants', 'ajouter', $cols, 1, '');
+verifie('IA : 400 du proxy signalé comme indisponibilité', isset($r['erreur']) && $r['statut'] == 503);
+
+// Paramètres refusés
+foreach (array(array('etudiants"; drop table notes; --', 'ajouter', $cols), array('inconnue', 'ajouter', $cols),
+               array('etudiants', 'supprimer', $cols), array('etudiants', 'ajouter', array('absente')),
+               array('etudiants', 'ajouter', 'noetu'), array('etudiants', 'ajouter', array())) as $i => $p) {
+	$r = ia_generer('ia', $p[0], $p[1], $p[2], 1, '');
+	verifie("IA : paramètre invalide refusé ($i)", isset($r['erreur']) && in_array($r['statut'], array(400, 404)), json_encode($r));
+}
+$r = ia_generer('base-inconnue', 'etudiants', 'ajouter', $cols, 1, '');
+verifie('IA : base inconnue refusée', isset($r['erreur']) && $r['statut'] == 404);
+$d = new SQLite3($copie_ia); $d->exec('CREATE TABLE sans_cle(a, b)'); $d->close();
+$r = ia_generer('ia', 'sans_cle', 'modifier', array('a'), 1, '');
+verifie('IA : compléter une table sans clé primaire refusé', isset($r['erreur']) && strpos($r['erreur'], 'clé primaire') !== false, json_encode($r));
+verifie('IA : base intacte après les refus (hors lignes validées)', nb_etudiants() == 9, nb_etudiants());
+
+// Quotas
+$conf = ia_config();
+$_SESSION['ia'] = array('jour' => date('Y-m-d'), 'n' => 0, 'dernier' => 0);
+faux(200, array('lignes' => array($un)));
+for ($i = 0; $i < $conf['par_session']; $i++) ia_generer('ia', 'etudiants', 'ajouter', $cols, 1, '');
+$r = ia_generer('ia', 'etudiants', 'ajouter', $cols, 1, '');
+verifie('IA : quota par session', isset($r['erreur']) && $r['statut'] == 429 && strpos($r['erreur'], 'générations du jour') !== false, json_encode($r));
+$_SESSION['ia'] = array('jour' => date('Y-m-d', time() - 86400), 'n' => 99, 'dernier' => 0);
+verifie('IA : le quota repart le lendemain', is_null(ia_reserve($conf)) && $_SESSION['ia']['n'] == 1);
+$_SESSION['ia']['dernier'] = time();
+$m = ia_reserve(array_merge($conf, array('delai' => 100)));
+verifie('IA : délai minimum entre deux générations', is_string($m) && strpos($m, 'Patientez') === 0, $m);
+$compteur_avant = is_file(DOSSIER_TMP.'/ia_compteur') ? file_get_contents(DOSSIER_TMP.'/ia_compteur') : null;
+@unlink(DOSSIER_TMP.'/ia_compteur');
+verifie('IA : plafond global', ia_compteur_global(1, 2) && ia_compteur_global(1, 2) && !ia_compteur_global(1, 2)
+        && ia_compteur_global(-1, 2) && ia_compteur_global(1, 2));
+verifie('IA : plafond global à 0 = sans limite', ia_compteur_global(1, 0) && ia_compteur_global(1, 0));
+$_SESSION['ia'] = array('jour' => date('Y-m-d'), 'n' => 0, 'dernier' => 0);
+@unlink(DOSSIER_TMP.'/ia_compteur');
+ia_compteur_global(1, 1);
+$m = ia_reserve(array_merge($conf, array('plafond_global' => 1)));
+verifie('IA : refus quand le plafond global est atteint', is_string($m) && strpos($m, 'application') !== false && $_SESSION['ia']['n'] == 0, $m);
+@unlink(DOSSIER_TMP.'/ia_compteur');
+if (!is_null($compteur_avant)) file_put_contents(DOSSIER_TMP.'/ia_compteur', $compteur_avant);
+unset($_SESSION['ia'], $_SESSION['copie_ia']);
+@unlink($copie_ia);
+
 echo "Restrictions de sécurité\n";
 $cible = "$tmp/ecrit.php";
 foreach (array("attach '$cible' as x", "vacuum into '$cible'", "pragma journal_mode = off",
@@ -312,7 +484,7 @@ $port = 18000 + getmypid() % 1000;
 $u = "http://127.0.0.1:$port";
 $serveur = proc_open(array(PHP_BINARY, '-S', "127.0.0.1:$port", '-t', $racine),
                      array(array('file', '/dev/null', 'r'), array('file', '/dev/null', 'w'),
-                           array('file', '/dev/null', 'w')), $tubes, $racine);
+                           array('file', '/dev/null', 'w')), $tubes, $racine, $env_serveurs);
 for ($i = 0; $i < 50 && !@fsockopen('127.0.0.1', $port); $i++) usleep(100000);
 
 $cookie = '';
@@ -393,11 +565,34 @@ verifie('rechargement : même jeton', strpos($page2, '"'.$jeton.'"') !== false);
 list($code, $corps) = http("$u/controler.php", array('Soumettre' => 'Envoyer', 'base' => 'cours', 'mode' => '1',
                            'csrf' => $jeton, 'requete' => 'select * from rechargement'));
 verifie('rechargement : modifications de la base conservées', $code == 200 && strpos($corps, 'Requête réussie') !== false, $corps);
+// Génération par IA à travers l'application
+verifie('IA : bouton activé dans la page', strpos($page2, 'ia_disponible = true') !== false && strpos($page2, 'js/ia.js') !== false);
+$ia = array('Soumettre' => 'ia_generer', 'base' => 'cours', 'table' => 'etudiants', 'mode' => 'ajouter',
+            'colonnes' => json_encode($cols), 'nb' => '2', 'consigne' => '');
+list($code, $corps) = http("$u/controler.php", $ia);
+verifie('IA : génération sans jeton refusée (403)', $code == 403 && !empty(json_decode($corps, true)['erreur']), $corps);
+faux(200, array('lignes' => array(array('noetu' => '90001A', 'nom' => 'Via', 'prenom' => 'Web'), array('noetu' => '28936E', 'nom' => 'Dup', 'prenom' => 'X'))));
+list($code, $corps) = http("$u/controler.php", $ia + array('csrf' => $jeton));
+$j = json_decode($corps, true);
+verifie('IA : génération via l\'application', $code == 200 && !empty($j['ok']) && array_column($j['lignes'], 'ok') === array(true, false), $corps);
+list($code, $corps) = http("$u/controler.php", array('Soumettre' => 'ia_appliquer', 'base' => 'cours', 'table' => 'etudiants', 'mode' => 'ajouter',
+                           'colonnes' => json_encode($cols), 'lignes' => json_encode(array($j['lignes'][0]['valeurs']))));
+verifie('IA : écriture sans jeton refusée (403)', $code == 403);
+list($code, $corps) = http("$u/controler.php", array('Soumettre' => 'ia_appliquer', 'base' => 'cours', 'table' => 'etudiants', 'mode' => 'ajouter',
+                           'csrf' => $jeton, 'colonnes' => json_encode($cols), 'lignes' => json_encode(array($j['lignes'][0]['valeurs']))));
+verifie('IA : écriture via l\'application', $code == 200 && json_decode($corps, true)['ecrites'] == 1, $corps);
+list($code, $corps) = http("$u/controler.php", array('Soumettre' => 'Envoyer', 'base' => 'cours', 'mode' => '1', 'csrf' => $jeton,
+                           'requete' => "select prenom from etudiants where noetu = '90001A'"));
+verifie('IA : ligne visible par une requête SQL', strpos($corps, '<td>Web</td>') !== false, $corps);
 list($code, $corps) = http("$u/controler.php", array('Soumettre' => 'end', 'csrf' => $jeton));
 verifie('fin de session : copies purgées', strpos($corps, 'purgées') !== false && copies() == 0);
 
 proc_terminate($serveur);
 proc_close($serveur);
+proc_terminate($faux_serveur);
+proc_close($faux_serveur);
+@unlink($reponse_faux.'.requete');
+if (!$compteur_existait) { @unlink(DOSSIER_TMP.'/ia_compteur'); @unlink("$travail/ia_compteur"); }
 foreach (glob("$tmp/modeles/*") as $f) unlink($f);
 @rmdir("$tmp/modeles");
 foreach (glob("$tmp/*") as $f) unlink($f);

@@ -152,6 +152,22 @@ if (isset($_SESSION['debug']) && $session_ok) {
 			}
 		}
 	//======================================================
+	// Génération de lignes par IA : aperçu à blanc (ia_generer), puis écriture (ia_appliquer)
+	else if ($Soumettre == "ia_generer" || $Soumettre == "ia_appliquer") {
+		header('Content-Type: application/json; charset=utf-8');
+		if (!jeton_valide()) {
+			$r = ia_erreur("Session expirée : l'application a sans doute été ouverte ou rechargée dans un autre onglet. Rechargez cette page pour continuer.", 403);
+		} else if ($Soumettre == "ia_generer") {
+			$r = ia_generer($base, param('table'), param('mode'), json_decode((string)param('colonnes'), true),
+			                param('nb'), param('consigne'));
+		} else {
+			$r = ia_appliquer($base, param('table'), param('mode'), json_decode((string)param('colonnes'), true),
+			                  json_decode((string)param('lignes'), true));
+		}
+		if (isset($r['statut'])) http_response_code($r['statut']);
+		echo json_encode($r, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+	}
+	//======================================================
 	else {//echo "<p>liste base $Soumettre</p>";
 		liste_base($Soumettre);
 	}

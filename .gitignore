@@ -6,3 +6,6 @@ tmp/copie_*
 tmp/sessions/
 tmp/verrou_*
 .DS_Store
+ia.ini
+*-ia.ini
+tmp/ia_compteur

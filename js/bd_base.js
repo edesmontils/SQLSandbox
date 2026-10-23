@@ -394,6 +394,7 @@ function new_query() {
     t = t + '	<div class="actions"><button type="submit" class="btn" id="send_new">▶️ Exécuter la requête</button>';
     t = t + '	<button type="button" class="btn secondaire" onclick="modele($(\'base\').value)" title="Diagramme, schéma relationnel et script SQL de la base">🧩 Modèle</button>';
     t = t + '	<button type="button" class="btn secondaire" onclick="db_tables($(\'base\').value)" title="Contenu des tables de la base (nouvel onglet)">📋 Voir les tables</button>';
+    t = t + ia_bouton("$('base').value");
     t = t + '	<button type="button" class="btn secondaire" onclick="reinitialise_base($(\'base\').value)" title="Efface vos modifications : la base redevient comme au départ">↩️ Base d\'origine</button></div>';
     t = t + '	</form>';
     t = t + '	<div id="results"></div>';
@@ -442,6 +443,7 @@ function description_base(nom) {
     t = t + '<button type="button" class="btn" onclick="current_base = ' + attr_js(nom) + '; current_request = null; new_query()">✏️ Interroger cette base</button>';
     t = t + '<button type="button" class="btn secondaire" title="Diagramme, schéma relationnel et script SQL" onclick="modele(' + attr_js(nom) + ')">🧩 Modèle de la base</button>';
     t = t + '<button type="button" class="btn secondaire" title="Contenu des tables (nouvel onglet)" onclick="db_tables(' + attr_js(nom) + ')">📋 Voir les tables</button>';
+    t = t + ia_bouton(attr_js(nom));
     t = t + '</div></div></div>';
     return t;
 }
