@@ -8,8 +8,9 @@
 url = "https://pedago.desmontils.net/proxyiag/v1"
 ; Clé propre à l'application (créée avec : proxyiag-keys add --name SQLSandbox ...)
 cle = "sk-..."
-; Alias du modèle (gemma-4-31b : le plus fiable ; mistral-small-24b : deux fois plus rapide)
-modele = "proxyiag/mistral-small-24b"
+; Alias du modèle : gemma-4-31b, le plus fiable à l'essai (~9 s par génération) ;
+; mistral-small-24b est deux fois plus rapide, avec quelques écarts de consigne
+modele = "proxyiag/gemma-4-31b"
 
 ; Réglages facultatifs (valeurs par défaut indiquées)
 ; par_session = 20       ; générations par session et par jour

@@ -107,7 +107,7 @@ La fonction passe par un ProxyIAg (proxy compatible OpenAI qui garde les vraies 
 
 Comme la clé est unique, le quota de ProxyIAg est commun à tous les étudiants : l'application limite donc elle-même chaque session (`par_session` générations par jour, `delai` secondes entre deux, `lignes_max` lignes par génération) et l'ensemble de l'installation (`plafond_global` par jour, compté dans un fichier `ia_compteur` du dossier de travail). Les messages d'erreur du proxy ne sont jamais montrés aux étudiants ; ils vont dans le journal d'erreurs de PHP.
 
-Modèles essayés (essai du 2026-10-23, 40 générations relues) : `gemma-4-31b` est le plus fiable mais lent (~9 s) ; `mistral-small-24b` (~4,5 s) est un bon compromis. Les données générées peuvent rester approximatives : l'aperçu sert à les vérifier.
+Modèle retenu : `gemma-4-31b`, le plus fiable à l'essai du 2026-10-23 (40 générations relues) mais lent (~9 s) ; `mistral-small-24b` (~4,5 s) est le repli si la lenteur gêne. Les données générées peuvent rester approximatives : l'aperçu sert à les vérifier.
 
 ## Plusieurs installations sur un même hébergement
 
