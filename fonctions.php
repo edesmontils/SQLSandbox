@@ -146,6 +146,13 @@ function plusieurs_instructions($sql) {
 // (CVE-2020-13434). Elles sont refusées sur ces versions (hébergement OVH : 3.27).
 define('VERSION_SQLITE_RECENTE', 3032003);
 
+// Adresse d'un fichier statique (js, css) suivie de sa date de modification : le navigateur
+// recharge le fichier dès qu'il change au lieu de servir une ancienne copie en cache.
+function url_fichier($chemin) {
+	$date = @filemtime(__DIR__.'/'.ltrim($chemin, './'));
+	return $chemin.($date ? '?v='.$date : '');
+}
+
 function sqlite_recent($version = null) {
 	if (is_null($version)) $version = SQLite3::version()['versionNumber'];
 	return $version >= VERSION_SQLITE_RECENTE;
@@ -698,17 +705,17 @@ function debut_page() {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SQL Sandbox</title>
   <link rel="icon" href="images/favicon.svg" type="image/svg+xml">
-  <link href="js/codemirror/codemirror.css" rel="stylesheet">
-  <link href="default.css" rel="stylesheet">
+  <link href="<?php echo url_fichier("js/codemirror/codemirror.css");?>" rel="stylesheet">
+  <link href="<?php echo url_fichier("default.css");?>" rel="stylesheet">
   <script>
     csrf_token = <?php echo json_encode(isset($_SESSION['csrf']) ? $_SESSION['csrf'] : ''); ?>;
   </script>
   <!-- Éditeur SQL : CodeMirror 5 (licence MIT, js/codemirror/LICENSE) -->
-  <script src="./js/codemirror/codemirror.js"></script>
-  <script src="./js/codemirror/sql.js"></script>
-  <script src="./js/coloration.js"></script>
-  <script src="./js/bd_base.js"></script>
-  <script src="./js/modele.js"></script>
+  <script src="<?php echo url_fichier("./js/codemirror/codemirror.js");?>"></script>
+  <script src="<?php echo url_fichier("./js/codemirror/sql.js");?>"></script>
+  <script src="<?php echo url_fichier("./js/coloration.js");?>"></script>
+  <script src="<?php echo url_fichier("./js/bd_base.js");?>"></script>
+  <script src="<?php echo url_fichier("./js/modele.js");?>"></script>
 </head>
 <body>
 <div class="container">

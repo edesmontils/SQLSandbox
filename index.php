@@ -187,8 +187,8 @@ $listeNoms = array_keys($listeBase);
   <meta property="fb:admins" content="706563623">
 
   <link rel="icon" href="images/favicon.svg" type="image/svg+xml">
-  <link href="js/codemirror/codemirror.css" rel="stylesheet">
-  <link href="default.css" rel="stylesheet">
+  <link href="<?php echo url_fichier("js/codemirror/codemirror.css");?>" rel="stylesheet">
+  <link href="<?php echo url_fichier("default.css");?>" rel="stylesheet">
 
   <script>
     listeBases = <?php
@@ -206,11 +206,11 @@ $listeNoms = array_keys($listeBase);
     csrf_token = <?php echo json_encode($_SESSION['csrf']); ?>;
   </script>
   <!-- Éditeur SQL : CodeMirror 5 (licence MIT, js/codemirror/LICENSE) -->
-  <script src="./js/codemirror/codemirror.js"></script>
-  <script src="./js/codemirror/sql.js"></script>
-  <script src="./js/coloration.js"></script>
-  <script src="./js/bd_base.js"></script>
-  <script src="./js/modele.js"></script>
+  <script src="<?php echo url_fichier("./js/codemirror/codemirror.js");?>"></script>
+  <script src="<?php echo url_fichier("./js/codemirror/sql.js");?>"></script>
+  <script src="<?php echo url_fichier("./js/coloration.js");?>"></script>
+  <script src="<?php echo url_fichier("./js/bd_base.js");?>"></script>
+  <script src="<?php echo url_fichier("./js/modele.js");?>"></script>
 </head>
 
 <body onload="init()" onunload="end()">
