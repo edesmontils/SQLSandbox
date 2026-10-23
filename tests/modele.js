@@ -69,6 +69,9 @@ for (const nom of Object.keys(limites)) {
 // (tests/run.php écrit un fichier <base>.json par base avec modele_base()). Les mesures se font
 // sur le dessin lui-même : points échantillonnés sur chaque tracé, comme le voit l'utilisateur.
 // ---------------------------------------------------------------------------------------------
+// Échantillonnage IMPAIR (41 points par courbe) : avec un nombre pair, deux courbes en S symétriques
+// passent toutes deux par le même point milieu exact, et leur croisement n'est pas détecté.
+const ECHANTILLONS = 41;
 function points(d) { // tracés M, L et C → polyligne
     const v = d.match(/[MLC]|-?[\d.]+/g);
     const pts = [];
@@ -80,8 +83,8 @@ function points(d) { // tracés M, L et C → polyligne
         else {
             const [x0, y0] = pts[pts.length - 1];
             const [x1, y1, x2, y2, x3, y3] = [+v[i++], +v[i++], +v[i++], +v[i++], +v[i++], +v[i++]];
-            for (let t = 1; t <= 40; t++) {
-                const u = t / 40, w = 1 - u;
+            for (let t = 1; t <= ECHANTILLONS; t++) {
+                const u = t / ECHANTILLONS, w = 1 - u;
                 pts.push([w*w*w*x0 + 3*w*w*u*x1 + 3*w*u*u*x2 + u*u*u*x3, w*w*w*y0 + 3*w*w*u*y1 + 3*w*u*u*y2 + u*u*u*y3]);
             }
         }
@@ -122,9 +125,20 @@ function mesure(modele) {
             croisements, chevauchements, largeur: +taille[1], hauteur: +taille[2]};
 }
 
+// La mesure elle-même : deux courbes en S symétriques (même milieu) qui se croisent sont comptées
+{
+    const A = points('M274,135 C219,135 219,246 164,246'), B = points('M274,291 C219,291 219,90 164,90');
+    let croisent = false;
+    for (let a = 0; a < A.length - 1 && !croisent; a++) for (let b = 0; b < B.length - 1; b++)
+        if (croise(A[a], A[a + 1], B[b], B[b + 1])) { croisent = true; break; }
+    verifie('mesure : deux courbes en S symétriques qui se croisent', croisent, 'croisement non détecté');
+}
+
 // Croisements au plus tolérés par base : la disposition ne doit pas se dégrader. Les valeurs sont
-// celles obtenues à la livraison de la disposition en couches (tp-mondial : 339 avant elle).
-const BUDGET_CROISEMENTS = {'cours': 0, 'tp-Lutins': 0, 'tp-cinema': 1, 'tp-em': 1, 'tp-robots': 0, 'tp-vols': 0, 'tp-mondial': 240};
+// celles de la disposition en couches (avant elle : tp-mondial 364, tp-robots 4, tp-cinema 3).
+// tp-em a 2 croisements, le minimum pour cette disposition : les colonnes id_em puis id_p de Fleuve
+// visent EspaceMaritime (en bas) puis Pays (en haut), et Fleuve(id_p) coupe Cotoie(id_em).
+const BUDGET_CROISEMENTS = {'cours': 0, 'tp-Lutins': 0, 'tp-cinema': 1, 'tp-em': 2, 'tp-robots': 0, 'tp-vols': 0, 'tp-mondial': 255};
 
 const dossier = process.argv[2];
 if (dossier) {
