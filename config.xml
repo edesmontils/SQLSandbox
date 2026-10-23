@@ -4,7 +4,7 @@
 <!ENTITY seuil '10800'>
 ]>
 
-<mab version="6.2" debug="false" name="SQL Sandbox">
+<mab version="6.3" debug="false" name="SQL Sandbox">
 	<!-- numéro de version de l'application -->
 	<!-- durée limite de vie d'une copie de base : 60*60*3 = 3 heures -->
 	<seuil>&seuil;</seuil>
@@ -119,6 +119,12 @@
 					<li>Dans l'onglet Mémoire, <strong>👁️ Résultat</strong> affiche ou masque le
 						résultat obtenu, <strong>✏️ Modifier</strong> reprend la requête dans
 						l'éditeur, <strong>🗑️ Supprimer</strong> l'efface.</li>
+					<li><strong>✨ Remplir</strong> (quand le serveur l'a activé) : une IA génère des
+						lignes pour une table, ou complète une colonne vide (par exemple ajoutée avec
+						ALTER TABLE). Vous voyez un aperçu contrôlé (contraintes, clés étrangères) et
+						rien n'est écrit dans votre copie avant que vous le validiez. Les résultats
+						peuvent être approximatifs : vérifiez-les. Le nombre de générations par jour est
+						limité.</li>
 					<li>Dans un TP, <strong>✏️ Répondre</strong> ouvre une question et
 						<strong>⬅️ Retour aux questions</strong> revient à la liste en mémorisant
 						votre réponse ; <strong>💡 Aide</strong> affiche un indice quand la
@@ -135,6 +141,16 @@
 	<listeMessages>
 		<!--message titre="" post=""><p></p>
 		</message-->
+		<message titre="Version 6.3" date="23/10/26" auteur="E. Desmontils">
+			<div>
+				<ul>
+					<li>le bouton <b>✨ Remplir</b> (quand le serveur l'a activé) fait générer par une IA des
+						<b>lignes pour une table</b>, ou le contenu d'une <b>colonne vide</b> ajoutée avec ALTER
+						TABLE ; l'aperçu est contrôlé (types, contraintes, clés étrangères) et rien n'est écrit
+						avant votre validation.</li>
+				</ul>
+			</div>
+		</message>
 		<message titre="Version 6.2" date="23/10/26" auteur="E. Desmontils">
 			<div>
 				<ul>
