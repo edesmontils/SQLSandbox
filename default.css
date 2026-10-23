@@ -735,6 +735,17 @@ table.historique td .btn {
 	cursor: pointer;
 }
 
+.pied .session-restante {
+	font-size: .85em;
+	opacity: .85;
+}
+
+.pied .session-restante.bientot {
+	color: var(--sb-accent-2);
+	font-weight: 600;
+	opacity: 1;
+}
+
 .pied .separateur {
 	margin: 0 6px;
 	color: var(--sb-border-strong);

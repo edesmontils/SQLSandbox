@@ -211,6 +211,7 @@ $listeNoms = array_keys($listeBase);
     echo json_encode($pourClient, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE); ?>;
     noms_bases = <?php echo json_encode($listeNoms, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE); ?>;
     csrf_token = <?php echo json_encode($_SESSION['csrf']); ?>;
+    duree_session = <?php echo (int)DUREE_SESSION; ?>;
   </script>
   <!-- Éditeur SQL : CodeMirror 5 (licence MIT, js/codemirror/LICENSE) -->
   <script src="<?php echo url_fichier("./js/codemirror/codemirror.js");?>"></script>
@@ -277,6 +278,7 @@ $listeNoms = array_keys($listeBase);
 	<p><?php echo "<a href='mailto:emmanuel.desmontils@univ-nantes.fr?subject=".rawurlencode("SQLSandbox $version - question")."'>✉️ Contact</a>"; ?>
 		<span class="separateur">·</span> <button type="button" onclick="apropos()">ℹ️ À propos de SQL et SQLite</button>
 		<span class="separateur">·</span> <button type="button" onclick="mentions()">🛡️ Mentions légales</button></p>
+	<p class="session-restante" id="session-restante" title="La session, vos bases modifiées comprises, est conservée tant que vous restez moins de ce temps sans rien faire"></p>
 </footer>
 
 </div>

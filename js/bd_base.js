@@ -139,6 +139,8 @@ function appel(methode, parametres, surSucces, surEchec) {
         return {status: 0, responseText: '', getHeader: function () { return null; }};
     }).then(function (reponse) {
         var s = reponse.status;
+        // Chaque réponse de l'application prolonge la session de la durée complète
+        if (s && s != 401 && reponse.getHeader('X-SQLSandbox')) fin_session = Date.now() + duree_session * 1000;
         if (!s || (s >= 200 && s < 300) || s == 304) {
             if (surSucces) surSucces(reponse);
         } else if (surEchec) {
@@ -252,9 +254,29 @@ function clear() {
     maj($('posts'), "");
 }
 
+// Temps restant de la session, en pied de page. La session expire duree_session secondes après
+// la dernière requête au serveur (fin_session est reportée à chaque réponse, voir appel()).
+var fin_session = Date.now() + (typeof duree_session == 'undefined' ? 0 : duree_session) * 1000;
+
+function texte_duree(secondes) {
+    var min = Math.ceil(secondes / 60);
+    return min >= 60 ? Math.floor(min / 60) + ' h ' + ('0' + (min % 60)).slice(-2) + ' min' : min + ' min';
+}
+
+function maj_session_restante() {
+    var e = $('session-restante');
+    if (!e) return;
+    var reste = Math.round((fin_session - Date.now()) / 1000);
+    e.textContent = reste > 0 ? '⏱️ Session : encore ' + texte_duree(reste) + ' sans action'
+                              : '⏱️ Session sans doute expirée : rechargez l\'application';
+    e.classList.toggle('bientot', reste > 0 && reste < 600);
+}
+
 function init() {
     clear();
     news();
+    maj_session_restante();
+    setInterval(maj_session_restante, 30000);
 }
 
 function attention() {
