@@ -189,9 +189,10 @@ class RequestSet {
 
         for (var i = 0; i < this.nb; i++) {
             r = this.set[i];
-            t = t + '<tr><td> ' + i + ' </td><td>' + echappe(r.base) + '</td><td>';
+            // Numérotation affichée à partir de 1 ; l'indice i (à partir de 0) reste celui du tableau
+            t = t + '<tr><td> ' + (i + 1) + ' </td><td>' + echappe(r.base) + '</td><td>';
             if (r.error == 'ok') t = t + "<span class='statut ok' title='Réussite'>✅</span>"; else t = t + "<span class='statut ko' title='Échec'>❌</span>";
-            t = t + "</td><td><pre>" + echappe(r.request) + "</pre></td><td>";
+            t = t + "</td><td><pre class='cm-s-default'>" + colore_sql(r.request) + "</pre></td><td>";
             t = t + "<button type='button' class='btn petit' title='Afficher ou masquer le résultat obtenu' onclick='histo(" + i + ")'>👁️ Résultat</button>";
             t = t + "<button type='button' class='btn secondaire petit' title='Reprendre la requête dans l\'éditeur' onclick='histo_mod(" + i + ")'>✏️ Modifier</button>";
             t = t + "<button type='button' class='btn danger petit' title='Supprimer la requête' onclick='histo_del(" + i + ")'>🗑️ Supprimer</button>";
@@ -347,7 +348,7 @@ function histo_mod(i) {
 }
 
 function histo_del(i) {
-    if (confirm("Êtes-vous certain(e) de vouloir supprimer la requête " + i + " ?")) {
+    if (confirm("Êtes-vous certain(e) de vouloir supprimer la requête " + (i + 1) + " ?")) {
         rs.remove(i);
         get_histo();
     }

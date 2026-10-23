@@ -391,6 +391,14 @@ select:focus, #posts textarea:focus {
 	font-weight: 600;
 }
 
+/* Requête colorée sans éditeur (requêtes mémorisées) : même police que l'éditeur SQL */
+#posts pre.cm-s-default {
+	font-family: var(--sb-mono);
+	font-size: 14px;
+	line-height: 1.4;
+	color: var(--sb-ink);
+}
+
 /* Résultats */
 
 #results {
