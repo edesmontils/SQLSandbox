@@ -4,7 +4,7 @@
 <!ENTITY seuil '10800'>
 ]>
 
-<mab version="6.1" debug="false" name="SQL Sandbox">
+<mab version="6.2" debug="false" name="SQL Sandbox">
 	<!-- numéro de version de l'application -->
 	<!-- durée limite de vie d'une copie de base : 60*60*3 = 3 heures -->
 	<seuil>&seuil;</seuil>
@@ -86,8 +86,9 @@
 			<div class="story">
 				<p>Chaque étudiant travaille sur sa propre copie des bases : vous pouvez les
 					interroger, mais aussi les modifier (INSERT, UPDATE, CREATE...). Ces
-					modifications sont perdues à la fermeture de la page ; les bases d'origine
-					restent intactes.</p>
+					modifications sont conservées trois heures après votre dernière action, même si
+					vous rechargez la page ou fermez le navigateur ; le bouton <strong>↩️ Revenir à la
+					base d'origine</strong> les efface. Les bases d'origine restent intactes.</p>
 				<h3>Les onglets</h3>
 				<ul>
 					<li><strong>🏠 Accueil</strong> : les nouvelles de l'application.</li>
@@ -134,6 +135,20 @@
 	<listeMessages>
 		<!--message titre="" post=""><p></p>
 		</message-->
+		<message titre="Version 6.2" date="23/10/26" auteur="E. Desmontils">
+			<div>
+				<ul>
+					<li>une requête qui change les tables (<b>CREATE, ALTER, DROP</b>) affiche, à côté de son
+						résultat, le <b>diagramme avant et après</b> ;</li>
+					<li>le <b>modèle</b> d'une base modifiée permet de voir le <b>schéma d'origine</b>, le
+						schéma actuel, ou les deux côte à côte ;</li>
+					<li>le bouton <b>↩️ Revenir à la base d'origine</b> efface vos modifications ;</li>
+					<li>recharger la page ou fermer le navigateur <b>ne perd plus vos bases</b> : votre session et
+						vos modifications sont conservées trois heures après votre dernière action (la durée se
+						réglait à deux endroits, elle ne dépend plus que de <code>config.xml</code>).</li>
+				</ul>
+			</div>
+		</message>
 		<message titre="Version 6.1" date="23/10/26" auteur="E. Desmontils">
 			<div>
 				<ul>
@@ -199,8 +214,8 @@
 			<p>Cette petite application Web a pour seul objectif de permettre aux étudiants novices
 				de manipuler de petites bases de données. Elle permet d'effectuer des requêtes de
 				recherche, mais aussi des requêtes de modification de la base. Ces modifications
-				seront perdues à la fermeture de la page ou du navigateur. La base d'origine sera à
-				nouveau accessible au prochain lancement du programme.</p>
+				sont conservées trois heures après la dernière action (rechargement de la page ou
+				fermeture du navigateur compris), puis perdues. La base d'origine reste intacte.</p>
 		</message>
 
 		<message titre="Nouvelle évolution" date="18/11/11" auteur="E. Desmontils">

@@ -48,6 +48,28 @@ execute("insert into t values(1)");
 $db = new SQLite3($copie);
 verifie('INSERT exécuté une seule fois', $db->querySingle("select count(*) from t") == 1);
 $db->close();
+// Requêtes sur le schéma : données du diagramme avant/après jointes au résultat
+list($r, $o) = execute("create table t2(a primary key, b references t(a))");
+verifie('schéma : CREATE TABLE joint le diagramme avant/après', $r === true && strpos($o, 'class="avant-apres"') !== false
+        && strpos($o, 'data-avant=') !== false && strpos($o, 't2') !== false, $o);
+list($r, $o) = execute("select * from t2");
+verifie('schéma : un SELECT ne joint pas de diagramme', strpos($o, 'avant-apres') === false, $o);
+list($r, $o) = execute("create index i_t2 on t2(b)");
+verifie('schéma : un CREATE INDEX (tables inchangées) ne joint pas de diagramme', $r === true && strpos($o, 'avant-apres') === false, $o);
+list($r, $o) = execute("drop table t2");
+verifie('schéma : DROP TABLE joint le diagramme', strpos($o, 'class="avant-apres"') !== false, $o);
+// Modèle d'origine et retour à la base d'origine
+$_SESSION['originaux']['test'] = './bdd/cours/cours';
+execute("create table t3(a)");
+$m = modele_base('test');
+$orig = modele_origine('test', $m);
+verifie('origine : modèle d\'origine fourni quand le schéma a changé', !is_null($orig)
+        && count($orig['tables']) == count($m['tables']) - 2, json_encode(array_column($m['tables'], 'nom')));
+verifie('origine : réinitialisation réussie', reinitialise_base('test') === true);
+$m = modele_base('test');
+verifie('origine : après réinitialisation, plus de table ajoutée et pas de modèle d\'origine distinct',
+        !in_array('t3', array_column($m['tables'], 'nom')) && is_null(modele_origine('test', $m)));
+execute("create table t(a)"); // table utilisée par les tests suivants
 list($r, $o) = execute("insert into etudiants values(null, null, null)");
 verifie('violation de contrainte signalée', $r === null && strpos($o, 'NOT NULL') !== false, $o);
 // Clés étrangères vérifiées sur la copie (désactivées par défaut dans SQLite)
@@ -357,6 +379,20 @@ $m = json_decode($corps, true);
 verifie('modèle en JSON', $code == 200 && count($m['tables']) == 5 && count($m['sql']) == 5, $corps);
 list($code, $corps) = http("$u/controler.php?Soumettre=modele&nom_base=inconnue");
 verifie('modèle d\'une base inconnue refusé (404)', $code == 404, $corps);
+// Durée de vie : une seule source (config.xml), cookie prolongé, rechargement sans perte
+$conf = new SimpleXMLElement('./config.xml', LIBXML_DTDATTR|LIBXML_DTDLOAD|LIBXML_DTDVALID|LIBXML_NOBLANKS|LIBXML_NOCDATA, true);
+verifie('durée de vie : identique au seuil de config.xml', duree_vie() === (int)$conf->seuil && duree_vie() > 0, duree_vie().' / '.$conf->seuil);
+http("$u/controler.php", array('Soumettre' => 'Envoyer', 'base' => 'cours', 'mode' => '1', 'csrf' => $jeton,
+                               'requete' => 'create table rechargement(a)'));
+$nb_copies = copies();
+list($code, $page2) = http("$u/index.php");
+$entetes = implode("\n", $derniers_entetes);
+verifie('rechargement : cookie avec date d\'expiration', preg_match('/^Set-Cookie: '.INSTANCE.'=[^\n]*expires=/mi', $entetes) === 1, $entetes);
+verifie('rechargement : mêmes copies', copies() == $nb_copies, copies().' / '.$nb_copies);
+verifie('rechargement : même jeton', strpos($page2, '"'.$jeton.'"') !== false);
+list($code, $corps) = http("$u/controler.php", array('Soumettre' => 'Envoyer', 'base' => 'cours', 'mode' => '1',
+                           'csrf' => $jeton, 'requete' => 'select * from rechargement'));
+verifie('rechargement : modifications de la base conservées', $code == 200 && strpos($corps, 'Requête réussie') !== false, $corps);
 list($code, $corps) = http("$u/controler.php", array('Soumettre' => 'end', 'csrf' => $jeton));
 verifie('fin de session : copies purgées', strpos($corps, 'purgées') !== false && copies() == 0);
 

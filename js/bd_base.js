@@ -261,17 +261,6 @@ function attention() {
     alert('Attention, nous avez perdu l\'historique !!!');
 }
 
-function end() {
-    // sendBeacon survit à la fermeture de la page, contrairement à un appel AJAX
-    var data = 'Soumettre=end&csrf=' + encodeURIComponent(csrf_token);
-    if (navigator.sendBeacon) {
-        navigator.sendBeacon('controler.php', new Blob([data], {type: 'application/x-www-form-urlencoded'}));
-    } else {
-        fetch('controler.php', {method: 'POST', keepalive: true, credentials: 'same-origin',
-                                headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: data});
-    }
-}
-
 function remember() {
     req = new Requete($('requete').value, $('base').value, result_type);
     req.result = current_result;
@@ -294,6 +283,7 @@ function query() {
             current_result = trs.responseText;
             cache($('results'));
             maj($('results'), current_result);
+            dessine_avant_apres($('results'));
             apparait($('results'));
         },
         function (trs) {
@@ -332,6 +322,7 @@ function histo(i) { // Risque de problème de mémoire s'il y a beaucoup de requ
         r = rs.set[i];
         cache($(code));
         maj($(code), r.result);
+        dessine_avant_apres($(code));
         cache($('memoriser'));
         apparait($(code));
     } else {
@@ -380,7 +371,8 @@ function new_query() {
     t = t + '	<input type="hidden" name="Soumettre" value="Envoyer"/>';
     t = t + '	<div class="actions"><button type="submit" class="btn" id="send_new">▶️ Exécuter la requête</button>';
     t = t + '	<button type="button" class="btn secondaire" onclick="modele($(\'base\').value)" title="Diagramme, schéma relationnel et script SQL de la base">🧩 Modèle</button>';
-    t = t + '	<button type="button" class="btn secondaire" onclick="db_tables($(\'base\').value)" title="Contenu des tables de la base (nouvel onglet)">📋 Voir les tables</button></div>';
+    t = t + '	<button type="button" class="btn secondaire" onclick="db_tables($(\'base\').value)" title="Contenu des tables de la base (nouvel onglet)">📋 Voir les tables</button>';
+    t = t + '	<button type="button" class="btn secondaire" onclick="reinitialise_base($(\'base\').value)" title="Efface vos modifications : la base redevient comme au départ">↩️ Base d\'origine</button></div>';
     t = t + '	</form>';
     t = t + '	<div id="results"></div>';
     t = t + '</div>';

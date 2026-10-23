@@ -606,6 +606,31 @@ table.historique td .btn {
 	stroke-width: 2.5;
 }
 
+/* Diagrammes avant/après une requête qui modifie le schéma */
+.avant-apres-grille {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 16px;
+}
+
+.avant-apres h3 {
+	margin: 18px 0 6px 0;
+}
+
+.avant-apres h4 {
+	margin: 0 0 4px 0;
+}
+
+.avant-apres .diagramme {
+	max-height: 60vh;
+}
+
+@media (max-width: 800px) {
+	.avant-apres-grille {
+		grid-template-columns: 1fr;
+	}
+}
+
 .schema-relationnel {
 	padding-left: 20px;
 	font-family: var(--sb-mono);

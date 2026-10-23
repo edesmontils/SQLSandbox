@@ -7,6 +7,7 @@ if (isset($_SESSION['debug']) && $session_ok) {
 	if ($debug) ini_set('display_errors', '1');
 	require_once('./lib/LibXML.php');
 	include "./fonctions.php";
+		prolonge_copies();
 
 	$Soumettre = isset($_REQUEST['Soumettre']) ? param('Soumettre') : 'rien';
 	$requete = param('requete');
@@ -133,9 +134,23 @@ if (isset($_SESSION['debug']) && $session_ok) {
 			http_response_code(404);
 			echo json_encode(array('erreur' => 'Base inconnue ou inaccessible.'));
 		} else {
+				$modele['origine'] = modele_origine(param('nom_base'), $modele);
 			echo json_encode($modele, JSON_UNESCAPED_UNICODE);
 		}
 	}
+		//======================================================
+		// Retour à la base d'origine : la copie de l'étudiant est remplacée par l'original
+		else if ($Soumettre == "reinitialiser") {
+			if (!jeton_valide()) {
+				http_response_code(403);
+				echo "<p>Session expirée : l'application a sans doute été ouverte ou rechargée dans un autre onglet. Rechargez cette page pour continuer.</p>";
+			} else if (reinitialise_base(param('nom_base'))) {
+				echo "ok";
+			} else {
+				http_response_code(404);
+				echo "<p>Base inconnue ou inaccessible.</p>";
+			}
+		}
 	//======================================================
 	else {//echo "<p>liste base $Soumettre</p>";
 		liste_base($Soumettre);

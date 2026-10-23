@@ -46,10 +46,12 @@ function affiche_modele(nom, m) {
     t += '<button type="button" class="btn" onclick="current_request = null; new_query()">✏️ Interroger cette base</button>';
     t += '<button type="button" class="btn secondaire" onclick="db_tables(' + attr_js(nom) + ')">📋 Voir les tables</button>';
     t += '<button type="button" class="btn secondaire" onclick="db(' + attr_js(nom) + ')">📖 Description</button>';
+    t += '<button type="button" class="btn secondaire" onclick="reinitialise_base(' + attr_js(nom) + ')" '
+        + 'title="Efface vos modifications : la base redevient comme au départ">↩️ Revenir à la base d\'origine</button>';
     t += '</div>';
     t += '<p class="astuce">Modèle lu sur votre copie de la base : il tient compte de vos CREATE, ALTER et DROP. '
         + m.tables.length + ' table(s), ' + nb_cles + ' clé(s) étrangère(s).</p>';
-    if (m.tables.length == 0) {
+    if (m.tables.length == 0 && !m.origine) {
         t += '<p class="message">Cette base ne contient aucune table.</p></div>';
         maj($('posts'), t);
         apparait($('posts'));
@@ -64,15 +66,18 @@ function affiche_modele(nom, m) {
         + '<span class="separateur">·</span>flèche : de la clé étrangère vers la table qu\'elle référence '
         + '(une flèche par colonne pour une clé étrangère composée)</p>';
 
-    t += '<h3>Diagramme</h3>';
-    t += '<div class="actions"><button type="button" class="btn secondaire petit" onclick="bascule_ajustement(this)">'
-        + '⤢ Ajuster à la largeur</button></div>';
-    t += '<div class="diagramme" id="diagramme"></div>';
+    if (m.origine) {
+        t += '<p class="message">Le schéma de votre copie a changé par rapport à la base d\'origine. '
+            + 'Choisissez ce que vous voulez voir :</p>';
+        t += '<div class="actions" id="choix-vue">'
+            + '<button type="button" class="btn petit" data-vue="actuel" onclick="vue_modele(\'actuel\')">Schéma actuel</button>'
+            + '<button type="button" class="btn secondaire petit" data-vue="origine" onclick="vue_modele(\'origine\')">Schéma d\'origine</button>'
+            + '<button type="button" class="btn secondaire petit" data-vue="deux" onclick="vue_modele(\'deux\')">Origine et actuel côte à côte</button>'
+            + '</div>';
+    }
+    t += '<div id="vue-modele"></div>';
 
-    t += '<h3>Schéma relationnel</h3>';
-    t += schema_relationnel(m);
-
-    t += '<details class="volet"><summary>Structure des tables</summary>' + structure_tables(m) + '</details>';
+    t += '<details class="volet"><summary>Structure des tables (schéma actuel)</summary>' + structure_tables(m) + '</details>';
     t += '<details class="volet" id="volet-sql" ontoggle="affiche_sql(this)"><summary>Script SQL de création</summary>'
         + '<div id="modele-sql"></div></details>';
     t += '</div>';
@@ -81,8 +86,88 @@ function affiche_modele(nom, m) {
     maj($('posts'), t);
     apparait($('posts'));
     // Les mesures du texte supposent la police chargée
-    var dessin = function () { $('diagramme') && ($('diagramme').innerHTML = dessine_modele(m)); active_liens(); };
+    vue_modele('actuel');
+}
+
+// Diagramme et schéma relationnel du modèle : 'actuel' (la copie de l'étudiant), 'origine'
+// (la base d'origine) ou 'deux' (les deux côte à côte)
+function vue_modele(vue) {
+    var m = modele_courant, cible = $('vue-modele');
+    if (!m || !cible) return;
+    if (!m.origine) vue = 'actuel';
+    document.querySelectorAll('#choix-vue button').forEach(function (b) {
+        b.classList.toggle('secondaire', b.getAttribute('data-vue') != vue);
+    });
+    var t = '';
+    if (vue == 'deux') {
+        t += '<div class="avant-apres-grille">';
+        [['Origine', m.origine], ['Actuel', m]].forEach(function (v, i) {
+            t += '<div><h3>' + v[0] + '</h3><div class="diagramme ajuste" id="diagramme-' + i + '"></div>'
+                + schema_relationnel(v[1]) + '</div>';
+        });
+        t += '</div>';
+    } else {
+        var x = vue == 'origine' ? m.origine : m;
+        t += '<h3>Diagramme' + (vue == 'origine' ? ' d\'origine' : '') + '</h3>';
+        t += '<div class="actions"><button type="button" class="btn secondaire petit" onclick="bascule_ajustement(this)">'
+            + '⤢ Ajuster à la largeur</button></div>';
+        t += '<div class="diagramme" id="diagramme"></div>';
+        t += '<h3>Schéma relationnel' + (vue == 'origine' ? ' d\'origine' : '') + '</h3>' + schema_relationnel(x);
+    }
+    cible.innerHTML = t;
+    var dessin = function () {
+        if (vue == 'deux') {
+            $('diagramme-0').innerHTML = dessine_modele(m.origine);
+            $('diagramme-1').innerHTML = dessine_modele(m);
+        } else {
+            $('diagramme').innerHTML = dessine_modele(vue == 'origine' ? m.origine : m);
+        }
+        active_liens();
+    };
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(dessin); else dessin();
+}
+
+// Retour à la base d'origine : la copie est remplacée par l'original (requêtes mémorisées conservées)
+function reinitialise_base(nom) {
+    if (!confirm('Revenir à la base d\'origine ' + nom + ' ? Toutes vos modifications (tables créées, '
+        + 'lignes ajoutées ou supprimées...) seront perdues.')) return;
+    appel('post', {Soumettre: 'reinitialiser', csrf: csrf_token, nom_base: nom},
+        function () {
+            if ($('SaisieRequete')) {
+                maj($('results'), "<p class='statut ok'>↩️ La base " + echappe(nom) + " est revenue à son état d'origine</p>");
+            } else {
+                modele(nom);
+            }
+        },
+        function (trs) {
+            if (session_perdue(trs)) return;
+            alert("Impossible de réinitialiser la base.");
+        });
+}
+
+// Requête qui a changé les tables (CREATE, ALTER, DROP) : le serveur joint au résultat un
+// <div class="avant-apres"> portant les tables avant et après (JSON). On y dessine, côte à
+// côte, le diagramme avant et le diagramme après. Appelé à chaque affichage d'un résultat.
+function dessine_avant_apres(element) {
+    element.querySelectorAll('.avant-apres:not([data-fait])').forEach(function (div) {
+        var avant, apres;
+        try {
+            avant = {tables: JSON.parse(div.getAttribute('data-avant'))};
+            apres = {tables: JSON.parse(div.getAttribute('data-apres'))};
+        } catch (e) {
+            return;
+        }
+        div.setAttribute('data-fait', '1');
+        div.innerHTML = '<h3>Effet sur le schéma</h3><div class="avant-apres-grille">'
+            + '<div><h4>Avant</h4><div class="diagramme ajuste"></div></div>'
+            + '<div><h4>Après</h4><div class="diagramme ajuste"></div></div></div>';
+        var cases = div.querySelectorAll('.diagramme');
+        var dessin = function () {
+            cases[0].innerHTML = avant.tables.length ? dessine_modele(avant) : '<p class="message">Aucune table.</p>';
+            cases[1].innerHTML = apres.tables.length ? dessine_modele(apres) : '<p class="message">Aucune table.</p>';
+        };
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(dessin); else dessin();
+    });
 }
 
 // Colonnes d'une table qui appartiennent à une clé étrangère

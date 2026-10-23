@@ -22,6 +22,16 @@ function purge_db() {
 		}	
 }
 
+// Prolonge la vie des copies de bases de la session : la purge de index.php supprime les
+// copies non touchées depuis plus de duree_vie(), alors que la session, elle, est prolongée à
+// chaque requête (même pour lire l'aide). Sans cela, une copie pourrait disparaître sous une
+// session encore valide.
+function prolonge_copies() {
+	foreach ($_SESSION as $nom => $fichier) {
+		if (substr($nom, 0, 6) == 'copie_' && is_string($fichier) && is_file($fichier)) @touch($fichier);
+	}
+}
+
 // Nombre maximal de lignes affichées pour un résultat
 define('MAX_LIGNES', 1000);
 // Durée maximale (secondes) d'attente d'un verrou et d'exécution PHP
@@ -293,6 +303,8 @@ function get($requete,$base) {
 	if (plusieurs_instructions($requete)) {
 		echo "<p><strong>Attention :</strong> seule la première instruction a été exécutée, la suite a été ignorée.</p>";
 	}
+	// Requête sur le schéma : le modèle avant est lu maintenant, le modèle après une fois exécutée
+	$avant = modifie_schema($requete) ? modele_base($base) : null;
 	$ok = null;
 	$result = @$db->query($requete);
 	if ($result) {
@@ -334,14 +346,39 @@ function get($requete,$base) {
 		echo "<script>result_type='ko';</script><p>".message_erreur($db)."</p>";
 	}
 	$db->close();
+	if ($ok && !is_null($avant)) {
+		$apres = modele_base($base);
+		// Données du diagramme avant/après, dessiné par js/modele.js (dessine_avant_apres)
+		if (!is_null($apres) && $apres['tables'] != $avant['tables']) {
+			echo '<div class="avant-apres" data-avant="'.htmlspecialchars(json_encode($avant['tables'], JSON_UNESCAPED_UNICODE), ENT_QUOTES)
+			    .'" data-apres="'.htmlspecialchars(json_encode($apres['tables'], JSON_UNESCAPED_UNICODE), ENT_QUOTES).'"></div>';
+		}
+	}
 	return $ok;
+}
+
+// Indique si $requete est une instruction qui peut changer la structure des tables
+// (CREATE, ALTER, DROP).
+function modifie_schema($requete) {
+	foreach (jetons_sql($requete) as $jeton) {
+		return $jeton[0] == 'mot' && in_array($jeton[1], array('CREATE', 'ALTER', 'DROP'), true);
+	}
+	return false;
 }
 
 // Modèle de la base $base, lu sur la copie de session (il suit donc les CREATE, ALTER et
 // DROP de l'étudiant) : tables avec colonnes, clé primaire et clés étrangères, vues, et
 // instructions SQL de création. Retourne null si la base est inconnue.
-function modele_base($base) {
-	$db = ouvre_base($base);
+function modele_base($base, $fichier = null) {
+	if (is_null($fichier)) {
+		$db = ouvre_base($base);
+	} else { // base d'origine, lue sans la copier
+		try {
+			$db = new SQLite3($fichier, SQLITE3_OPEN_READONLY);
+		} catch (Exception $e) {
+			$db = null;
+		}
+	}
 	if (is_null($db)) return null;
 	$modele = array('tables' => array(), 'vues' => array(), 'sql' => array());
 	$objets = $db->query("SELECT type, name, sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' "
@@ -392,6 +429,24 @@ function modele_base($base) {
 	unset($t, $k);
 	$db->close();
 	return $modele;
+}
+
+// Modèle de la base d'origine (sans les modifications de l'étudiant), ou null si la
+// copie de session a les mêmes tables que l'original ou si l'original est illisible.
+function modele_origine($base, $modele) {
+	if (!is_string($base) || !isset($_SESSION['originaux'][$base])) return null;
+	$origine = modele_base($base, $_SESSION['originaux'][$base]);
+	if (is_null($origine) || $origine['tables'] == $modele['tables']) return null;
+	return $origine;
+}
+
+// Remet la copie de session de $base dans l'état de la base d'origine. Retourne false
+// si la base est inconnue ou si la copie a échoué.
+function reinitialise_base($base) {
+	if (!is_string($base) || !isset($_SESSION["copie_$base"], $_SESSION['originaux'][$base])) return false;
+	$ok = @copy($_SESSION['originaux'][$base], $_SESSION["copie_$base"]);
+	clearstatcache(true, $_SESSION["copie_$base"]);
+	return $ok;
 }
 
 // Tables et vues de la copie de session de $base, ou de la base d'origine $fichier

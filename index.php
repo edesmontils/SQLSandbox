@@ -5,7 +5,7 @@ $debug=false;
 $ok = true;
 $nom_appli = 'SQL Sandbox';
 $version = '';
-$seuil = 10800;
+$seuil = DUREE_SESSION; // durée de vie des copies, la même que celle de la session
 $listeBase = array();
 $listeNoms = array();
 
@@ -13,13 +13,13 @@ $listeNoms = array();
 require_once('./lib/LibXML.php');
 include "./fonctions.php";
 
-// En cas de rechargement de la page, les bases restent... donc on les supprime !
-if (isset($_SESSION['debug'])) {
-	purge_db();	
-	session_unset();
-}
+// Rechargement de la page ou retour dans le navigateur : la session, les copies des bases
+// (donc les modifications de l'étudiant) et le jeton sont conservés tant que l'inactivité
+// reste sous la durée de vie (duree_vie()). Le retour à la base d'origine se fait par le bouton.
+// Le jeton est conservé pour que les onglets déjà ouverts continuent de fonctionner.
+prolonge_copies();
 session_regenerate_id(true);
-$_SESSION['csrf'] = bin2hex(random_bytes(16));
+if (empty($_SESSION['csrf'])) $_SESSION['csrf'] = bin2hex(random_bytes(16));
 
 try { 
 	$config = new SimpleXMLElement('./config.xml',
@@ -37,8 +37,7 @@ try {
 	$_SESSION['debug'] = $debug;
 	if ($debug) ini_set('display_errors', '1');
 	
-	//Gestion du seuil de vie des copies de base //60 * 60 * 24;
-	$seuil = (int)$config->seuil;
+	// Seuil de vie des copies de base : DUREE_SESSION (config.xml, lu par duree_vie())
 	
 	//Gestion des bases
 	$listeBase = array();
@@ -151,6 +150,14 @@ foreach($listeNoms as $nom) {
 	// tempnam() se replie silencieusement sur le répertoire temporaire du système :
 	// une copie créée ailleurs que dans le dossier de travail ne serait jamais purgée.
 	$original = realpath($listeBase[$nom]['fichier']);
+	// Copie déjà réservée par cette session (page rechargée) : conservée
+	if (isset($_SESSION["copie_$nom"]) && dirname($_SESSION["copie_$nom"]) === $dossierTmp
+	    && $original !== false && is_readable($original)) {
+		$_SESSION['configs'][$nom] = $listeBase[$nom]['config'];
+		$_SESSION['originaux'][$nom] = $original;
+		$listeBase[$nom]['tables'] = get_tables($nom, $original);
+		continue;
+	}
 	$copie = @tempnam($dossierTmp, "copie_$nom".'_');
 	if ($copie === false || dirname($copie) !== $dossierTmp
 	    || $original === false || !is_readable($original)) {
@@ -213,7 +220,7 @@ $listeNoms = array_keys($listeBase);
   <script src="<?php echo url_fichier("./js/modele.js");?>"></script>
 </head>
 
-<body onload="init()" onunload="end()">
+<body onload="init()">
 <div class="container">
 
 <header class="entete">

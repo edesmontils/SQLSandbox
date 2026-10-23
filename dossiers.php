@@ -24,3 +24,16 @@ function dossier_prive($nom, $repli) {
 // Copies des bases de chaque session et verrous d'exécution (null si aucun dossier
 // n'est accessible en écriture)
 if (!defined('DOSSIER_TMP')) define('DOSSIER_TMP', dossier_prive(INSTANCE.'-tmp', __DIR__.'/tmp'));
+
+// Durée de vie (secondes) d'une session et des copies de bases d'un utilisateur, depuis
+// l'inactivité : le « seuil » de config.xml (3 heures par défaut). Lue sans analyser tout le XML,
+// car chaque requête en a besoin avant de démarrer la session. C'est l'unique source de cette
+// durée : cookie, session, copies de bases et purge s'en servent, et restent donc alignés.
+function duree_vie() {
+	$xml = @file_get_contents(__DIR__.'/config.xml');
+	if ($xml !== false) {
+		if (preg_match("/<!ENTITY\\s+seuil\\s+['\"]\\s*(\\d+)\\s*['\"]/", $xml, $m) && preg_match('#<seuil>\\s*&seuil;\\s*</seuil>#', $xml)) return max(60, (int)$m[1]);
+		if (preg_match('#<seuil>\\s*(\\d+)\\s*</seuil>#', $xml, $m)) return max(60, (int)$m[1]);
+	}
+	return 3 * 60 * 60;
+}
