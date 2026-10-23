@@ -504,7 +504,7 @@ function ouvre_question(q) {
         t = t + '<div id="div1">' + q.aide + '</div>';
     }
     if (q.type == 'rq-intention') {
-        t = t + '<p class="libelle">Requête :</p><pre>' + echappe(q.sql) + '</pre>';
+        t = t + '<p class="libelle">Requête :</p><pre class="cm-s-default">' + colore_sql(q.sql) + '</pre>';
         t = t + '<p class="libelle"><label for="requete">Que fait la requête ci-dessus ? Rédigez son intention :</label></p>';
         t = t + '<textarea rows="3" cols="80" id="requete"></textarea>';
     } else {
