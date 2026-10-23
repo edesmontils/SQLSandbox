@@ -259,7 +259,7 @@ if ($node !== '') {
 	$ok = array_filter($sortie, function ($l) { return strpos($l, '  ok   ') === 0; });
 	$echecs_node = array_filter($sortie, function ($l) { return strpos($l, '  ECHEC ') === 0; });
 	verifie('diagramme : '.count($ok).' vérifications (clés composées, cas limites, disposition des bases)',
-	        $code == 0 && count($echecs_node) == 0 && count($ok) >= 31, implode(' | ', $echecs_node ?: $sortie));
+	        $code == 0 && count($echecs_node) == 0 && count($ok) >= 32, implode(' | ', $echecs_node ?: $sortie));
 } else {
 	echo "  --   diagramme : node absent, test ignoré\n";
 }

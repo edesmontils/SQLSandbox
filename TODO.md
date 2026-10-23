@@ -15,7 +15,14 @@ plafond de croisements, sur les 7 bases du dépôt. Ce qui reste, par ordre d'in
     empiler (liens plus droits, moins de dénivelés) ;
   - le diagramme est plus étroit (5 colonnes au lieu de 17) mais plus haut (environ 1740 px
     au lieu de 1130) : limiter la hauteur d'une couche si cela gêne.
-- **tp-em, tp-cinema** : 1 croisement chacun, qui est le minimum pour l'ordre des tables dans
-  les couches ; seul un autre découpage en couches pourrait faire mieux.
+- **tp-em** (2 croisements) et **tp-cinema** (1) : c'est le minimum pour l'ordre des tables dans
+  les couches (recherche exhaustive). Dans `tp-em`, les colonnes `id_em` puis `id_p` de `Fleuve`
+  visent `EspaceMaritime` (en bas) puis `Pays` (en haut) : leurs liens se croisent forcément, et
+  `Fleuve(id_p)` coupe aussi `Cotoie(id_em)`. Seul un autre choix de couches ou de côté
+  d'attache pourrait faire mieux.
 - Le test utilise une largeur de texte fixe (7 px par caractère) ; dans un navigateur, la
   largeur des boîtes dépend de la police et peut modifier légèrement la disposition.
+- Les croisements sont comptés sur des courbes échantillonnées. Avec un nombre pair de points, deux
+  courbes en S symétriques passent par le même point milieu et leur croisement échappe au calcul
+  (c'est ce qui avait fait compter 1 croisement au lieu de 2 pour `tp-em`) : le test utilise un
+  nombre impair de points et vérifie ce cas.
