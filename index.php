@@ -208,6 +208,7 @@ $listeNoms = array_keys($listeBase);
   <!-- Éditeur SQL : CodeMirror 5 (licence MIT, js/codemirror/LICENSE) -->
   <script src="./js/codemirror/codemirror.js"></script>
   <script src="./js/codemirror/sql.js"></script>
+  <script src="./js/coloration.js"></script>
   <script src="./js/bd_base.js"></script>
   <script src="./js/modele.js"></script>
 </head>

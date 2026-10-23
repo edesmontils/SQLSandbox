@@ -191,7 +191,7 @@ class RequestSet {
             r = this.set[i];
             t = t + '<tr><td> ' + i + ' </td><td>' + echappe(r.base) + '</td><td>';
             if (r.error == 'ok') t = t + "<span class='statut ok' title='Réussite'>✅</span>"; else t = t + "<span class='statut ko' title='Échec'>❌</span>";
-            t = t + "</td><td><pre>" + echappe(r.request) + "</pre></td><td>";
+            t = t + "</td><td><pre class='cm-s-default'>" + colore_sql(r.request) + "</pre></td><td>";
             t = t + "<button type='button' class='btn petit' title='Afficher ou masquer le résultat obtenu' onclick='histo(" + i + ")'>👁️ Résultat</button>";
             t = t + "<button type='button' class='btn secondaire petit' title='Reprendre la requête dans l\'éditeur' onclick='histo_mod(" + i + ")'>✏️ Modifier</button>";
             t = t + "<button type='button' class='btn danger petit' title='Supprimer la requête' onclick='histo_del(" + i + ")'>🗑️ Supprimer</button>";
