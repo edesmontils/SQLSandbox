@@ -138,8 +138,22 @@ function ia_reserve($conf) {
 	return null;
 }
 
+// La session est libérée pendant l'appel au proxy (jusqu'à plusieurs dizaines de secondes) :
+// sinon les autres requêtes de l'élève attendraient sa fin. Elle est rouverte pour rendre
+// une réservation. Sans effet quand aucune session n'est ouverte (tests).
+function ia_libere_session() {
+	if (session_status() != PHP_SESSION_ACTIVE) return false;
+	session_write_close();
+	return true;
+}
+
+function ia_rouvre_session() {
+	if (session_status() == PHP_SESSION_NONE && PHP_SAPI != 'cli') @session_start();
+}
+
 // Rend la génération réservée quand le service n'a pas pu répondre
 function ia_rend($conf) {
+	ia_rouvre_session();
 	if (isset($_SESSION['ia']['n']) && $_SESSION['ia']['n'] > 0) $_SESSION['ia']['n']--;
 	if (isset($_SESSION['ia'])) $_SESSION['ia']['dernier'] = 0;
 	ia_compteur_global(-1, $conf['plafond_global']);
@@ -175,12 +189,13 @@ function ia_schema_sql($db, $noms) {
 }
 
 // Lignes de $table (colonnes $cols), au plus $max, éventuellement selon $ou (SQL construit ici)
-function ia_lignes_table($db, $table, $cols, $max, $ou = '', $distinct = false) {
+// $couper false : valeurs envoyées en entier (clés primaires, références, valeurs à compléter).
+function ia_lignes_table($db, $table, $cols, $max, $ou = '', $distinct = false, $couper = true) {
 	$liste = implode(', ', array_map('ia_ident', $cols));
 	$r = @$db->query('SELECT '.($distinct ? 'DISTINCT ' : '').$liste.' FROM '.ia_ident($table)
 	                .($ou !== '' ? " WHERE $ou" : '').' LIMIT '.(int)$max);
 	$lignes = array();
-	while ($r && ($l = $r->fetchArray(SQLITE3_ASSOC))) $lignes[] = array_map('ia_court', $l);
+	while ($r && ($l = $r->fetchArray(SQLITE3_ASSOC))) $lignes[] = $couper ? array_map('ia_court', $l) : $l;
 	return $lignes;
 }
 
@@ -198,7 +213,7 @@ function ia_messages($db, $modele, $t, $mode, $ecrire, $nb, $consigne, $existant
 	foreach ($parents as $nom => $k) {
 		$cols = array_values(array_filter($k['references'], 'is_string'));
 		if (count($cols) == 0) continue;
-		$valeurs = ia_lignes_table($db, $nom, $cols, 40, '', true);
+		$valeurs = ia_lignes_table($db, $nom, $cols, 40, '', true, false);
 		$p .= "\nValeurs existantes de ".$nom.'('.implode(', ', $cols).") — les clés étrangères de "
 		     .$t['nom'].' doivent prendre ces valeurs : '.ia_json($valeurs)."\n";
 	}
@@ -290,7 +305,15 @@ function ia_appel($conf, $messages) {
 // Accepte {"lignes": [...]}, une autre clé de liste, ou une liste seule, avec du texte autour.
 function ia_extrait_lignes($texte) {
 	$obj = json_decode($texte, true);
-	if ($obj === null && preg_match('/\{.*\}|\[.*\]/s', $texte, $m)) $obj = json_decode($m[0], true);
+	if (!is_array($obj)) { // texte autour : on essaie d'abord l'objet, puis la liste
+		foreach (array(array('{', '}'), array('[', ']')) as $d) {
+			$a = strpos($texte, $d[0]);
+			$b = strrpos($texte, $d[1]);
+			if ($a === false || $b === false || $b < $a) continue;
+			$obj = json_decode(substr($texte, $a, $b - $a + 1), true);
+			if (is_array($obj)) break;
+		}
+	}
 	if (!is_array($obj)) return null;
 	if (isset($obj['lignes']) && is_array($obj['lignes'])) $obj = $obj['lignes'];
 	elseif (!ia_est_liste($obj)) {
@@ -312,7 +335,7 @@ function ia_valeur($v) {
 // Écrit $lignes dans la copie, chacune dans un point de sauvegarde : une ligne refusée
 // (contrainte, clé étrangère) n'empêche pas les autres. $definitif false = aperçu : tout est
 // annulé à la fin. $mode 'ajouter' (INSERT de $ecrire) ou 'modifier' (UPDATE de $ecrire sur
-// la ligne de clé primaire $pk). Retourne une liste de array('ok' => bool, 'erreur' => texte).
+// la ligne de clé primaire $pk, sans toucher aux valeurs déjà renseignées : COALESCE). Retourne une liste de array('ok' => bool, 'erreur' => texte).
 function ia_ecrit($db, $t, $mode, $ecrire, $pk, $lignes, $definitif) {
 	$etats = array();
 	if ($mode == 'ajouter') {
@@ -320,7 +343,7 @@ function ia_ecrit($db, $t, $mode, $ecrire, $pk, $lignes, $definitif) {
 		     .implode(', ', array_map(function ($i) { return ":v$i"; }, array_keys($ecrire))).')';
 	} else {
 		$sql = 'UPDATE '.ia_ident($t['nom']).' SET '
-		     .implode(', ', array_map(function ($c, $i) { return ia_ident($c).' = :v'.$i; }, $ecrire, array_keys($ecrire)))
+		     .implode(', ', array_map(function ($c, $i) { return ia_ident($c).' = COALESCE('.ia_ident($c).', :v'.$i.')'; }, $ecrire, array_keys($ecrire)))
 		     .' WHERE '.implode(' AND ', array_map(function ($c, $i) { return ia_ident($c).' = :k'.$i; }, $pk, array_keys($pk)));
 	}
 	$st = $db->prepare($sql);
@@ -409,7 +432,7 @@ function ia_generer($base, $nom_table, $mode, $colonnes, $nb, $consigne) {
 	$existantes = array();
 	if ($mode == 'modifier') {
 		$vides = implode(' OR ', array_map(function ($c) { return ia_ident($c).' IS NULL'; }, $ecrire));
-		$existantes = ia_lignes_table($db, $t['nom'], array_merge($pk, $ecrire), $nb, $vides);
+		$existantes = ia_lignes_table($db, $t['nom'], array_merge($pk, $ecrire), $nb, $vides, false, false);
 		if (count($existantes) == 0) {
 			$db->close();
 			return ia_erreur('Aucune ligne n\'a de valeur vide (NULL) dans ces colonnes : il n\'y a rien à compléter.', 400);
@@ -422,7 +445,8 @@ function ia_generer($base, $nom_table, $mode, $colonnes, $nb, $consigne) {
 	}
 	$refus = ia_reserve($conf);
 	if (!is_null($refus)) { $db->close(); return ia_erreur($refus, 429); }
-	set_time_limit($conf['delai_appel'] + 20);
+	set_time_limit(2 * $conf['delai_appel'] + 30); // jusqu'à deux appels (nouvel essai après une erreur 400)
+	ia_libere_session();
 	$r = ia_appel($conf, $messages);
 	if (isset($r['erreur'])) { $db->close(); return $r; }
 	$lignes = ia_extrait_lignes($r['texte']);
@@ -437,9 +461,21 @@ function ia_generer($base, $nom_table, $mode, $colonnes, $nb, $consigne) {
 	$db->close();
 	$cols = ($mode == 'modifier') ? array_merge($pk, $ecrire) : $ecrire;
 	$sortie = array();
+	$actuelles = array(); // mode « modifier » : valeurs déjà présentes, que l'écriture ne remplace pas
+	foreach ($existantes as $e) {
+		$cle = array();
+		foreach ($pk as $c) $cle[] = (string)$e[$c];
+		$actuelles[implode("\x1f", $cle)] = $e;
+	}
 	foreach ($lignes as $i => $l) {
 		$valeurs = array();
 		foreach ($cols as $c) $valeurs[$c] = (isset($l[$c]) && !is_array($l[$c])) ? $l[$c] : null;
+		if ($mode == 'modifier') {
+			$cle = array();
+			foreach ($pk as $c) $cle[] = isset($l[$c]) && !is_array($l[$c]) ? (string)$l[$c] : '';
+			$e = $actuelles[implode("\x1f", $cle)] ?? null;
+			if ($e) foreach ($ecrire as $c) if (!is_null($e[$c])) $valeurs[$c] = $e[$c];
+		}
 		$sortie[] = array('valeurs' => $valeurs, 'ok' => $etats[$i]['ok'], 'erreur' => $etats[$i]['erreur']);
 	}
 	return array('ok' => true, 'mode' => $mode, 'table' => $t['nom'], 'colonnes' => $cols, 'ecrire' => $ecrire,

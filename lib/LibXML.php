@@ -45,8 +45,7 @@ private $debug;
 	
 	function afficheDerniereErreur() {
 		$error = libxml_get_last_error();
-		$rep = display_xml_error($error);
-		return $rep;
+		return $error ? $this->display_xml_error($error) : '';
 	}
 }
 
