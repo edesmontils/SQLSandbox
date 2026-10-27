@@ -15,7 +15,7 @@ function ia_bouton(base_js) {
 // Retour à l'édition d'une requête sur la base
 function ia_retour(base, requete) {
     current_base = base;
-    current_request = requete == null ? null : requete;
+    if (requete !== undefined) current_request = requete; // sans requête : on garde celle en cours
     new_query();
 }
 

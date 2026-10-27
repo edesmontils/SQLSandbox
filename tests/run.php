@@ -188,6 +188,44 @@ $d->close();
 $r = ia_generer('ia', 'etudiants', 'modifier', array('email'), 3, '');
 verifie('IA : compléter -> rien à faire si plus de valeur vide', isset($r['erreur']) && $r['statut'] == 400 && strpos($r['erreur'], 'rien à compléter') !== false, json_encode($r));
 
+// Compléter ne remplace jamais une valeur déjà renseignée (deux colonnes, une seule vide)
+$d = new SQLite3($copie_ia);
+$d->exec("alter table etudiants add column tel varchar(20)");
+$d->exec("update etudiants set email = NULL, tel = NULL");
+$d->exec("update etudiants set tel = '0240000000' where noetu = '28936E'");
+$d->close();
+faux(200, json_encode(array('lignes' => array(array('noetu' => '28936E', 'email' => 'nouveau@exemple.fr', 'tel' => '0699999999')))));
+$r = ia_generer('ia', 'etudiants', 'modifier', array('email', 'tel'), 50, '');
+$ligne = null;
+if (isset($r['lignes'])) foreach ($r['lignes'] as $l) if (($l['valeurs']['noetu'] ?? '') === '28936E') $ligne = $l;
+verifie('IA : compléter -> l\'aperçu montre la valeur déjà présente', $ligne && $ligne['valeurs']['tel'] === '0240000000' && $ligne['valeurs']['email'] === 'nouveau@exemple.fr', json_encode($r));
+$w = ia_appliquer('ia', 'etudiants', 'modifier', array('email', 'tel'), array(array('noetu' => '28936E', 'email' => 'nouveau@exemple.fr', 'tel' => '0699999999')));
+$d = new SQLite3($copie_ia);
+verifie('IA : compléter -> valeur déjà renseignée conservée, valeur vide remplie',
+        $d->querySingle("select tel from etudiants where noetu = '28936E'") === '0240000000'
+        && $d->querySingle("select email from etudiants where noetu = '28936E'") === 'nouveau@exemple.fr', json_encode($w));
+$d->close();
+
+// Extraction du JSON dans un texte contenant des crochets avant l'objet
+verifie('IA : texte avec [ avant l\'objet JSON', ia_extrait_lignes('Voici [10 lignes] : {"lignes":[{"a":1}]}') === array(array('a' => 1)));
+verifie('IA : texte autour d\'une liste seule', ia_extrait_lignes('Résultat : [{"a":1},{"a":2}] fin') === array(array('a' => 1), array('a' => 2)));
+
+// Valeurs longues : jamais tronquées quand elles servent d'identifiant
+$d = new SQLite3($copie_ia);
+$longue = str_repeat('x', 120);
+$d->exec("create table longues (k text primary key, v text)");
+$d->exec("insert into longues values ('$longue', NULL)");
+$d->close();
+$lignes_longues = ia_lignes_table(ouvre_base('ia'), 'longues', array('k', 'v'), 5, '', false, false);
+verifie('IA : clé longue envoyée en entier', $lignes_longues[0]['k'] === $longue);
+
+// Paramètres : les cookies ne remplacent pas ceux de la requête
+$_POST = array(); $_GET = array('table' => 'get'); $_COOKIE = array('table' => 'cookie'); $_REQUEST = array('table' => 'cookie');
+verifie('Paramètres : $_REQUEST (cookies) ignoré', param('table') === 'get');
+$_POST = array('table' => 'post');
+verifie('Paramètres : POST prioritaire sur GET', param('table') === 'post');
+$_POST = $_GET = $_COOKIE = $_REQUEST = array();
+
 // Formes de réponse acceptées
 $un = array('noetu' => '77777G', 'nom' => 'Texte', 'prenom' => 'Autour');
 foreach (array('liste seule' => json_encode(array($un)), 'avec texte autour' => "Voici :\n```json\n".json_encode(array('lignes' => array($un)))."\n```\nBonne chance",

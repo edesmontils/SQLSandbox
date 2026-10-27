@@ -9,7 +9,7 @@ if (isset($_SESSION['debug']) && $session_ok) {
 	include "./fonctions.php";
 		prolonge_copies();
 
-	$Soumettre = isset($_REQUEST['Soumettre']) ? param('Soumettre') : 'rien';
+	$Soumettre = is_null(param('Soumettre')) ? 'rien' : param('Soumettre');
 	$requete = param('requete');
 	$base = param('base');
 	

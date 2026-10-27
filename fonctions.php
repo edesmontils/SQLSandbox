@@ -2,16 +2,23 @@
 require_once __DIR__.'/dossiers.php';
 require_once __DIR__.'/ia.php';
 
+// Valeur reçue en POST ou en GET. $_REQUEST n'est pas utilisé : selon request_order, il
+// peut contenir les cookies, qui prendraient alors la place des paramètres.
+function parametre_recu($nom) {
+	if (isset($_POST[$nom])) return $_POST[$nom];
+	return $_GET[$nom] ?? null;
+}
+
 // Paramètre de la requête HTTP, s'il est une chaîne (les tableaux, comme base[]=x, sont ignorés)
 function param($nom) {
-	return (isset($_REQUEST[$nom]) && is_string($_REQUEST[$nom])) ? $_REQUEST[$nom] : null;
+	$v = parametre_recu($nom);
+	return is_string($v) ? $v : null;
 }
 
 // Jeton anti-CSRF, généré par index.php et renvoyé par le JavaScript
 function jeton_valide() {
-	return isset($_SESSION['csrf'], $_REQUEST['csrf'])
-		&& is_string($_REQUEST['csrf'])
-		&& hash_equals($_SESSION['csrf'], $_REQUEST['csrf']);
+	$jeton = parametre_recu('csrf');
+	return isset($_SESSION['csrf']) && is_string($jeton) && hash_equals($_SESSION['csrf'], $jeton);
 }
 
 function purge_db() {
