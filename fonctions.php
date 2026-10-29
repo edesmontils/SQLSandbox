@@ -776,6 +776,7 @@ function debut_page() {
   <!-- Éditeur SQL : CodeMirror 5 (licence MIT, js/codemirror/LICENSE) -->
   <script src="<?php echo url_fichier("./js/codemirror/codemirror.js");?>"></script>
   <script src="<?php echo url_fichier("./js/codemirror/sql.js");?>"></script>
+  <script src="<?php echo url_fichier("./js/mode_sqlite.js");?>"></script>
   <script src="<?php echo url_fichier("./js/coloration.js");?>"></script>
   <script src="<?php echo url_fichier("./js/bd_base.js");?>"></script>
   <script src="<?php echo url_fichier("./js/modele.js");?>"></script>
