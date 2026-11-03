@@ -4,7 +4,7 @@
 <!ENTITY seuil '10800'>
 ]>
 
-<mab version="6.3" debug="false" name="SQL Sandbox">
+<mab version="6.4" debug="false" name="SQL Sandbox">
 	<!-- numéro de version de l'application -->
 	<!-- durée limite de vie d'une copie de base : 60*60*3 = 3 heures -->
 	<seuil>&seuil;</seuil>
@@ -140,6 +140,16 @@
 	<listeMessages>
 		<!--message titre="" post=""><p></p>
 		</message-->
+		<message titre="Version 6.4" date="03/11/26" auteur="E. Desmontils">
+			<div>
+				<ul>
+					<li>l'onglet « Requête » n'est plus dans l'en-tête : on y accède depuis une base,
+						par <b>✏️ Interroger cette base</b> ;</li>
+					<li>la base interrogée est affichée (et non plus choisie dans une liste) sur la page
+						d'édition d'une requête.</li>
+				</ul>
+			</div>
+		</message>
 		<message titre="Version 6.3" date="23/10/26" auteur="E. Desmontils">
 			<div>
 				<ul>
