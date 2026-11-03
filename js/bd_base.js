@@ -382,11 +382,8 @@ function new_query() {
     t = t + '<h2 class="title">Édition d\'une requête</h2>';
     t = t + '<div class="story">';
     t = t + '	<form method="POST" id="SaisieRequete" onSubmit="query(); return false;">';
-    t = t + '	<p><label for="base">Base</label><select name="base" id="base" onchange="change_base()">';
-    for(var i = 0; i < noms_bases.length;i++) {
-    	t = t + '<option>'+echappe(noms_bases[i])+'</option>';
-    }
-    t = t + '</select></p>';
+    if (!current_base) current_base = noms_bases[0];
+    t = t + '	<p>Base : <strong>' + echappe(current_base) + '</strong><input type="hidden" name="base" id="base" value="' + echappe(current_base).replace(/"/g, '&quot;') + '"/></p>';
     t = t + '	<p class="libelle"><label for="requete">Requête SQL <span class="astuce">(Ctrl+Entrée pour l\'exécuter)</span></label></p>';
     t = t + '	<textarea name="requete" rows="10" cols="80" id="requete"></textarea>';
     t = t + '	<input type="hidden" name="Soumettre" value="Envoyer"/>';
@@ -403,7 +400,6 @@ function new_query() {
     cache($('posts'));
     maj($('posts'), t);
 
-    if (current_base) choisit($('base'), current_base);
     marque_actif(pastille_base($('base').value));
     if (current_request == null) {
         derniere_suggestion = suggestion($('base').value);
@@ -415,16 +411,6 @@ function new_query() {
 
     apparait($('posts'));
     editeur_courant = editeur_sql($('requete'), query);
-}
-
-// Changement de base : la requête proposée suit la base, tant que l'élève ne l'a pas modifiée
-function change_base() {
-    current_base = $('base').value;
-    marque_actif(pastille_base(current_base));
-    if (derniere_suggestion == null || $('requete').value != derniere_suggestion) return;
-    derniere_suggestion = suggestion(current_base);
-    if (editeur_courant) editeur_courant.setValue(derniere_suggestion);
-    else $('requete').value = derniere_suggestion;
 }
 
 // Valeur JavaScript sûre à placer dans un attribut HTML (onClick="f(...)")
