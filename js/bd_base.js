@@ -378,7 +378,6 @@ var editeur_courant = null;  // éditeur CodeMirror de la page d'édition
 var derniere_suggestion = null; // requête proposée automatiquement, pas encore modifiée
 
 function new_query() {
-    marque_actif($('onglet-requete'));
     t = '<div class="post">';
     t = t + '<h2 class="title">Édition d\'une requête</h2>';
     t = t + '<div class="story">';
@@ -405,6 +404,7 @@ function new_query() {
     maj($('posts'), t);
 
     if (current_base) choisit($('base'), current_base);
+    marque_actif(pastille_base($('base').value));
     if (current_request == null) {
         derniere_suggestion = suggestion($('base').value);
         $('requete').value = derniere_suggestion;
@@ -420,6 +420,7 @@ function new_query() {
 // Changement de base : la requête proposée suit la base, tant que l'élève ne l'a pas modifiée
 function change_base() {
     current_base = $('base').value;
+    marque_actif(pastille_base(current_base));
     if (derniere_suggestion == null || $('requete').value != derniere_suggestion) return;
     derniere_suggestion = suggestion(current_base);
     if (editeur_courant) editeur_courant.setValue(derniere_suggestion);

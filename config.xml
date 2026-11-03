@@ -93,7 +93,7 @@
 				<ul>
 					<li><strong>🏠 Accueil</strong> : les nouvelles de l'application.</li>
 					<li><strong>✏️ Requête</strong> : écrire et exécuter une requête sur la base
-						choisie. Une requête est proposée selon la base ; elle suit le choix de la
+						choisie (accessible depuis une base, par « Interroger cette base »). Une requête est proposée selon la base ; elle suit le choix de la
 						base tant que vous ne l'avez pas modifiée.</li>
 					<li><strong>🧺 Mémoire</strong> : les requêtes mémorisées pendant la session,
 						avec leur état (✅ réussite ou ❌ échec). Attention, recharger la page les

@@ -249,7 +249,6 @@ $listeNoms = array_keys($listeBase);
 <nav class="navigation" aria-label="Navigation principale">
 	<div class="onglets">
 		<button type="button" class="onglet" id="onglet-accueil" onclick="news()"><span class="icone">🏠</span> <span>Accueil</span></button>
-		<button type="button" class="onglet" id="onglet-requete" onclick="new_query()"><span class="icone">✏️</span> <span>Requête</span></button>
 		<button type="button" class="onglet" id="onglet-memoire" onclick="get_histo()"><span class="icone">🧺</span> <span>Mémoire <span class="compteur" id="nb_memo">(0)</span></span></button>
 		<button type="button" class="onglet" id="onglet-aide" onclick="aides()"><span class="icone">❓</span> <span>Aide</span></button>
 	</div>
