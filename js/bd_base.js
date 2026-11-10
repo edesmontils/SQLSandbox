@@ -427,6 +427,10 @@ function vers_querycraft() {
     if (editeur_courant) editeur_courant.save();
     var requete = $('requete').value;
     if (requete.trim() === '') { alert('La requête est vide.'); return; }
+    if (!confirm('QueryCraft va s\'ouvrir dans un nouvel onglet avec cette requête.\n\n'
+            + 'Attention : si vous avez modifié la base dans SQLSandbox (INSERT, UPDATE, DELETE, '
+            + 'CREATE…), QueryCraft ne verra pas ces modifications : il utilise la base d\'origine.'))
+        return;
     window.open(querycraft.url + '/#requete=' + encodeURIComponent(requete), '_blank', 'noopener');
 }
 
