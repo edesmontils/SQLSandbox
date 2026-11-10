@@ -1,0 +1,22 @@
+{
+  "database": {
+    "type": "sqlite",
+    "name": "cours.db"
+  },
+  "questions": {
+    "q1": [
+      "SELECT m.codemat, titre FROM matieres m left join notes n on m.codemat = n.codemat inner join etudiants using (noetu) group by m.codemat, titre having count(*) > 1 ;",
+      "Liste des matières (code matière et le titre) qui sont associées à au moins un étudiant via une note.",
+      "Pour prendre en compte toutes les matières, même celles sans notes, il faut utiliser une jointure externe entre les tables matieres et notes.",
+      "I->R",
+      ""
+    ],
+    "q2": [
+      "Select Distinct nom, prenom From etudiants Where nom like 'D%' Order By nom, prenom ;",
+      "Les étudiants (nom, prénom) dont le nom commence par D. ",
+      "Attention aux homonymes et à l'ordre des tuples !",
+      "IT->R",
+      ""
+    ]
+  }
+}

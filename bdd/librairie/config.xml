@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE base_de_donnee SYSTEM '../../config.dtd'>
+<base_de_donnee nom="tp-librairie">
+    <fichier nom="librairie.db"/>
+    <référence/>
+    <description>
+        <p>Une base de données qui gère les clients d'une librairie, les livres qu'ils
+            achètent et les avis qu'ils donnent sur ces livres. Elle est décrite par les tables
+            suivantes :</p>
+        <ul>
+            <li><b>CLIENTS</b> (<em>idcl</em>, nom, pren, adr, tel)<br/>
+                un client est identifié par un numéro ; on connaît son nom, son prénom, son adresse
+                et son téléphone ;</li>
+            <li><b>LIVRES</b> (<em>refl</em>, titre, auteur, genre)<br/>
+                un livre est identifié par une référence ; on connaît son titre, son auteur et son genre ;</li>
+            <li><b>ACHATS</b> (#<em>idcl</em>, #<em>refl</em>, <em>dateachat</em>)<br/>
+                un client achète un livre à une date donnée ;</li>
+            <li><b>AVIS</b> (#<em>idcl</em>, #<em>refl</em>, note, commentaire)<br/>
+                un client donne une note (de 1 à 20) et un commentaire sur un livre.</li>
+        </ul>
+    </description>
+</base_de_donnee>

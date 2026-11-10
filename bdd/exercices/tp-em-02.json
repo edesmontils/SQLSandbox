@@ -1,0 +1,23 @@
+{
+  "database": {
+    "type": "sqlite",
+    "name": "em.db"
+  },
+  "questions": {
+    "tr-em-02": [
+      "SELECT nom_f\nFROM Fleuve NATURAL JOIN EspaceMaritime\nWHERE type='mer'",
+      "On recherche le nom des fleuves qui se jettent dans une mer.",
+      "Test 4 pour aide question",
+      "rIT->R",
+      "",
+      "SELECT ___\nFROM ___\nWHERE type='mer'"
+    ],
+    "re-em-02": [
+      "SELECT nom_f\nFROM Fleuve NATURAL JOIN EspaceMaritime\nWHERE type='mer'",
+      "On recherche le nom des fleuves qui se jettent dans une mer.",
+      "Test 5 pour aide question",
+      "I->R",
+      ""
+    ]
+  }
+}

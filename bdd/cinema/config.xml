@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE base_de_donnee SYSTEM '../../config.dtd'>
 <base_de_donnee nom="tp-cinema">
-    <fichier nom="cinema"/>
+    <fichier nom="cinema.db"/>
     <référence>http://miage.univ-nantes.fr/miage/DVD-MIAGEv2/BD.html</référence>
     <description>
         <p>La base de données Programme-Cinéma qui décrit les films qui

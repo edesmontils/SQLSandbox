@@ -105,9 +105,35 @@ Le bouton « ✨ Remplir » (page d'une base et édition d'une requête) fait g�
 
 La fonction passe par un ProxyIAg (proxy compatible OpenAI qui garde les vraies clés des providers et applique des quotas) et **n'existe que si le fichier de réglages est présent**. Copier `ia.ini.exemple` **hors du site**, à côté de la racine web, sous le nom `sqlsandbox-ia.ini` (`~/sqlsandbox-ia.ini` chez OVH, droits `600`), et y renseigner l'URL du proxy (HTTPS obligatoire hors `localhost`), une clé `sk-…` propre à l'application et l'alias du modèle. La variable d'environnement `SQLSANDBOX_IA_INI` permet de placer le fichier ailleurs. Prérequis : l'extension `curl` de PHP.
 
-Comme la clé est unique, le quota de ProxyIAg est commun à tous les étudiants : l'application limite donc elle-même chaque session (`par_session` générations par jour, `delai` secondes entre deux, `lignes_max` lignes par génération) et l'ensemble de l'installation (`plafond_global` par jour, compté dans un fichier `ia_compteur` du dossier de travail). Les messages d'erreur du proxy ne sont jamais montrés aux étudiants ; ils vont dans le journal d'erreurs de PHP.
+Comme la clé est unique, le quota de ProxyIAg est commun à tous les étudiants : l'application limite donc elle-même chaque session (`par_session` générations par jour, `delai` secondes entre deux, `lignes_max` lignes par génération) et l'ensemble de l'installation (`plafond_global` par jour, compté dans un fichier `ia_compteur` du dossier de travail).
+
+Les mêmes réglages servent à la **correction des intentions** (questions `R->I` et `RT->I`, section « Exercices »), avec un compteur de session à part (`par_session_intention`, 30 corrections par jour par défaut) : faire corriger ses intentions n'épuise pas les générations de « ✨ Remplir », et inversement. Le plafond global, lui, est commun aux deux. Les messages d'erreur du proxy ne sont jamais montrés aux étudiants ; ils vont dans le journal d'erreurs de PHP.
 
 Modèle retenu : `gemma-4-31b`, le plus fiable à l'essai du 2026-10-23 (40 générations relues) mais lent (~9 s) ; `mistral-small-24b` (~4,5 s) est le repli si la lenteur gêne. Les données générées peuvent rester approximatives : l'aperçu sert à les vérifier.
+
+## Exercices (format QueryCraft)
+
+Les travaux pratiques sont des exercices au format JSON de [QueryCraft](https://pedago.desmontils.net/querycraft/), communs aux deux applications. Un exercice porte sur une base, désignée par le nom de son fichier SQLite (`{"type": "sqlite", "name": "em.db"}` pour `bdd/em/em.db`), et chaque question est une liste `[requête, intention, commentaire, type, instructions]`, avec un 6e élément, la requête à trous, pour les types `rI->R` et `rIT->R`.
+
+| Type | L'étudiant reçoit | Il produit |
+|---|---|---|
+| `I->R` | l'intention | la requête |
+| `IT->R` | l'intention et la table attendue | la requête |
+| `rI->R` | l'intention et une requête à trous | la requête |
+| `rIT->R` | l'intention, une requête à trous et la table attendue | la requête |
+| `R->I` | une requête, qu'il peut exécuter | son intention |
+| `RT->I` | une requête et son résultat | son intention |
+
+L'intention rédigée pour une question `…->I` est corrigée par l'IA quand elle est activée (section suivante), sinon l'étudiant la compare à celle de l'enseignant (auto-évaluation). Le navigateur ne reçoit jamais la solution d'une question `…->R` ni l'intention attendue d'une question `…->I` : le serveur les relit dans le catalogue.
+
+**Origine des exercices**, réglée par le fichier `sqlsandbox.ini` (modèle : `sqlsandbox.ini.exemple`), à placer **hors du site** comme `sqlsandbox-ia.ini` (`~/sqlsandbox.ini` chez OVH, droits `600` ; variable d'environnement `SQLSANDBOX_INI` pour un autre emplacement) :
+
+- `exos_source` vide, ou pas de fichier : exercices **locaux**, dans `bdd/exercices/` (protégé comme les bases) ;
+- `exos_source` renseigné : exercices de l'instance QueryCraft indiquée, la démonstration (`https://<hôte>/`) ou le tenant d'un enseignant (`https://<hôte>/<code>/`), lus sur sa route `/catalogue/exos` avec le jeton `exos_jeton`, que l'administrateur de QueryCraft crée par `tenant-sbs --set-catalogue-token <demo|code>`. Le catalogue est gardé en cache dans le dossier de travail et revérifié toutes les `exos_ttl` secondes (300 par défaut) : un exercice créé ou modifié dans QueryCraft apparaît donc sans redéploiement. Si QueryCraft ne répond pas, le dernier cache sert, et à défaut les exercices locaux.
+
+Un exercice dont la base n'existe pas dans SQLSandbox n'est pas proposé.
+
+**Bases et exercices locaux** : le package QueryCraft en est la référence. `outils/importe-querycraft.sh <dépôt QueryCraft>` (avec `--dry-run` pour voir ce qui changerait) recopie ses bases dans les dossiers de `bdd/` qui les déclarent, ses exercices dans `bdd/exercices/` et le prompt de correction des intentions dans `templates/`. Une nouvelle base de QueryCraft demande d'écrire son `config.xml` (description).
 
 ## Plusieurs installations sur un même hébergement
 

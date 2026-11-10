@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE base_de_donnee SYSTEM '../../config.dtd'>
 <base_de_donnee nom="tp-robots">
-    <fichier nom="robots"/>
+    <fichier nom="robots.db"/>
     <référence/>
     <description>
         <p>Cette base de données suivante a été définie par une association pour gérer un

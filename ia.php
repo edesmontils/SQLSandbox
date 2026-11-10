@@ -14,6 +14,7 @@ require_once __DIR__.'/dossiers.php';
 
 // Réglages par défaut, modifiables dans ia.ini
 define('IA_PAR_SESSION', 20);   // générations par session et par jour
+define('IA_PAR_SESSION_INTENTION', 30); // corrections d'intention par session et par jour (compteur à part)
 define('IA_DELAI', 5);          // secondes minimum entre deux générations d'une session
 define('IA_LIGNES_MAX', 30);    // lignes par génération
 define('IA_PLAFOND_GLOBAL', 500); // générations par jour pour toute l'application (0 = sans limite)
@@ -37,6 +38,7 @@ function ia_lit_ini($fichier) {
 	return array(
 		'url' => $url, 'cle' => $cle, 'modele' => $modele,
 		'par_session' => max(1, (int)($ini['par_session'] ?? IA_PAR_SESSION)),
+		'par_session_intention' => max(1, (int)($ini['par_session_intention'] ?? IA_PAR_SESSION_INTENTION)),
 		'delai' => max(0, (int)($ini['delai'] ?? IA_DELAI)),
 		'lignes_max' => max(1, (int)($ini['lignes_max'] ?? IA_LIGNES_MAX)),
 		'plafond_global' => max(0, (int)($ini['plafond_global'] ?? IA_PLAFOND_GLOBAL)),
@@ -117,22 +119,30 @@ function ia_compteur_global($delta, $plafond) {
 	return $ok;
 }
 
-// Réserve une génération pour la session. Retourne null si c'est accordé, sinon le message
-// de refus.
-function ia_reserve($conf) {
+// Réserve un appel pour la session. Retourne null si c'est accordé, sinon le message de refus.
+// $compteur : 'ia' pour le remplissage (par_session), 'ia_intention' pour la correction des
+// intentions (par_session_intention) ; chacun a son compteur de session, le plafond global
+// de l'application (une seule clé d'API) est commun.
+function ia_reserve($conf, $compteur = 'ia') {
+	$intention = $compteur === 'ia_intention';
+	$max = $intention ? $conf['par_session_intention'] : $conf['par_session'];
 	$jour = date('Y-m-d');
-	if (!isset($_SESSION['ia']) || !is_array($_SESSION['ia']) || ($_SESSION['ia']['jour'] ?? '') !== $jour)
-		$_SESSION['ia'] = array('jour' => $jour, 'n' => 0, 'dernier' => 0);
-	$s = &$_SESSION['ia'];
-	if ($s['n'] >= $conf['par_session'])
-		return "Vous avez utilisé vos {$conf['par_session']} générations du jour. Vous pouvez toujours "
-		      ."saisir des données avec des requêtes INSERT et UPDATE ; le compteur repart demain.";
+	if (!isset($_SESSION[$compteur]) || !is_array($_SESSION[$compteur]) || ($_SESSION[$compteur]['jour'] ?? '') !== $jour)
+		$_SESSION[$compteur] = array('jour' => $jour, 'n' => 0, 'dernier' => 0);
+	$s = &$_SESSION[$compteur];
+	if ($s['n'] >= $max)
+		return $intention
+			? "Vous avez utilisé vos $max corrections d'intention du jour ; le compteur repart demain."
+			: "Vous avez utilisé vos $max générations du jour. Vous pouvez toujours "
+			  ."saisir des données avec des requêtes INSERT et UPDATE ; le compteur repart demain.";
 	$attente = $conf['delai'] - (time() - $s['dernier']);
 	if ($attente > 0)
-		return "Patientez $attente seconde(s) avant une nouvelle génération.";
+		return "Patientez $attente seconde(s) avant ".($intention ? 'une nouvelle correction.' : 'une nouvelle génération.');
 	if (!ia_compteur_global(1, $conf['plafond_global']))
-		return "La limite de générations de l'application est atteinte pour aujourd'hui. "
-		      ."Vous pouvez saisir des données avec des requêtes INSERT et UPDATE.";
+		return $intention
+			? "La limite d'utilisation de l'IA de l'application est atteinte pour aujourd'hui."
+			: "La limite de générations de l'application est atteinte pour aujourd'hui. "
+			  ."Vous pouvez saisir des données avec des requêtes INSERT et UPDATE.";
 	$s['n']++;
 	$s['dernier'] = time();
 	return null;
@@ -151,11 +161,11 @@ function ia_rouvre_session() {
 	if (session_status() == PHP_SESSION_NONE && PHP_SAPI != 'cli') @session_start();
 }
 
-// Rend la génération réservée quand le service n'a pas pu répondre
-function ia_rend($conf) {
+// Rend l'appel réservé (compteur $compteur, voir ia_reserve) quand le service n'a pas pu répondre
+function ia_rend($conf, $compteur = 'ia') {
 	ia_rouvre_session();
-	if (isset($_SESSION['ia']['n']) && $_SESSION['ia']['n'] > 0) $_SESSION['ia']['n']--;
-	if (isset($_SESSION['ia'])) $_SESSION['ia']['dernier'] = 0;
+	if (isset($_SESSION[$compteur]['n']) && $_SESSION[$compteur]['n'] > 0) $_SESSION[$compteur]['n']--;
+	if (isset($_SESSION[$compteur])) $_SESSION[$compteur]['dernier'] = 0;
 	ia_compteur_global(-1, $conf['plafond_global']);
 }
 
@@ -266,8 +276,8 @@ function ia_post($conf, $corps) {
 
 // Demande les lignes au modèle. Retourne array('texte' => ..., 'tokens' => n) ou une erreur
 // ia_erreur() ; la réservation de quota est rendue si le service n'a pas pu répondre.
-function ia_appel($conf, $messages) {
-	$corps = array('model' => $conf['modele'], 'messages' => $messages, 'temperature' => 0.7,
+function ia_appel($conf, $messages, $compteur = 'ia', $temperature = 0.7) {
+	$corps = array('model' => $conf['modele'], 'messages' => $messages, 'temperature' => $temperature,
 	               'max_tokens' => $conf['max_tokens'], 'response_format' => array('type' => 'json_object'));
 	list($code, $texte, $err) = ia_post($conf, $corps);
 	if ($code == 400) { // modèle sans mode JSON : on retente sans, le format étant aussi demandé dans le prompt
@@ -276,18 +286,18 @@ function ia_appel($conf, $messages) {
 	}
 	if ($code == 0 || $code >= 500) {
 		error_log("SQLSandbox IA : proxy injoignable ou en erreur (code $code) $err ".substr($texte, 0, 200));
-		ia_rend($conf);
+		ia_rend($conf, $compteur);
 		return ia_erreur("Le service de génération est momentanément indisponible. Réessayez dans un instant.", 503);
 	}
 	if ($code == 429) {
-		ia_rend($conf);
+		ia_rend($conf, $compteur);
 		return ia_erreur("Le service de génération a atteint sa limite pour aujourd'hui ou est saturé. "
 		                ."Réessayez plus tard ; vous pouvez saisir des données avec INSERT et UPDATE.", 429);
 	}
 	if ($code != 200) {
 		// 401 (clé révoquée), 403 (modèle interdit), 400/422... : problème de configuration
 		error_log("SQLSandbox IA : refus du proxy (code $code) ".substr($texte, 0, 200));
-		ia_rend($conf);
+		ia_rend($conf, $compteur);
 		return ia_erreur("La génération par IA n'est pas disponible (erreur de configuration du serveur).", 503);
 	}
 	$d = json_decode($texte, true);
@@ -503,3 +513,87 @@ function ia_appliquer($base, $nom_table, $mode, $colonnes, $lignes) {
 	}
 	return array('ok' => true, 'ecrites' => $ecrites, 'refusees' => $refusees);
 }
+
+//------------------------------------------------------------------------------
+// Correction de l'intention d'une requête (questions « R->I » / « RT->I »)
+//------------------------------------------------------------------------------
+
+define('INTENTION_MAX', 2000);   // longueur maximale d'une intention soumise
+define('VERDICTS_INTENTION', array('correct', 'partiel', 'incorrect'));
+
+// Prompt de correction (templates/intention_prompt.md, partagé avec QueryCraft) : seules
+// des substitutions simples {{ nom }} y figurent.
+function ia_prompt_intention($requete, $reference, $intention) {
+	$modele = @file_get_contents(__DIR__.'/templates/intention_prompt.md');
+	if ($modele === false) return null;
+	return strtr($modele, array(
+		'{{ requete }}' => $requete,
+		'{{ intention_attendue }}' => $reference,
+		'{{ intention_etudiant }}' => $intention,
+	));
+}
+
+// Verdict et explication extraits de la réponse JSON du modèle : array(verdict|null, texte)
+function ia_lit_verdict($texte) {
+	$texte = trim((string)$texte);
+	$a = strpos($texte, '{');
+	$b = strrpos($texte, '}');
+	if ($a !== false && $b !== false && $b > $a) {
+		$d = json_decode(substr($texte, $a, $b - $a + 1), true);
+		if (is_array($d)) {
+			$v = strtolower(trim((string)($d['verdict'] ?? '')));
+			$e = trim((string)($d['explication'] ?? ''));
+			return array(in_array($v, VERDICTS_INTENTION, true) ? $v : null, $e !== '' ? $e : $texte);
+		}
+	}
+	return array(null, $texte);
+}
+
+// Corrige l'intention $intention rédigée pour la question ($code_ex, $code_q) de la base $base.
+// La requête et l'intention de référence sont relues dans le catalogue, jamais reçues du
+// navigateur. Sans IA configurée : auto-évaluation, l'intention de référence est renvoyée.
+// Retourne array('ok' => true, 'ia' => bool, ...) ou ia_erreur().
+function ia_corriger_intention($base, $code_ex, $code_q, $intention) {
+	$q = exos_question($base, $code_ex, $code_q);
+	if (is_null($q)) return ia_erreur('Question inconnue.', 404);
+	if (exos_type($q['type'])['attendu'] !== 'I') return ia_erreur('Cette question attend une requête, pas une intention.', 400);
+	$intention = trim(preg_replace('/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]+/u', ' ', (string)$intention));
+	if ($intention === '') return ia_erreur('Rédigez d\'abord l\'intention de la requête.', 400);
+	$intention = mb_substr($intention, 0, INTENTION_MAX);
+
+	$conf = ia_config();
+	if (is_null($conf)) return array('ok' => true, 'ia' => false, 'reference' => $q['intention']);
+
+	$prompt = ia_prompt_intention($q['requete'], $q['intention'], $intention);
+	if (is_null($prompt)) return ia_erreur('La correction par IA n\'est pas disponible (modèle de prompt absent).', 503);
+	$schema = '';
+	if (isset($_SESSION['originaux'][$base])) {
+		try {
+			$db = new SQLite3($_SESSION['originaux'][$base], SQLITE3_OPEN_READONLY);
+			$tables = array();
+			$r = @$db->query("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name");
+			while ($r && ($l = $r->fetchArray(SQLITE3_NUM))) $tables[] = $l[0];
+			$schema = ia_schema_sql($db, $tables);
+			$db->close();
+		} catch (Exception $e) {
+			$schema = '';
+		}
+	}
+	$messages = array(
+		array('role' => 'system', 'content' =>
+			"Tu es un enseignant de bases de données, bienveillant, qui corrige en français le travail "
+			."d'étudiants débutants en SQL. Tu ne donnes jamais la réponse attendue. La base est sous SQLite."
+			.($schema !== '' ? "\nSchéma de la base :\n".$schema : '')),
+		array('role' => 'user', 'content' => $prompt),
+	);
+	$refus = ia_reserve($conf, 'ia_intention');
+	if (!is_null($refus)) return ia_erreur($refus, 429);
+	set_time_limit(2 * $conf['delai_appel'] + 30);
+	ia_libere_session();
+	$r = ia_appel($conf, $messages, 'ia_intention', 0.2);
+	if (isset($r['erreur'])) return $r;
+	list($verdict, $explication) = ia_lit_verdict($r['texte']);
+	return array('ok' => true, 'ia' => true, 'verdict' => $verdict, 'explication' => $explication,
+	             'modele' => $conf['modele']);
+}
+

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE base_de_donnee SYSTEM '../../config.dtd'>
 <base_de_donnee nom="cours">
-    <fichier nom="cours" prefixe="bcour"/>
+    <fichier nom="cours.db" prefixe="bcour"/>
     <référence/>
     <description>
         <p>M. Tiron, responsable de la société de formation "Info-Dev Formation" (IDF),
@@ -17,9 +17,9 @@
                 prenom varchar(10) not null, primary key (noetu)) ;</li>
             <li><b>matieres</b>( codemat varchar(8) not null primary key, titre varchar(10),
                 responsable varchar(4), diplome varchar(20)) ;</li>
-            <li><b>notes</b>( noe varchar(6), codemat varchar(8) , noteex numeric check
+            <li><b>notes</b>( noetu varchar(6), codemat varchar(8) , noteex numeric check
                 (noteex between 0 and 20), notecc numeric check (notecc between 0 and 20),
-                primary key (noe, codemat), CONSTRAINT FK_noe FOREIGN KEY (noe) REFERENCES
+                primary key (noetu, codemat), CONSTRAINT FK_noe FOREIGN KEY (noetu) REFERENCES
                 etudiants (noetu), CONSTRAINT FK_codemat FOREIGN KEY (codemat) REFERENCES
                 matieres (codemat)).</li>
         </ul>

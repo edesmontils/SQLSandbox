@@ -14,6 +14,7 @@ modele = "proxyiag/gemma-4-31b"
 
 ; Réglages facultatifs (valeurs par défaut indiquées)
 ; par_session = 20       ; générations par session et par jour
+; par_session_intention = 30 ; corrections d'intention par session et par jour (compteur à part)
 ; delai = 5              ; secondes minimum entre deux générations d'une session
 ; lignes_max = 30        ; lignes par génération
 ; plafond_global = 500   ; générations par jour pour toute l'application (0 = sans limite)

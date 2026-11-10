@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE base_de_donnee SYSTEM '../../config.dtd'>
+<base_de_donnee nom="tp-entreprise">
+    <fichier nom="entreprise.db"/>
+    <référence/>
+    <description>
+        <p>Une base de données qui décrit des personnes, les entreprises où elles travaillent
+            et les villes où elles résident ou sont implantées. Elle est décrite par les tables
+            suivantes :</p>
+        <ul>
+            <li><b>Ville</b> (<em>code</em>, nomVille, nb)<br/>
+                une ville est identifiée par un code ; on connaît son nom et son nombre d'habitants ;</li>
+            <li><b>Personne</b> (<em>id</em>, nom, prenom, age, #code)<br/>
+                une personne est identifiée par un identifiant ; elle a un nom, un prénom, un âge,
+                et réside dans une ville ;</li>
+            <li><b>Entreprise</b> (<em>ident</em>, nom_ent, type_ent, #code, #id)<br/>
+                une entreprise est identifiée par un identifiant ; elle a un nom, un type, est
+                implantée dans une ville et est dirigée par une personne ;</li>
+            <li><b>Travaille</b> (#<em>id</em>, #<em>ident</em>, salaire_mensuel)<br/>
+                une personne travaille dans une entreprise, pour un salaire mensuel donné.</li>
+        </ul>
+    </description>
+</base_de_donnee>

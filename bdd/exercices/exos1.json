@@ -1,0 +1,29 @@
+{
+  "database": {
+    "type": "sqlite",
+    "name": "cours.db"
+  },
+  "questions": {
+    "q11": [
+      "SELECT e.noetu, e.nom, e.prenom, m.codemat, m.titre, n.noteex, n.notecc\n  FROM etudiants e\n  JOIN notes n ON e.noetu = n.noetu\n  JOIN matieres m ON n.codemat = m.codemat\n  WHERE e.noetu = '28936E';",
+      "Obtenir les notes d’un étudiant donné pour toutes les matières",
+      "",
+      "I->R",
+      ""
+    ],
+    "q12": [
+      "SELECT m.codemat, m.titre,\n         AVG((n.noteex + n.notecc) / 2.0) AS moyenne_mat\n  FROM notes n\n  JOIN matieres m ON n.codemat = m.codemat\n  GROUP BY m.codemat, m.titre;",
+      "Obtenir la moyenne d’une matière",
+      "",
+      "I->R",
+      ""
+    ],
+    "q13": [
+      "SELECT e.noetu, e.nom, e.prenom, m.codemat, m.titre, m.responsable\n  FROM etudiants e\n  JOIN notes n ON e.noetu = n.noetu\n  JOIN matieres m ON n.codemat = m.codemat\n  WHERE e.noetu = '28936E'; ",
+      "Lister les matières suivies par un étudiant et leurs responsables",
+      "",
+      "I->R",
+      ""
+    ]
+  }
+}

@@ -115,15 +115,24 @@ if (isset($_SESSION['debug']) && $session_ok) {
 		}	
 	}
 	//======================================================
-	// Travaux pratiques : les noms de base et de TP sont vérifiés dans la configuration
+	// Travaux pratiques (exercices au format QueryCraft) : base et TP vérifiés dans le catalogue
 	else if ($Soumettre == "tp") {
 		liste_TP(param('nom_base'));
 	}
-	else if ($Soumettre == "themes_dispo") {
-		themes_dispo(param('nom_base'));
-	}
 	else if ($Soumettre == "pageIni") {
 		page_tp(param('nom_base'), param('tp_name'));
+	}
+	//======================================================
+	// Correction de l'intention rédigée pour une question « R->I » / « RT->I »
+	else if ($Soumettre == "corriger_intention") {
+		header('Content-Type: application/json; charset=utf-8');
+		if (!jeton_valide()) {
+			$r = ia_erreur("Session expirée : l'application a sans doute été ouverte ou rechargée dans un autre onglet. Rechargez cette page pour continuer.", 403);
+		} else {
+			$r = ia_corriger_intention($base, param('exercice'), param('question'), param('intention'));
+		}
+		if (isset($r['statut'])) http_response_code($r['statut']);
+		echo json_encode($r, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
 	}
 	//======================================================
 	// Modèle d'une base (tables, clés, SQL), en JSON pour le dessin du diagramme

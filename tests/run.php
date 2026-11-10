@@ -34,7 +34,7 @@ function execute($requete) {
 $tmp = sys_get_temp_dir().'/sqlsandbox-tests-'.getmypid();
 mkdir($tmp);
 $copie = "$tmp/copie_test";
-copy('./bdd/cours/cours', $copie);
+copy('./bdd/cours/cours.db', $copie);
 $_SESSION['copie_test'] = $copie;
 
 echo "SQLite ".SQLite3::version()['versionString'].", PHP ".PHP_VERSION."\n";
@@ -59,7 +59,7 @@ verifie('schéma : un CREATE INDEX (tables inchangées) ne joint pas de diagramm
 list($r, $o) = execute("drop table t2");
 verifie('schéma : DROP TABLE joint le diagramme', strpos($o, 'class="avant-apres"') !== false, $o);
 // Modèle d'origine et retour à la base d'origine
-$_SESSION['originaux']['test'] = './bdd/cours/cours';
+$_SESSION['originaux']['test'] = './bdd/cours/cours.db';
 execute("create table t3(a)");
 $m = modele_base('test');
 $orig = modele_origine('test', $m);
@@ -73,10 +73,10 @@ execute("create table t(a)"); // table utilisée par les tests suivants
 list($r, $o) = execute("insert into etudiants values(null, null, null)");
 verifie('violation de contrainte signalée', $r === null && strpos($o, 'NOT NULL') !== false, $o);
 // Clés étrangères vérifiées sur la copie (désactivées par défaut dans SQLite)
-list($r, $o) = execute("insert into notes (noe, codemat) values ('inconnu', 'inconnu')");
+list($r, $o) = execute("insert into notes (noetu, codemat) values ('inconnu', 'inconnu')");
 verifie('clé étrangère : insertion orpheline refusée', $r === null && strpos($o, 'FOREIGN KEY') !== false
         && strpos($o, 'Une clé étrangère') !== false, $o);
-list($r, $o) = execute("delete from etudiants where noetu in (select noe from notes)");
+list($r, $o) = execute("delete from etudiants where noetu in (select noetu from notes)");
 verifie('clé étrangère : suppression d\'une ligne référencée refusée', $r === null && strpos($o, 'FOREIGN KEY') !== false, $o);
 list($r, $o) = execute("select '<script>x</script>' as \"<b>\"");
 verifie('sortie échappée', strpos($o, '<script>x') === false && strpos($o, '&lt;script&gt;') !== false
@@ -122,7 +122,7 @@ verifie('IA : clé vide -> désactivée', is_null(ia_lit_ini("$tmp/ia2.ini")));
 unlink("$tmp/ia2.ini");
 
 $copie_ia = "$tmp/copie_ia";
-copy('./bdd/cours/cours', $copie_ia);
+copy('./bdd/cours/cours.db', $copie_ia);
 $_SESSION['copie_ia'] = $copie_ia;
 unset($_SESSION['ia']);
 function nb_etudiants() { global $copie_ia; $d = new SQLite3($copie_ia); $n = $d->querySingle('select count(*) from etudiants'); $d->close(); return $n; }
@@ -159,10 +159,10 @@ verifie('IA : trop de lignes refusé', isset($w['erreur']) && $w['statut'] == 40
 
 // Clés étrangères : les valeurs possibles des tables référencées sont dans le prompt, et contrôlées
 faux(200, array('lignes' => array(
-	array('noe' => '11111A', 'codemat' => 'MIAS2I5', 'noteex' => 12, 'notecc' => 14),
-	array('noe' => 'inconnu', 'codemat' => 'MIAS2I5', 'noteex' => 12, 'notecc' => 14),
-	array('noe' => '11111A', 'codemat' => 'MIAS2I6', 'noteex' => 25, 'notecc' => 3))));
-$r = ia_generer('ia', 'notes', 'ajouter', array('noe', 'codemat', 'noteex', 'notecc'), 3, '');
+	array('noetu' => '11111A', 'codemat' => 'MIAS2I5', 'noteex' => 12, 'notecc' => 14),
+	array('noetu' => 'inconnu', 'codemat' => 'MIAS2I5', 'noteex' => 12, 'notecc' => 14),
+	array('noetu' => '11111A', 'codemat' => 'MIAS2I6', 'noteex' => 25, 'notecc' => 3))));
+$r = ia_generer('ia', 'notes', 'ajouter', array('noetu', 'codemat', 'noteex', 'notecc'), 3, '');
 verifie('IA : clé étrangère et CHECK contrôlés', array_column($r['lignes'], 'ok') === array(true, false, false), json_encode($r));
 $requete_faux = (string)file_get_contents($reponse_faux.'.requete');
 verifie('IA : valeurs des tables référencées dans le prompt', strpos($requete_faux, 'MIAS2I5') !== false && strpos($requete_faux, '28936E') !== false);
@@ -419,36 +419,114 @@ foreach ($cas as $c) {
 list($r, $o) = execute("select 1; drop table etudiants");
 verifie('avertissement affiché', strpos($o, 'seule la première instruction') !== false, $o);
 
-echo "Travaux pratiques\n";
+echo "Travaux pratiques (exercices au format QueryCraft)\n";
+verifie('types : I->R', exos_type('I->R') === array('modele' => false, 'table' => false, 'attendu' => 'R'));
+verifie('types : rIT->R', exos_type('rIT->R') === array('modele' => true, 'table' => true, 'attendu' => 'R'));
+verifie('types : RT->I', exos_type('RT->I') === array('modele' => false, 'table' => true, 'attendu' => 'I'));
+verifie('types : inconnu lu comme I->R', exos_type('X') === exos_type('I->R') && exos_type('') === exos_type('I->R'));
+$v = exos_valides(array('ok' => array('database' => null, 'questions' => array('q1' => array('a', 'b', 'c', 'I->R', ''),
+                                      'q2' => array('a', 'b'), 'q3' => array('a', 'b', 'c', 'd', 'e', array('x')))),
+                        '../x' => array('questions' => array()), 'sans' => array('database' => null)));
+verifie('catalogue : exercices et questions mal formés écartés', array_keys($v) === array('ok')
+        && array_keys($v['ok']['questions']) === array('q1'), json_encode($v));
+$locaux = exos_locaux();
+verifie('exercices locaux lus', isset($locaux['tp-em-01']) && count($locaux['tp-em-01']['questions']) == 4, implode(',', array_keys($locaux)));
+$_SESSION['originaux']['tp-em'] = realpath('./bdd/em/em.db');
 $_SESSION['configs']['tp-em'] = './bdd/em/config.xml';
-$conf = config_base('tp-em');
-verifie('configuration lue depuis la session', $conf !== null);
-verifie('base sans configuration en session refusée', config_base('../../etc') === null && config_base('cours') === null);
-$tp = cherche_tp($conf, 'tp-em-01');
-$ids = array_map('id_question', questions_tp($conf, $tp));
-verifie('questions du TP dans l\'ordre', $ids === array('tr-em-01', 're-em-01', 'int-em-01', 'cmp-em-01'), implode(',', $ids));
-verifie('TP inconnu', cherche_tp($conf, 'inexistant') === null);
-verifie('thèmes ouverts et difficulté', themes_ouverts($conf) === array('projection' => 1), json_encode(themes_ouverts($conf)));
-$q = cherche_question($conf, 'int-em-01');
-verifie('texte SQL reconstruit', texte_sql($q->SQL) === "SELECT nom_f\nFROM Fleuve NATURAL JOIN EspaceMaritime\nWHERE type='mer'", texte_sql($q->SQL));
+$exos_em = exos_de_base('tp-em');
+verifie('exercices de la base (par nom de fichier)', isset($exos_em['tp-em-01'], $exos_em['tp-em-02']) && !isset($exos_em['Didapro11']),
+        implode(',', array_keys($exos_em)));
+verifie('base sans exercice', exos_de_base('inconnue') === array());
+$q = exos_question('tp-em', 'tp-em-01', 'int-em-01');
+$c = exos_question_client('tp-em', 'tp-em-01', 'int-em-01', $q, 1);
+verifie('R->I : requête envoyée, intention attendue cachée', $c['attendu'] === 'I' && $c['intention'] === ''
+        && strpos($c['requete'], 'NATURAL JOIN') !== false, json_encode($c));
+$c = exos_question_client('tp-em', 'tp-em-01', 'tr-em-01', exos_question('tp-em', 'tp-em-01', 'tr-em-01'), 1);
+verifie('rI->R : requête à trous envoyée, solution cachée', $c['requete'] === '' && strpos($c['modele'], '___') !== false
+        && $c['table'] === '' && $c['aide'] !== '', json_encode($c));
+$c = exos_question_client('tp-em', 'tp-em-02', 'tr-em-02', exos_question('tp-em', 'tp-em-02', 'tr-em-02'), 1);
+verifie('rIT->R : table attendue calculée sur la base d\'origine', strpos($c['table'], '<table class="resultat">') !== false
+        && strpos($c['table'], '52 ligne(s)') !== false, $c['table']);
 ob_start(); liste_question('tp-em', '<script>x</script>'); $o = ob_get_clean();
 verifie('nom de TP non reconnu non affiché', strpos($o, '<script>x') === false && strpos($o, 'TP inconnu') !== false, $o);
-ob_start(); bouton_question(cherche_question($conf, 'tr-em-01'), 'tp-em', 1); $o = ob_get_clean();
-verifie('données de question encodées dans l\'attribut', preg_match("/onclick='ouvre_question\\(([^']*)\\)/i", $o, $m)
-        && json_decode(html_entity_decode($m[1], ENT_QUOTES))->sql === "SELECT \nFROM Fleuve\nWHERE longueur>1000", $o);
+ob_start(); liste_question('tp-em', 'tp-em-01'); $o = ob_get_clean();
+verifie('questions du TP dans l\'ordre', preg_match_all("/onclick='ouvre_question\\(([^']*)\\)/i", $o, $m) == 4
+        && array_map(function ($a) { return json_decode(html_entity_decode($a, ENT_QUOTES))->code; }, $m[1])
+           === array('tr-em-01', 're-em-01', 'int-em-01', 'cmp-em-01'), $o);
+verifie('données de question encodées dans l\'attribut', json_decode(html_entity_decode($m[1][0], ENT_QUOTES))->modele
+        === "SELECT ___\nFROM Fleuve\nWHERE longueur>1000", $m[1][0]);
+$fuites = array_filter(array_map(function ($a) { return json_decode(html_entity_decode($a, ENT_QUOTES), true); }, $m[1]),
+                       function ($q) { return $q['attendu'] === 'R' ? $q['requete'] !== '' : $q['intention'] !== ''; });
+verifie('aucune réponse attendue dans la page du TP', count($fuites) == 0, json_encode($fuites));
 
-// Chaque requête de référence des fichiers de configuration doit s'exécuter sur sa base
+// Chaque requête de référence des exercices locaux doit s'exécuter sur sa base
+$fichiers_bd = array();
 foreach (glob('./bdd/*/config.xml') as $fic) {
 	$c = simplexml_load_file($fic, 'SimpleXMLElement', LIBXML_DTDLOAD|LIBXML_DTDATTR);
-	if (!isset($c->{'liste-questions'})) continue;
-	$bd = new SQLite3(dirname($fic).'/'.(string)$c->fichier['nom'], SQLITE3_OPEN_READONLY);
-	foreach ($c->{'liste-questions'}->children() as $q) {
-		$sql = texte_sql($q->SQL[0]);
-		verifie("requête de référence ".basename(dirname($fic))."/".id_question($q), @$bd->query($sql) !== false,
-		        $bd->lastErrorMsg()." : ".str_replace("\n", ' ', $sql));
+	$fichiers_bd[(string)$c->fichier['nom']] = dirname($fic).'/'.(string)$c->fichier['nom'];
+}
+foreach ($locaux as $code => $exo) {
+	$nom = $exo['database']['name'] ?? '';
+	verifie("exercice $code : base $nom présente", isset($fichiers_bd[$nom]));
+	if (!isset($fichiers_bd[$nom])) continue;
+	$bd = new SQLite3($fichiers_bd[$nom], SQLITE3_OPEN_READONLY);
+	foreach ($exo['questions'] as $cq => $qq) {
+		verifie("requête de référence $code/$cq", @$bd->query($qq[0]) !== false, $bd->lastErrorMsg().' : '.str_replace("\n", ' ', $qq[0]));
+		verifie("type de $code/$cq reconnu", in_array($qq[3], EXOS_TYPES, true), $qq[3]);
 	}
 	$bd->close();
 }
+
+echo "Catalogue distant (faux QueryCraft)\n";
+file_put_contents("$tmp/sqlsandbox.ini", "exos_source = \"http://serveur-distant.example/qc\"\nexos_jeton = \"j\"\n");
+verifie('source : jeton jamais envoyé en HTTP vers une autre machine', exos_lit_ini("$tmp/sqlsandbox.ini")['source'] === '');
+file_put_contents("$tmp/sqlsandbox.ini", "exos_source = \"https://asql.example/123456/\"\nexos_jeton = \"j\"\n");
+verifie('source : HTTPS accepté, / final retiré', exos_lit_ini("$tmp/sqlsandbox.ini")['source'] === 'https://asql.example/123456');
+verifie('source absente : exercices locaux', exos_lit_ini("$tmp/inexistant.ini")['source'] === '');
+unlink("$tmp/sqlsandbox.ini");
+$conf_cat = array('source' => "http://127.0.0.1:$port_faux/qc", 'jeton' => 'jeton-de-test', 'ttl' => 0);
+$cache_existait = is_file(DOSSIER_TMP.'/exos-catalogue.json');
+$cache_avant = $cache_existait ? file_get_contents(DOSSIER_TMP.'/exos-catalogue.json') : null;
+@unlink(DOSSIER_TMP.'/exos-catalogue.json');
+file_put_contents($reponse_faux, "200\n".json_encode(array('format' => 1, 'instance' => 'demo', 'exercices' => array(
+	'distant' => array('database' => array('type' => 'sqlite', 'name' => 'em.db'),
+	                   'questions' => array('q1' => array('SELECT 1', 'Un', '', 'R->I', '')))))));
+$d = exos_distants($conf_cat);
+$requete_recue = (string)@file_get_contents($reponse_faux.'.requete');
+verifie('catalogue distant lu', isset($d['distant']['questions']['q1']), json_encode($d));
+verifie('catalogue : jeton envoyé', strpos($requete_recue, 'Bearer jeton-de-test') === 0, $requete_recue);
+file_put_contents($reponse_faux, "503\n");
+$d = exos_distants($conf_cat);
+verifie('catalogue injoignable : dernier cache servi', isset($d['distant']), json_encode($d));
+@unlink(DOSSIER_TMP.'/exos-catalogue.json');
+verifie('catalogue injoignable sans cache : null (repli sur les locaux)', exos_distants($conf_cat) === null);
+if (!is_null($cache_avant)) file_put_contents(DOSSIER_TMP.'/exos-catalogue.json', $cache_avant);
+@unlink(DOSSIER_TMP.'/exos-catalogue.verrou');
+
+echo "Correction des intentions (faux ProxyIAg)\n";
+unset($_SESSION['ia'], $_SESSION['ia_intention']);
+faux(200, array('verdict' => 'partiel', 'explication' => 'Il manque la **condition** sur le type.'));
+$r = ia_corriger_intention('tp-em', 'tp-em-01', 'int-em-01', 'Les fleuves');
+verifie('intention : verdict et explication', ($r['ok'] ?? false) && $r['ia'] === true && $r['verdict'] === 'partiel'
+        && strpos($r['explication'], 'condition') !== false, json_encode($r));
+$envoye = (string)@file_get_contents($reponse_faux.'.requete');
+verifie('intention : requête et référence relues côté serveur, dans le prompt', strpos($envoye, 'NATURAL JOIN') !== false
+        && strpos($envoye, 'Le nom des fleuves qui se jettent dans une mer.') !== false && strpos($envoye, 'Les fleuves') !== false
+        && strpos($envoye, 'CREATE TABLE') !== false, substr($envoye, 0, 300));
+verifie('intention : compteur à part, « Remplir » non décompté', ($_SESSION['ia_intention']['n'] ?? 0) == 1 && !isset($_SESSION['ia']),
+        json_encode($_SESSION));
+verifie('intention : question qui attend une requête refusée', ia_corriger_intention('tp-em', 'tp-em-01', 'tr-em-01', 'x')['statut'] ?? 0) == 400;
+verifie('intention : question inconnue', (ia_corriger_intention('tp-em', 'tp-em-01', 'zz', 'x')['statut'] ?? 0) == 404);
+verifie('intention : vide refusée', (ia_corriger_intention('tp-em', 'tp-em-01', 'int-em-01', "  \n ")['statut'] ?? 0) == 400);
+faux(200, 'pas du JSON');
+$r = ia_corriger_intention('tp-em', 'tp-em-01', 'int-em-01', 'Les fleuves');
+verifie('intention : réponse non JSON -> texte brut sans verdict', $r['verdict'] === null && $r['explication'] === 'pas du JSON', json_encode($r));
+faux(503, '');
+$n = $_SESSION['ia_intention']['n'];
+$r = ia_corriger_intention('tp-em', 'tp-em-01', 'int-em-01', 'Les fleuves');
+verifie('intention : service indisponible -> réservation rendue au bon compteur', ($r['statut'] ?? 0) == 503
+        && $_SESSION['ia_intention']['n'] == $n && !isset($_SESSION['ia']), json_encode($_SESSION));
+unset($_SESSION['ia_intention']);
 
 echo "Modèle des bases\n";
 // Toutes les bases déclarent des clés étrangères et leurs données les respectent
@@ -508,7 +586,7 @@ $_SESSION['copie_autre'] = "$tmp/copie_autre";
 touch($_SESSION['copie_autre']);
 purge_db();
 verifie('purge_db supprime les copies de session', !file_exists($copie) && !file_exists("$tmp/copie_autre"));
-$_SESSION['originaux']['test'] = realpath('./bdd/cours/cours');
+$_SESSION['originaux']['test'] = realpath('./bdd/cours/cours.db');
 list($r, $o) = execute("select count(*) from etudiants");
 verifie('copie purgée recréée depuis la base d\'origine', $r === true && file_exists($copie), $o);
 unset($_SESSION['originaux']['test']);
@@ -580,8 +658,13 @@ list($code, $corps) = http("$u/tp.php?base=tp-em&tp=".urlencode('<img src=x>'));
 verifie('page d\'un TP : paramètre non affiché', strpos($corps, '<img src=x>') === false && strpos($corps, 'TP inconnu') !== false);
 list($code, $corps) = http("$u/tp.php?base=tp-em&tp[]=x");
 verifie('paramètre en tableau ignoré sans warning', strpos($corps, 'TP inconnu') !== false && stripos($corps, 'warning') === false, $corps);
-list($code, $corps) = http("$u/questionsThem.php?base=tp-em&theme=projection");
-verifie('page d\'un thème', substr_count($corps, 'ouvre_question(') == 1, $corps);
+list($code, $corps) = http("$u/controler.php", array('Soumettre' => 'corriger_intention', 'base' => 'tp-em',
+                           'exercice' => 'tp-em-01', 'question' => 'int-em-01', 'intention' => 'Les fleuves'));
+verifie('intention sans jeton refusée (403)', $code == 403, $corps);
+faux(200, array('verdict' => 'correct', 'explication' => 'Bravo.'));
+list($code, $corps) = http("$u/controler.php", array('Soumettre' => 'corriger_intention', 'base' => 'tp-em', 'csrf' => $jeton,
+                           'exercice' => 'tp-em-01', 'question' => 'int-em-01', 'intention' => 'Les fleuves qui vont à la mer'));
+verifie('intention corrigée via l\'application', $code == 200 && (json_decode($corps, true)['verdict'] ?? '') === 'correct', $corps);
 list($code, $corps) = http("$u/controler.php?Soumettre=tp&nom_base=tp-em");
 verifie('liste des TP', strpos($corps, 'page_tp(') !== false && strpos($corps, 'tp-em-02') !== false, $corps);
 list($code, $corps) = http("$u/controler.php?Soumettre=modele&nom_base=tp-cinema");

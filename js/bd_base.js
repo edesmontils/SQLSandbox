@@ -456,16 +456,13 @@ function insere_rubrique(parametres, suite) {
         });
 }
 
-// Affiche la description d'une base, ses TP et ses questions à thèmes
+// Affiche la description d'une base et ses TP
 function db(nom) {
     marque_actif(pastille_base(nom));
     cache($('posts'));
     maj($('posts'), description_base(nom));
     montre($('posts'));
-    // Requêtes enchaînées pour garder l'ordre d'affichage
-    insere_rubrique({Soumettre: 'tp', nom_base: nom}, function () {
-        insere_rubrique({Soumettre: 'themes_dispo', nom_base: nom});
-    });
+    insere_rubrique({Soumettre: 'tp', nom_base: nom});
 }
 
 // Contenu des tables d'une base, dans un nouvel onglet
@@ -483,7 +480,11 @@ function page_tp(nom, tp) {
 }
 
 //=================================================================
-// Questions (pages tp.php et questionsThem.php)
+// Questions (page tp.php), au format des exercices de QueryCraft.
+// q.attendu : 'R' (écrire la requête) ou 'I' (rédiger l'intention de q.requete) ;
+// q.modele : requête à trous (types rI->R, rIT->R) ; q.table : table résultat affichée
+// d'emblée (types en T). Le serveur n'envoie jamais la solution d'une question …->R,
+// ni l'intention attendue d'une question …->I.
 //=================================================================
 
 var reponses = {};          // réponses mémorisées, par numéro de question
@@ -502,43 +503,106 @@ function ouvre_question(q) {
     t = t + '<h2>Base ' + echappe(q.base) + '</h2>';
     t = t + '<h2 class="title">Question ' + q.numero + '</h2>';
     t = t + '<div class="story">';
+    // Le commentaire de l'enseignant (indice) est du texte : il est échappé
     if (q.aide) {
         t = t + '<p><button type="button" class="btn secondaire petit" onclick="bascule_aide()">💡 Aide</button></p>';
-        t = t + '<div id="div1">' + q.aide + '</div>';
+        t = t + '<div id="div1"><p>' + echappe(q.aide) + '</p></div>';
     }
-    if (q.type == 'rq-intention') {
-        t = t + '<p class="libelle">Requête :</p><pre class="cm-s-default">' + colore_sql(q.sql) + '</pre>';
-        t = t + '<p class="libelle"><label for="requete">Que fait la requête ci-dessus ? Rédigez son intention :</label></p>';
-        t = t + '<textarea rows="3" cols="80" id="requete"></textarea>';
+    if (q.instructions) t = t + '<p class="message">' + echappe(q.instructions) + '</p>';
+    if (q.attendu == 'I') {
+        t = t + '<p class="libelle">Requête :</p><pre class="cm-s-default">' + colore_sql(q.requete) + '</pre>';
+        if (q.table) t = t + '<p class="libelle">Son résultat :</p><div class="table-attendue">' + q.table + '</div>';
+        t = t + '<p class="libelle"><label for="requete">Que recherche la requête ci-dessus ? Rédigez son intention :</label></p>';
+        t = t + '<textarea rows="3" cols="80" id="requete" maxlength="2000"></textarea>';
     } else {
         t = t + '<p>' + echappe(q.intention) + '</p>';
-        t = t + '<p class="libelle"><label for="requete">' + (q.type == 'rq-trou' ? 'Complétez la requête suivante' : 'Écrivez la requête');
+        if (q.table) t = t + '<p class="libelle">Table attendue :</p><div class="table-attendue">' + q.table + '</div>';
+        t = t + '<p class="libelle"><label for="requete">' + (q.modele ? 'Complétez la requête suivante' : 'Écrivez la requête');
         t = t + ' <span class="astuce">(Ctrl+Entrée pour l\'exécuter)</span></label></p>';
         t = t + '<textarea rows="10" cols="80" id="requete"></textarea>';
     }
     t = t + '<div class="actions">';
-    if (q.type != 'rq-intention') {
+    if (q.attendu == 'I') {
+        t = t + '<button type="button" class="btn" onclick="execute_requete_donnee()" title="Exécuter la requête donnée pour la comprendre">▶️ Exécuter la requête</button>';
+        t = t + '<button type="button" class="btn" id="corriger_intention" onclick="corrige_intention()">✅ Faire corriger mon intention</button>';
+    } else {
         t = t + '<button type="button" class="btn" onclick="reponse()">▶️ Exécuter</button>';
     }
     t = t + '<button type="button" class="btn secondaire" onclick="memorise_reponse(true)">🧺 Mémoriser la réponse</button>';
     t = t + '<button type="button" class="btn secondaire" onclick="retour_questions()">⬅️ Retour aux questions</button>';
-    t = t + '</div><div id="results"></div>';
+    t = t + '</div><div id="correction"></div><div id="results"></div>';
     t = t + '</div></div>';
 
     cache($('posts'));
     maj($('posts'), t);
     var initiale = reponses[q.numero];
-    if (initiale == null) initiale = (q.type == 'rq-trou') ? q.sql : '';
+    if (initiale == null) initiale = q.modele || '';
     $('requete').value = initiale;
     apparait($('posts'));
     // L'intention se rédige en français : zone de saisie simple
-    if (q.type != 'rq-intention') editeur_sql($('requete'), reponse);
+    if (q.attendu != 'I') editeur_sql($('requete'), reponse);
 }
 
 // Exécute la réponse de l'élève sur sa copie de la base
 function reponse() {
+    execute_sur_copie($('requete').value);
+}
+
+// Exécute la requête donnée d'une question d'intention (sans correction)
+function execute_requete_donnee() {
+    execute_sur_copie(question_courante.requete);
+}
+
+// Texte de l'IA (Markdown simple) en HTML sûr : échappé, gras et retours à la ligne
+function texte_ia(texte) {
+    return echappe(texte).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>');
+}
+
+// Fait corriger l'intention rédigée : par l'IA si le serveur l'a activée, sinon
+// auto-évaluation (l'intention de l'enseignant est affichée)
+function corrige_intention() {
+    var texte = $('requete').value.trim();
+    if (texte == '') {
+        maj($('correction'), '<p class="statut ko">Rédigez d\'abord l\'intention de la requête.</p>');
+        return;
+    }
+    memorise_reponse(false);
+    $('corriger_intention').disabled = true;
+    maj($('correction'), '<p>⏳ Correction en cours…</p>');
     appel('post', {
-            Soumettre: 'Envoyer', csrf: csrf_token, requete: $('requete').value, base: question_courante.base, mode: 0
+            Soumettre: 'corriger_intention', csrf: csrf_token, base: question_courante.base,
+            exercice: question_courante.exercice, question: question_courante.code, intention: texte
+        },
+        function (trs) {
+            $('corriger_intention').disabled = false;
+            var r = null;
+            try { r = JSON.parse(trs.responseText); } catch (e) { r = null; }
+            if (!r || !r.ok) {
+                maj($('correction'), '<p class="statut ko">' + echappe(r && r.erreur ? r.erreur : 'Réponse inattendue du serveur.') + '</p>');
+            } else if (r.ia) {
+                var libelles = {correct: '✅ Intention correcte', partiel: '🟠 Intention partiellement correcte',
+                                incorrect: '❌ Intention incorrecte'};
+                var t = r.verdict ? '<p class="statut ' + (r.verdict == 'correct' ? 'ok' : 'ko') + '">' + libelles[r.verdict] + '</p>' : '';
+                t = t + '<div class="story"><p>' + texte_ia(r.explication || '') + '</p>'
+                      + '<p class="astuce">Correction proposée par une IA (' + echappe(r.modele || '') + ') : elle peut se tromper.</p></div>';
+                maj($('correction'), t);
+            } else {
+                maj($('correction'), '<p><strong>Auto-évaluation</strong> : comparez votre intention à celle de l\'enseignant.</p>'
+                    + '<blockquote>' + echappe(r.reference || '') + '</blockquote>');
+            }
+        },
+        function (trs) {
+            $('corriger_intention').disabled = false;
+            if (session_perdue(trs)) return;
+            var r = null;
+            try { r = JSON.parse(trs.responseText); } catch (e) { r = null; }
+            maj($('correction'), '<p class="statut ko">' + echappe(r && r.erreur ? r.erreur : 'La correction a échoué.') + '</p>');
+        });
+}
+
+function execute_sur_copie(requete) {
+    appel('post', {
+            Soumettre: 'Envoyer', csrf: csrf_token, requete: requete, base: question_courante.base, mode: 0
         },
         function (trs) {
             if (trs.responseText == '') {

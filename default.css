@@ -884,3 +884,10 @@ table.historique td .btn {
 		font-size: 16px;
 	}
 }
+
+/* Table attendue d'une question (types en T) : hauteur limitée, défilement */
+.table-attendue {
+	max-height: 22em;
+	overflow: auto;
+	margin-bottom: 1em;
+}

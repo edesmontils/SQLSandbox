@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE base_de_donnee SYSTEM '../../config.dtd'>
 <base_de_donnee nom="tp-vols">
-    <fichier nom="vols"/>
+    <fichier nom="vols.db"/>
     <référence/>
     <description>
         <p>Cette base de données a été créée par Sylvie Cazalens et a été principalement

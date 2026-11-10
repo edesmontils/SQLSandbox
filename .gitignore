@@ -9,3 +9,5 @@ tmp/verrou_*
 ia.ini
 *-ia.ini
 tmp/ia_compteur
+tmp/exos-catalogue.*
+sqlsandbox.ini

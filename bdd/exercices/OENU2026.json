@@ -1,0 +1,22 @@
+{
+  "database": {
+    "type": "sqlite",
+    "name": "em.db"
+  },
+  "questions": {
+    "q1": [
+      "Select * From Fleuve limit 10 ;",
+      "Dix fleuves présents dans la base de données.",
+      "Il faut limiter le nombre de réponses à 10.",
+      "I->R",
+      ""
+    ],
+    "q2": [
+      "Select * From Pays ;",
+      "Sélectionner tous les pays.",
+      "Faire simple !",
+      "I->R",
+      ""
+    ]
+  }
+}

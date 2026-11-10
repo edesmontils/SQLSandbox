@@ -1,0 +1,71 @@
+{
+  "database": {
+    "type": "sqlite",
+    "name": "cours.db"
+  },
+  "questions": {
+    "q0": [
+      "select nom, prenom from etudiants natural join notes where codemat='MIAS2I5' ;",
+      "Le nom et prénom des étudiants inscrits dans le module MIAS2I5.",
+      "Penser à vérifier le code de la matière. Une jointure naturelle est possible.",
+      "I->R",
+      ""
+    ],
+    "q1": [
+      "select nom, prenom from etudiants Natural Join notes where codemat='MIAS2I5' ;",
+      "Le nom et le prénom des étudiants ayant des notes dans le module MIAS2I5.",
+      "Penser à vérifier le code de la matière. Une jointure naturelle est possible.",
+      "I->R",
+      ""
+    ],
+    "q2": [
+      "select distinct nom, prenom from etudiants join notes using(noetu) where noteex >= 10 ;",
+      "Les étudiants (nom et prénom) qui ont eu une note d'examen supérieure à 10.",
+      "Attention aux multiples.",
+      "I->R",
+      ""
+    ],
+    "q3": [
+      "select nom, prenom, AVG((noteex+notecc)/2) FROM etudiants natural join notes Group By noetu, nom, prenom having AVG((noteex+notecc)/2) > 10 ; ",
+      "Étudiants (nom, prénom) qui ont eu une moyenne générale supérieur à 10.",
+      "Attention, une moyenne de moyennes !",
+      "IT->R",
+      ""
+    ],
+    "q4": [
+      "select nom, prenom from etudiants where nom like \"D%\"order by nom, prenom ;",
+      "Nom et Prénom des étudiants qui ont un nom qui commence par un D, trié par ordre alphabétique sur le nom et prénom.",
+      "Regarder la première lettre du nom en utilisant '%'. Attention au tri alphabétique sur le nom ET prénom.",
+      "I->R",
+      ""
+    ],
+    "q5": [
+      "select nom, prenom from matieres m join notes n on m.codemat = n.codemat join etudiants e on e.noetu = n.noetu where diplome = 'Deug MIAS' ;",
+      "La liste des étudiants (nom, prénom) inscrits en Deug MIAS.",
+      "Jointure et sélection classiques.",
+      "I->R",
+      ""
+    ],
+    "q6": [
+      "select n1.noetu from notes n1 join notes n2 on n1.noetu=n2.noetu where n1.codemat='MIAS2I5' and n2.codemat='MIAS2I6' ;",
+      "Les étudiants inscrits en même temps dans le module MIAS2I5 et le module MIAS2I6.",
+      "Ce n'est pas une jointure classique...",
+      "I->R",
+      ""
+    ],
+    "q7": [
+      "select nom, prenom from etudiants e Left Outer Join (select noetu, codemat from notes where codemat='MIAS2I5') n on e.noetu = n.noetu where codemat is NULL ;",
+      "Les étudiants (nom, prénom) qui ne sont pas inscrits dans le module MIAS2I5",
+      "Attention, il ne faut pas chercher ceux qui ont fait autre chose que MIAS2I5 ! Il faut chercher ceux qui n'ont pas de note pour MIAS2I5.",
+      "IT->R",
+      ""
+    ],
+    "q8": [
+      "SELECT e.noetu,e.nom, e.prenom, group_concat(n.codemat, ', ') AS modules_suivis, ROUND(SUM(COALESCE(n.noteex, 0) + COALESCE(n.notecc, 0)) / (COUNT(*) * 2.0), 2) AS moyenne_generale FROM etudiants e CROSS JOIN matieres m LEFT JOIN notes n ON n.noetu = e.noetu AND n.codemat = m.codemat WHERE m.diplome = 'Deug MIAS' AND m.codemat LIKE 'MIAS2%' AND e.noetu IN (SELECT noetu FROM notes NATURAL JOIN matieres WHERE diplome = 'Deug MIAS') GROUP BY e.noetu, e.nom, e.prenom ORDER BY e.noetu;",
+      "La moyenne générale des étudiants en deuxième année de Deug MIAS, s’ils n’ont pas de notes dans un module, ils ont 0 à ce module. Même chose pour les notes (noteex et notecc).",
+      "Grosse requête où il faut gérer les valeurs NULL (avec COALESCE) et faire un produit cartésien pour avoir toutes les combinaisons étudiant/module.",
+      "IT->R",
+      ""
+    ]
+  }
+}

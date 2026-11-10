@@ -4,7 +4,7 @@
 <!ENTITY seuil '10800'>
 ]>
 
-<mab version="6.4" debug="false" name="SQL Sandbox">
+<mab version="7.0" debug="false" name="SQL Sandbox">
 	<!-- numéro de version de l'application -->
 	<!-- durée limite de vie d'une copie de base : 60*60*3 = 3 heures -->
 	<seuil>&seuil;</seuil>
@@ -100,8 +100,8 @@
 					<li><strong>❓ Aide</strong> : cette page.</li>
 				</ul>
 				<h3>Les bases</h3>
-				<p>Cliquez sur le nom d'une base pour lire sa description, ses travaux pratiques
-					et ses questions à thèmes. « ✏️ Interroger cette base » ouvre l'édition d'une
+				<p>Cliquez sur le nom d'une base pour lire sa description et ses travaux
+					pratiques. « ✏️ Interroger cette base » ouvre l'édition d'une
 					requête sur cette base, « 📋 Voir les tables » affiche le contenu de ses tables
 					dans un nouvel onglet.</p>
 				<p>« 🧩 Modèle de la base » montre son diagramme (tables et liens entre clés
@@ -127,7 +127,11 @@
 					<li>Dans un TP, <strong>✏️ Répondre</strong> ouvre une question et
 						<strong>⬅️ Retour aux questions</strong> revient à la liste en mémorisant
 						votre réponse ; <strong>💡 Aide</strong> affiche un indice quand la
-						question en propose un.</li>
+						question en propose un. Selon la question, il faut écrire une requête,
+						compléter une requête à trous, ou rédiger l'intention d'une requête donnée
+						(que vous pouvez exécuter) : <strong>✅ Faire corriger mon intention</strong>
+						la fait évaluer par une IA quand le serveur l'a activée, sinon affiche
+						celle de l'enseignant pour comparer.</li>
 				</ul>
 				<p>En bas de page : <strong>ℹ️ À propos de SQL et SQLite</strong> présente les
 					particularités du SGBD utilisé, <strong>🛡️ Mentions légales</strong> les
@@ -140,6 +144,21 @@
 	<listeMessages>
 		<!--message titre="" post=""><p></p>
 		</message-->
+		<message titre="Version 7.0" date="10/11/26" auteur="E. Desmontils">
+			<div>
+				<ul>
+					<li>les <b>travaux pratiques</b> sont désormais les exercices de <b>QueryCraft</b>, communs
+						aux deux applications : écrire une requête, <b>compléter une requête à trous</b>,
+						avec ou sans la table attendue, ou <b>rédiger l'intention</b> d'une requête
+						donnée, que l'on peut exécuter ;</li>
+					<li>l'intention rédigée est <b>corrigée par une IA</b> quand le serveur l'a activée ;</li>
+					<li>les bases sont celles de QueryCraft : nouvelles bases <b>tp-entreprise</b> et
+						<b>tp-librairie</b> ; dans <b>cours</b>, la colonne des notes qui désigne l'étudiant
+						s'appelle maintenant <b>noetu</b>, comme dans la table etudiants ;</li>
+					<li>les questions à thèmes disparaissent.</li>
+				</ul>
+			</div>
+		</message>
 		<message titre="Version 6.4" date="03/11/26" auteur="E. Desmontils">
 			<div>
 				<ul>
