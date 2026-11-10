@@ -55,7 +55,8 @@ function ia_config() {
 	static $conf = false;
 	if ($conf !== false) return $conf;
 	$conf = null;
-	if (!function_exists('curl_init')) return null;
+	// curl pour appeler le service, mbstring pour couper les textes (consigne, intention...)
+	if (!function_exists('curl_init') || !function_exists('mb_substr')) return null;
 	$candidats = array();
 	if (getenv('SQLSANDBOX_IA_INI')) $candidats[] = getenv('SQLSANDBOX_IA_INI');
 	if (!empty($_SERVER['DOCUMENT_ROOT']))
