@@ -223,6 +223,15 @@ $listeNoms = array_keys($listeBase);
     duree_session = <?php echo (int)DUREE_SESSION; ?>;
     ia_disponible = <?php echo ia_config() ? 'true' : 'false'; ?>;
     ia_lignes_max = <?php $ia = ia_config(); echo $ia ? (int)$ia['lignes_max'] : 0; ?>;
+    // Instance QueryCraft source et nom (côté SQLSandbox) de la base qu'elle interroge : le
+    // bouton « Ouvrir dans QueryCraft » n'apparaît que sur cette base (voir exercices.php)
+    querycraft = <?php
+    $qc = querycraft_cible();
+    $qc_base = null;
+    if ($qc) foreach ($listeBase as $n => $b)
+    	if (basename($b['fichier']) === $qc['fichier']) { $qc_base = (string)$n; break; }
+    echo json_encode($qc_base === null ? null : array('url' => $qc['url'], 'base' => $qc_base),
+                     JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES); ?>;
   </script>
   <!-- Éditeur SQL : CodeMirror 5 (licence MIT, js/codemirror/LICENSE) -->
   <script src="<?php echo url_fichier("./js/codemirror/codemirror.js");?>"></script>

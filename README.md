@@ -135,6 +135,8 @@ L'intention rédigée pour une question `…->I` est corrigée par l'IA quand el
 
 Un exercice dont la base n'existe pas dans SQLSandbox n'est pas proposé.
 
+**Ouvrir une requête dans QueryCraft.** Le catalogue indique aussi la base que l'instance QueryCraft interroge (`base_active`, réglée par l'enseignant dans QueryCraft). Sur cette base seulement, la page d'édition propose « 🚀 Ouvrir dans QueryCraft » : QueryCraft s'ouvre dans un nouvel onglet avec la requête de l'étudiant, passée dans le fragment de l'URL (`<source>/#requete=…`), que le navigateur n'envoie pas au serveur. QueryCraft l'exécute sur sa base d'origine, sans les modifications faites dans la copie de session.
+
 **Bases et exercices locaux** : le package QueryCraft en est la référence. `outils/importe-querycraft.sh <dépôt QueryCraft>` (avec `--dry-run` pour voir ce qui changerait) recopie ses bases dans les dossiers de `bdd/` qui les déclarent, ses exercices dans `bdd/exercices/` et le prompt de correction des intentions dans `templates/`. Une nouvelle base de QueryCraft demande d'écrire son `config.xml` (description).
 
 ## Plusieurs installations sur un même hébergement

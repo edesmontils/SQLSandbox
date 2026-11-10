@@ -511,17 +511,21 @@ copy('./bdd/em/em.db', $reponse_faux.'.bases/em.db');
 copy('./bdd/cinema/cinema.db', $reponse_faux.'.bases/cinema.db');
 $sha_em = hash_file('sha256', './bdd/em/em.db');
 $sha_cinema = hash_file('sha256', './bdd/cinema/cinema.db');
-function catalogue_faux($bases) {
+function catalogue_faux($bases, $base_active = null) {
 	global $reponse_faux;
 	file_put_contents($reponse_faux, "200\n".json_encode(array('format' => 2, 'instance' => 'demo',
-		'exercices' => array(), 'bases' => $bases)));
+		'exercices' => array(), 'bases' => $bases, 'base_active' => $base_active)));
 	@unlink(DOSSIER_TMP.'/exos-catalogue.json');
 }
 $desc = array('origine' => 'manuelle', 'nom' => 'tp-em', 'reference' => 'javascript:alert(1)',
               'markdown' => 'x', 'html' => '<p>Description <strong>synchronisée</strong></p>');
+verifie('QueryCraft : pas de base active sans catalogue', querycraft_cible($conf_cat) === null);
 catalogue_faux(array('em.db' => array('taille' => filesize('./bdd/em/em.db'), 'sha256' => $sha_em, 'description' => $desc),
-                     '../evil.db' => array('taille' => 1, 'sha256' => $sha_em)));
+                     '../evil.db' => array('taille' => 1, 'sha256' => $sha_em)), 'em.db');
 exos_distants($conf_cat);
+verifie('QueryCraft : base active reprise du catalogue', querycraft_cible($conf_cat)
+        === array('url' => $conf_cat['source'], 'fichier' => 'em.db'), json_encode(querycraft_cible($conf_cat)));
+verifie('QueryCraft : aucune base active sans source', querycraft_cible(array('source' => '') + $conf_cat) === null);
 $b = bases_dossiers();
 verifie('base téléchargée, empreinte vérifiée', isset($b['em']) && hash_file('sha256', $b['em'].'/em.db') === $sha_em, json_encode($b));
 verifie('nom de fichier dangereux ignoré', count($b) == 1 && !file_exists(dirname($dossier_bases).'/evil.db'));
@@ -546,8 +550,9 @@ exos_distants($conf_cat);
 $b = bases_dossiers();
 verifie('base retirée de QueryCraft : à la corbeille', isset($b['cinema']) && !isset($b['em'])
         && count((array)glob($dossier_bases.'/.corbeille/em-*')) == 1, json_encode(array_keys($b)));
-catalogue_faux(array());
+catalogue_faux(array(), '../config.db');
 exos_distants($conf_cat);
+verifie('QueryCraft : nom de base active dangereux refusé', querycraft_cible($conf_cat) === null);
 verifie('catalogue sans base : rien n\'est retiré', isset(bases_dossiers()['cinema']));
 // Description d'une base synchronisée, sans config.xml
 $_SESSION['descriptions']['tp-cinema-sync'] = $b['cinema'].'/description.html';

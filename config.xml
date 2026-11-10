@@ -4,7 +4,7 @@
 <!ENTITY seuil '10800'>
 ]>
 
-<mab version="7.1" debug="false" name="SQL Sandbox">
+<mab version="7.2" debug="false" name="SQL Sandbox">
 	<!-- numéro de version de l'application -->
 	<!-- durée limite de vie d'une copie de base : 60*60*3 = 3 heures -->
 	<seuil>&seuil;</seuil>
@@ -124,6 +124,10 @@
 						rien n'est écrit dans votre copie avant que vous le validiez. Les résultats
 						peuvent être approximatifs : vérifiez-les. Le nombre de générations par jour est
 						limité.</li>
+					<li><strong>🚀 Ouvrir dans QueryCraft</strong> (seulement sur la base que
+						QueryCraft interroge) : ouvre QueryCraft dans un nouvel onglet avec votre
+						requête, pour la suivre pas à pas ou la faire commenter. QueryCraft l'exécute
+						sur la base d'origine, sans vos modifications.</li>
 					<li>Dans un TP, <strong>✏️ Répondre</strong> ouvre une question et
 						<strong>⬅️ Retour aux questions</strong> revient à la liste en mémorisant
 						votre réponse ; <strong>💡 Aide</strong> affiche un indice quand la
@@ -144,6 +148,14 @@
 	<listeMessages>
 		<!--message titre="" post=""><p></p>
 		</message-->
+		<message titre="Version 7.2" date="10/11/26" auteur="E. Desmontils">
+			<div>
+				<ul>
+					<li>sur la base qu'interroge QueryCraft, le bouton <b>🚀 Ouvrir dans QueryCraft</b> de
+						la page d'édition y reprend votre requête, dans un nouvel onglet.</li>
+				</ul>
+			</div>
+		</message>
 		<message titre="Version 7.1" date="10/11/26" auteur="E. Desmontils">
 			<div>
 				<ul>

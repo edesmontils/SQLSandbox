@@ -391,6 +391,8 @@ function new_query() {
     t = t + '	<button type="button" class="btn secondaire" onclick="modele($(\'base\').value)" title="Diagramme, schéma relationnel et script SQL de la base">🧩 Modèle</button>';
     t = t + '	<button type="button" class="btn secondaire" onclick="db_tables($(\'base\').value)" title="Contenu des tables de la base (nouvel onglet)">📋 Voir les tables</button>';
     t = t + ia_bouton("$('base').value");
+    if (querycraft_possible(current_base))
+        t = t + '	<button type="button" class="btn secondaire" onclick="vers_querycraft()" title="Ouvre QueryCraft dans un nouvel onglet avec cette requête (sur la base d\'origine, sans vos modifications)">🚀 Ouvrir dans QueryCraft</button>';
     t = t + '	<button type="button" class="btn secondaire" onclick="reinitialise_base($(\'base\').value)" title="Efface vos modifications : la base redevient comme au départ">↩️ Base d\'origine</button></div>';
     t = t + '	</form>';
     t = t + '	<div id="results"></div>';
@@ -411,6 +413,21 @@ function new_query() {
 
     apparait($('posts'));
     editeur_courant = editeur_sql($('requete'), query);
+}
+
+// SQLSandbox est relié à une instance QueryCraft (sqlsandbox.ini) qui interroge la base `base`
+function querycraft_possible(base) {
+    return typeof querycraft != 'undefined' && querycraft !== null && base === querycraft.base;
+}
+
+// Ouvre QueryCraft avec la requête en cours d'édition. Elle passe dans le fragment de l'URL
+// (#requete=…), que le navigateur n'envoie pas au serveur ; QueryCraft le lit puis l'efface.
+function vers_querycraft() {
+    if (!querycraft_possible($('base').value)) return;
+    if (editeur_courant) editeur_courant.save();
+    var requete = $('requete').value;
+    if (requete.trim() === '') { alert('La requête est vide.'); return; }
+    window.open(querycraft.url + '/#requete=' + encodeURIComponent(requete), '_blank', 'noopener');
 }
 
 // Valeur JavaScript sûre à placer dans un attribut HTML (onClick="f(...)")

@@ -153,6 +153,7 @@ function exos_distants($conf) {
 				if (is_array($d) && isset($d['exercices'])) {
 					$cache = array('source' => $conf['source'], 'etag' => $etag, 'verifie' => time(),
 					               'instance' => (string)($d['instance'] ?? ''),
+					               'base_active' => bases_nom_valide($d['base_active'] ?? null) ? $d['base_active'] : '',
 					               'exercices' => exos_valides($d['exercices']));
 					// Format 2 : les bases suivent ; si leur synchronisation n'a pas abouti, l'empreinte
 					// n'est pas gardée, pour retenter au prochain passage
@@ -188,6 +189,23 @@ function exos_catalogue() {
 		if (!is_null($d)) return $exercices = $d;
 	}
 	return $exercices = exos_locaux();
+}
+
+// Instance QueryCraft vers laquelle envoyer la requête d'un étudiant : son adresse et le
+// fichier de la base qu'elle interroge (em.db), lus dans le catalogue ; null sans source,
+// sans catalogue reçu, ou si l'instance n'interroge pas une de ses bases SQLite.
+// $conf : réglages de la source (ceux de sqlsandbox.ini par défaut).
+function querycraft_cible($conf = null) {
+	if (is_null($conf)) {
+		$conf = exos_config();
+		if ($conf['source'] !== '') exos_catalogue(); // rafraîchit le cache si son délai est écoulé
+	}
+	if ($conf['source'] === '' || is_null(DOSSIER_TMP)) return null;
+	$cache = json_decode((string)@file_get_contents(DOSSIER_TMP.'/exos-catalogue.json'), true);
+	if (!is_array($cache) || ($cache['source'] ?? '') !== $conf['source']) return null;
+	$base = (string)($cache['base_active'] ?? '');
+	if (!bases_nom_valide($base)) return null;
+	return array('url' => $conf['source'], 'fichier' => $base);
 }
 
 // Nom du fichier de la base $base de la session (em.db), ou null
