@@ -503,6 +503,67 @@ verifie('catalogue injoignable sans cache : null (repli sur les locaux)', exos_d
 if (!is_null($cache_avant)) file_put_contents(DOSSIER_TMP.'/exos-catalogue.json', $cache_avant);
 @unlink(DOSSIER_TMP.'/exos-catalogue.verrou');
 
+echo "Synchronisation des bases (faux QueryCraft)\n";
+$dossier_bases = DOSSIER_BASES;
+verifie('dossier des bases synchronisées disponible', !is_null($dossier_bases) && is_dir($dossier_bases), (string)$dossier_bases);
+@mkdir($reponse_faux.'.bases');
+copy('./bdd/em/em.db', $reponse_faux.'.bases/em.db');
+copy('./bdd/cinema/cinema.db', $reponse_faux.'.bases/cinema.db');
+$sha_em = hash_file('sha256', './bdd/em/em.db');
+$sha_cinema = hash_file('sha256', './bdd/cinema/cinema.db');
+function catalogue_faux($bases) {
+	global $reponse_faux;
+	file_put_contents($reponse_faux, "200\n".json_encode(array('format' => 2, 'instance' => 'demo',
+		'exercices' => array(), 'bases' => $bases)));
+	@unlink(DOSSIER_TMP.'/exos-catalogue.json');
+}
+$desc = array('origine' => 'manuelle', 'nom' => 'tp-em', 'reference' => 'javascript:alert(1)',
+              'markdown' => 'x', 'html' => '<p>Description <strong>synchronisée</strong></p>');
+catalogue_faux(array('em.db' => array('taille' => filesize('./bdd/em/em.db'), 'sha256' => $sha_em, 'description' => $desc),
+                     '../evil.db' => array('taille' => 1, 'sha256' => $sha_em)));
+exos_distants($conf_cat);
+$b = bases_dossiers();
+verifie('base téléchargée, empreinte vérifiée', isset($b['em']) && hash_file('sha256', $b['em'].'/em.db') === $sha_em, json_encode($b));
+verifie('nom de fichier dangereux ignoré', count($b) == 1 && !file_exists(dirname($dossier_bases).'/evil.db'));
+$meta = json_decode((string)@file_get_contents($b['em'].'/meta.json'), true);
+verifie('description et nom repris, lien non http refusé', ($meta['nom'] ?? '') === 'tp-em' && ($meta['reference'] ?? 'x') === ''
+        && strpos((string)@file_get_contents($b['em'].'/description.html'), 'synchronisée') !== false, json_encode($meta));
+$avant = filemtime($b['em'].'/em.db');
+sleep(1);
+$requetes_avant = (string)@file_get_contents($reponse_faux.'.requete');
+exos_distants($conf_cat + array());
+verifie('base inchangée : pas de nouveau téléchargement', filemtime($b['em'].'/em.db') == $avant);
+// Empreinte fausse : base refusée, empreinte du catalogue non gardée (nouvel essai)
+catalogue_faux(array('em.db' => array('taille' => 1, 'sha256' => $sha_em),
+                     'cinema.db' => array('taille' => 1, 'sha256' => str_repeat('0', 64))));
+exos_distants($conf_cat);
+$cache = json_decode((string)@file_get_contents(DOSSIER_TMP.'/exos-catalogue.json'), true);
+verifie('empreinte fausse : base refusée et nouvel essai prévu', !isset(bases_dossiers()['cinema'])
+        && ($cache['etag'] ?? 'x') === '', json_encode(array_keys(bases_dossiers())));
+// Base retirée de QueryCraft : corbeille ; catalogue sans base : rien n'est retiré
+catalogue_faux(array('cinema.db' => array('taille' => 1, 'sha256' => $sha_cinema)));
+exos_distants($conf_cat);
+$b = bases_dossiers();
+verifie('base retirée de QueryCraft : à la corbeille', isset($b['cinema']) && !isset($b['em'])
+        && count((array)glob($dossier_bases.'/.corbeille/em-*')) == 1, json_encode(array_keys($b)));
+catalogue_faux(array());
+exos_distants($conf_cat);
+verifie('catalogue sans base : rien n\'est retiré', isset(bases_dossiers()['cinema']));
+// Description d'une base synchronisée, sans config.xml
+$_SESSION['descriptions']['tp-cinema-sync'] = $b['cinema'].'/description.html';
+file_put_contents($b['cinema'].'/description.html', '<p>Les cinémas</p>');
+ob_start(); description_base('tp-cinema-sync'); $o = ob_get_clean();
+verifie('description d\'une base synchronisée affichée', strpos($o, 'Les cinémas') !== false, $o);
+unset($_SESSION['descriptions']);
+// Nettoyage
+foreach (array_merge((array)glob($dossier_bases.'/*', GLOB_ONLYDIR), (array)glob($dossier_bases.'/.corbeille/*', GLOB_ONLYDIR)) as $d)
+	bases_supprime_dossier($d);
+@rmdir($dossier_bases.'/.corbeille');
+foreach ((array)glob($reponse_faux.'.bases/*') as $f) unlink($f);
+@rmdir($reponse_faux.'.bases');
+@unlink(DOSSIER_TMP.'/exos-catalogue.json');
+@unlink(DOSSIER_TMP.'/exos-catalogue.verrou');
+
 echo "Correction des intentions (faux ProxyIAg)\n";
 unset($_SESSION['ia'], $_SESSION['ia_intention']);
 faux(200, array('verdict' => 'partiel', 'explication' => 'Il manque la **condition** sur le type.'));

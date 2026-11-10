@@ -550,7 +550,13 @@ function contenu_xml($element) {
 function description_base($base) {
 	$conf = config_base($base);
 	echo "<div class='post'><h2 class='title'>Base ".html($base)."</h2><div class='story'>";
-	if ($conf) {
+	$synchro = is_string($base) ? ($_SESSION['descriptions'][$base] ?? null) : null;
+	if (is_string($synchro) && is_file($synchro)) {
+		// Base synchronisée depuis QueryCraft : description rendue (et assainie) par QueryCraft
+		echo (string)@file_get_contents($synchro);
+		$ref = (string)($_SESSION['references'][$base] ?? '');
+		if ($ref !== '') echo "<p>Référence : <a href='".html($ref)."'>".html($ref)."</a></p>";
+	} elseif ($conf) {
 		echo contenu_xml($conf->description);
 		$ref = trim((string)$conf->référence);
 		if ($ref !== '') echo "<p>Référence : <a href='".html($ref)."'>".html($ref)."</a></p>";

@@ -102,6 +102,10 @@ try {
 			closedir($iter);  
 		}
 	}
+	// Source QueryCraft configurée (sqlsandbox.ini) et bases déjà synchronisées : ce sont
+	// elles qui sont proposées, à la place de celles de bdd/ (voir exercices.php)
+	$synchro = bases_synchronisees();
+	if (!is_null($synchro)) $listeBase = $synchro;
 	ksort($listeBase,SORT_NATURAL | SORT_FLAG_CASE);
 	$listeNoms = array_keys($listeBase);
 } catch(Exception $e) {
@@ -154,6 +158,8 @@ foreach($listeNoms as $nom) {
 	if (isset($_SESSION["copie_$nom"]) && dirname($_SESSION["copie_$nom"]) === $dossierTmp
 	    && $original !== false && is_readable($original)) {
 		$_SESSION['configs'][$nom] = $listeBase[$nom]['config'];
+		$_SESSION['descriptions'][$nom] = $listeBase[$nom]['description_html'] ?? null;
+		$_SESSION['references'][$nom] = $listeBase[$nom]['référence'];
 		$_SESSION['originaux'][$nom] = $original;
 		$listeBase[$nom]['tables'] = get_tables($nom, $original);
 		continue;
@@ -169,6 +175,9 @@ foreach($listeNoms as $nom) {
 	$_SESSION["copie_$nom"] = $copie;
 	// Fichier de configuration (TP, questions), relu côté serveur sans passer par le navigateur
 	$_SESSION['configs'][$nom] = $listeBase[$nom]['config'];
+	// Description d'une base synchronisée depuis QueryCraft (sans config.xml)
+	$_SESSION['descriptions'][$nom] = $listeBase[$nom]['description_html'] ?? null;
+	$_SESSION['references'][$nom] = $listeBase[$nom]['référence'];
 	// Base d'origine, pour recréer la copie si elle est purgée pendant un TP
 	$_SESSION['originaux'][$nom] = $original;
 	if ($debug) echo "<p>Réservation de ".$_SESSION["copie_$nom"]."</p>";

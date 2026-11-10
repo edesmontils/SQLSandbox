@@ -14,6 +14,13 @@
 //   dans le dossier de travail ; si QueryCraft ne répond pas, le dernier cache sert,
 //   et à défaut les exercices locaux.
 //
+// Avec une source, SQLSandbox reproduit aussi les BASES de l'instance QueryCraft (catalogue
+// au format 2) : une base nouvelle ou modifiée est téléchargée (empreinte sha256 vérifiée)
+// avec sa description, dans un dossier de travail hors du site (DOSSIER_BASES), jamais dans
+// bdd/ ; une base retirée de QueryCraft passe à la corbeille (vidée après 7 jours). Dès
+// qu'une base a été synchronisée, ce sont ces bases qui sont proposées (bdd/ ne sert plus
+// qu'en l'absence de source ou de synchronisation réussie).
+//
 // Types de question (voir querycraft/exercicemanager.py) : à gauche de la flèche ce que
 // reçoit l'étudiant, à droite ce qu'il produit. I : intention, R : requête, r : requête à
 // trous (6e élément), T : table résultat affichée d'emblée. …->R : écrire la requête ;
@@ -26,6 +33,12 @@ define('EXOS_TYPES', array('I->R', 'IT->R', 'rI->R', 'rIT->R', 'R->I', 'RT->I'))
 define('EXOS_TTL', 300);          // secondes entre deux vérifications du catalogue distant
 define('EXOS_DELAI_APPEL', 10);   // secondes d'attente de la réponse de QueryCraft
 define('EXOS_TAILLE_MAX', 5 * 1024 * 1024);
+define('BASES_TAILLE_MAX', 20 * 1024 * 1024);   // taille maximale d'une base téléchargée
+define('BASES_CORBEILLE_JOURS', 7);              // conservation des bases retirées
+
+// Bases synchronisées depuis QueryCraft : <DOSSIER_BASES>/<nom>/<nom>.db, description.html
+// et meta.json (hors du site, comme les copies de session ; null si aucun dossier utilisable)
+if (!defined('DOSSIER_BASES')) define('DOSSIER_BASES', dossier_prive(INSTANCE.'-bases', __DIR__.'/tmp/bases'));
 
 // Réglages de la source des exercices, lus dans le fichier ini $fichier.
 // exos_source vide (ou fichier absent) : exercices locaux.
@@ -141,6 +154,10 @@ function exos_distants($conf) {
 					$cache = array('source' => $conf['source'], 'etag' => $etag, 'verifie' => time(),
 					               'instance' => (string)($d['instance'] ?? ''),
 					               'exercices' => exos_valides($d['exercices']));
+					// Format 2 : les bases suivent ; si leur synchronisation n'a pas abouti, l'empreinte
+					// n'est pas gardée, pour retenter au prochain passage
+					if (isset($d['bases']) && is_array($d['bases']) && !bases_synchronise($conf, $d['bases']))
+						$cache['etag'] = '';
 				} else {
 					error_log('SQLSandbox exercices : réponse illisible du catalogue');
 				}
@@ -263,3 +280,139 @@ function exos_question_client($base, $code_ex, $code_q, $q, $numero) {
 		'aide' => $q['commentaire'],
 	);
 }
+
+//============================================================================
+// Bases synchronisées depuis QueryCraft
+//============================================================================
+
+// Nom de fichier de base acceptable (em.db), sans chemin
+function bases_nom_valide($fichier) {
+	return is_string($fichier) && preg_match('/^[A-Za-z0-9][A-Za-z0-9_.-]{0,99}\.db$/', $fichier) === 1;
+}
+
+// Télécharge la base $fichier du catalogue dans $cible, en vérifiant taille, empreinte et
+// format. Retourne true si la base est en place.
+function bases_telecharge($conf, $fichier, $sha256, $cible) {
+	$tmp = $cible.'.'.getmypid().'.tmp';
+	$f = @fopen($tmp, 'wb');
+	if (!$f) return false;
+	$c = curl_init($conf['source'].'/catalogue/bases/'.rawurlencode($fichier));
+	curl_setopt_array($c, array(
+		CURLOPT_HTTPHEADER => array('Authorization: Bearer '.$conf['jeton']),
+		CURLOPT_FILE => $f,
+		CURLOPT_CONNECTTIMEOUT => 5,
+		CURLOPT_TIMEOUT => 60,
+		CURLOPT_FOLLOWLOCATION => false,
+		CURLOPT_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
+		CURLOPT_USERAGENT => 'SQLSandbox',
+		CURLOPT_NOPROGRESS => false,
+		// Coupe le transfert au-delà de la taille maximale
+		CURLOPT_PROGRESSFUNCTION => function ($c, $total, $recu) { return $recu > BASES_TAILLE_MAX ? 1 : 0; },
+	));
+	$ok = curl_exec($c) && (int)curl_getinfo($c, CURLINFO_RESPONSE_CODE) == 200;
+	fclose($f);
+	if ($ok && filesize($tmp) > 0 && filesize($tmp) <= BASES_TAILLE_MAX
+	    && hash_equals($sha256, hash_file('sha256', $tmp))
+	    && file_get_contents($tmp, false, null, 0, 16) === "SQLite format 3\0") {
+		try {
+			$db = new SQLite3($tmp, SQLITE3_OPEN_READONLY);
+			$ok = $db->querySingle('PRAGMA quick_check') === 'ok';
+			$db->close();
+		} catch (Exception $e) {
+			$ok = false;
+		}
+		if ($ok && @rename($tmp, $cible)) return true;
+	}
+	error_log("SQLSandbox bases : téléchargement de $fichier refusé ou incomplet");
+	@unlink($tmp);
+	return false;
+}
+
+// Reproduit dans DOSSIER_BASES les bases $bases du catalogue (fichier => {sha256, taille,
+// description}). Retourne false si une base n'a pas pu être mise à jour.
+function bases_synchronise($conf, $bases) {
+	if (is_null(DOSSIER_BASES)) return false;
+	$tout_ok = true;
+	$presentes = array();
+	foreach ($bases as $fichier => $b) {
+		if (!bases_nom_valide($fichier) || !is_array($b) || !is_string($b['sha256'] ?? null)
+		    || !preg_match('/^[0-9a-f]{64}$/', $b['sha256']) || (int)($b['taille'] ?? 0) > BASES_TAILLE_MAX) continue;
+		$nom = substr($fichier, 0, -3);
+		$presentes[$nom] = true;
+		$dossier = DOSSIER_BASES.'/'.$nom;
+		if (!is_dir($dossier) && !@mkdir($dossier, 0700)) { $tout_ok = false; continue; }
+		$meta_fic = $dossier.'/meta.json';
+		$meta = is_file($meta_fic) ? json_decode((string)@file_get_contents($meta_fic), true) : null;
+		if (!is_array($meta)) $meta = array();
+		if (($meta['sha256'] ?? '') !== $b['sha256'] || !is_file($dossier.'/'.$fichier)) {
+			if (!bases_telecharge($conf, $fichier, $b['sha256'], $dossier.'/'.$fichier)) { $tout_ok = false; continue; }
+		}
+		// Description : le HTML est rendu (et assaini) par QueryCraft
+		$d = (isset($b['description']) && is_array($b['description'])) ? $b['description'] : array();
+		$meta = array(
+			'fichier' => $fichier,
+			'sha256' => $b['sha256'],
+			'nom' => preg_replace('/[^\p{L}\p{N} _.-]/u', '', (string)($d['nom'] ?? '')) ?: $nom,
+			'reference' => preg_match('#^https?://#i', (string)($d['reference'] ?? '')) ? (string)$d['reference'] : '',
+			'origine' => (string)($d['origine'] ?? ''),
+			'synchronise' => date('c'),
+		);
+		@file_put_contents($dossier.'/description.html', (string)($d['html'] ?? ''));
+		@file_put_contents($meta_fic.'.tmp', json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+		@rename($meta_fic.'.tmp', $meta_fic);
+	}
+	// Bases retirées de QueryCraft : à la corbeille, seulement sur un catalogue non vide
+	if (count($presentes) > 0) {
+		$corbeille = DOSSIER_BASES.'/.corbeille';
+		foreach (bases_dossiers() as $nom => $dossier) {
+			if (isset($presentes[$nom])) continue;
+			if (!is_dir($corbeille)) @mkdir($corbeille, 0700);
+			@rename($dossier, $corbeille.'/'.$nom.'-'.date('Ymd-His'));
+			error_log("SQLSandbox bases : $nom retirée de QueryCraft, mise à la corbeille");
+		}
+		foreach ((array)glob($corbeille.'/*', GLOB_ONLYDIR) as $vieux) {
+			if (filemtime($vieux) < time() - BASES_CORBEILLE_JOURS * 86400) bases_supprime_dossier($vieux);
+		}
+	}
+	return $tout_ok;
+}
+
+function bases_supprime_dossier($dossier) {
+	foreach ((array)glob($dossier.'/*') as $f) @unlink($f);
+	@rmdir($dossier);
+}
+
+// Dossiers des bases synchronisées complètes : nom => dossier
+function bases_dossiers() {
+	$liste = array();
+	if (is_null(DOSSIER_BASES)) return $liste;
+	foreach ((array)glob(DOSSIER_BASES.'/*', GLOB_ONLYDIR) as $dossier) {
+		$nom = basename($dossier);
+		if (is_file("$dossier/meta.json") && is_file("$dossier/$nom.db")) $liste[$nom] = $dossier;
+	}
+	return $liste;
+}
+
+// Bases synchronisées, au format de $listeBase (index.php), ou null si SQLSandbox n'a pas de
+// source d'exercices ou n'a encore synchronisé aucune base (on garde alors bdd/).
+function bases_synchronisees() {
+	if (exos_config()['source'] === '') return null;
+	exos_catalogue(); // rafraîchit le catalogue (et les bases) si son délai est écoulé
+	$liste = array();
+	foreach (bases_dossiers() as $nom => $dossier) {
+		$meta = json_decode((string)@file_get_contents("$dossier/meta.json"), true);
+		if (!is_array($meta)) continue;
+		$affiche = (string)($meta['nom'] ?? '') !== '' ? $meta['nom'] : $nom;
+		$liste[$affiche] = array(
+			'config' => null,
+			'description_html' => "$dossier/description.html",
+			'fichier' => "$dossier/$nom.db",
+			'prefixe' => '',
+			'référence' => (string)($meta['reference'] ?? ''),
+			'description' => (string)@file_get_contents("$dossier/description.html"),
+			'tables' => array(),
+		);
+	}
+	return count($liste) > 0 ? $liste : null;
+}
+

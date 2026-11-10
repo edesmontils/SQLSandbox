@@ -4,7 +4,7 @@
 <!ENTITY seuil '10800'>
 ]>
 
-<mab version="7.0" debug="false" name="SQL Sandbox">
+<mab version="7.1" debug="false" name="SQL Sandbox">
 	<!-- numéro de version de l'application -->
 	<!-- durée limite de vie d'une copie de base : 60*60*3 = 3 heures -->
 	<seuil>&seuil;</seuil>
@@ -144,6 +144,15 @@
 	<listeMessages>
 		<!--message titre="" post=""><p></p>
 		</message-->
+		<message titre="Version 7.1" date="10/11/26" auteur="E. Desmontils">
+			<div>
+				<ul>
+					<li>les <b>bases</b> sont celles de la démonstration de QueryCraft, et suivent ses
+						évolutions : une base ajoutée, modifiée ou retirée par l'enseignant l'est aussi ici ;</li>
+					<li>leur <b>description</b> est rédigée dans QueryCraft, par l'enseignant ou par une IA.</li>
+				</ul>
+			</div>
+		</message>
 		<message titre="Version 7.0" date="10/11/26" auteur="E. Desmontils">
 			<div>
 				<ul>
