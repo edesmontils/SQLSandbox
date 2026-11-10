@@ -12,6 +12,7 @@ if (preg_match('#/catalogue/bases/([A-Za-z0-9_.-]+)$#', parse_url($_SERVER['REQU
 }
 list($code, $corps) = explode("\n", (string)@file_get_contents($fichier), 2) + array('500', '');
 file_put_contents($fichier.'.requete', ($_SERVER['HTTP_AUTHORIZATION'] ?? '')."\n".file_get_contents('php://input'));
+file_put_contents($fichier.'.etag', $_SERVER['HTTP_IF_NONE_MATCH'] ?? '');
 http_response_code((int)$code);
 header('Content-Type: application/json');
 echo $corps;

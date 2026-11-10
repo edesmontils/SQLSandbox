@@ -147,7 +147,10 @@ function exos_distants($conf) {
 		// Un seul processus rafraîchit le cache ; les autres servent l'existant
 		$verrou = @fopen(DOSSIER_TMP.'/exos-catalogue.verrou', 'c');
 		if ($verrou && flock($verrou, LOCK_EX | LOCK_NB)) {
-			list($code, $corps, $etag) = exos_appel($conf, $cache ? (string)($cache['etag'] ?? '') : '');
+			// Cache antérieur à la version 7.2 (sans base_active) : relu en entier, car QueryCraft
+			// répondrait 304 tant que son catalogue ne change pas
+			$etag_cache = ($cache && array_key_exists('base_active', $cache)) ? (string)($cache['etag'] ?? '') : '';
+			list($code, $corps, $etag) = exos_appel($conf, $etag_cache);
 			if ($code == 200 && strlen($corps) <= EXOS_TAILLE_MAX) {
 				$d = json_decode($corps, true);
 				if (is_array($d) && isset($d['exercices'])) {

@@ -526,6 +526,18 @@ exos_distants($conf_cat);
 verifie('QueryCraft : base active reprise du catalogue', querycraft_cible($conf_cat)
         === array('url' => $conf_cat['source'], 'fichier' => 'em.db'), json_encode(querycraft_cible($conf_cat)));
 verifie('QueryCraft : aucune base active sans source', querycraft_cible(array('source' => '') + $conf_cat) === null);
+// Cache d'une version antérieure (sans base_active) : l'empreinte n'est pas renvoyée
+$c = json_decode((string)file_get_contents(DOSSIER_TMP.'/exos-catalogue.json'), true);
+$c['etag'] = '"ancienne"';
+$c['verifie'] = 0;
+file_put_contents(DOSSIER_TMP.'/exos-catalogue.json', json_encode($c));
+exos_distants($conf_cat);
+verifie('cache à jour : empreinte renvoyée', (string)@file_get_contents($reponse_faux.'.etag') === '"ancienne"');
+unset($c['base_active']);
+file_put_contents(DOSSIER_TMP.'/exos-catalogue.json', json_encode($c));
+exos_distants($conf_cat);
+verifie('cache sans base_active : catalogue relu en entier', querycraft_cible($conf_cat) !== null
+        && (string)@file_get_contents($reponse_faux.'.etag') === '');
 $b = bases_dossiers();
 verifie('base téléchargée, empreinte vérifiée', isset($b['em']) && hash_file('sha256', $b['em'].'/em.db') === $sha_em, json_encode($b));
 verifie('nom de fichier dangereux ignoré', count($b) == 1 && !file_exists(dirname($dossier_bases).'/evil.db'));
@@ -779,6 +791,7 @@ proc_close($serveur);
 proc_terminate($faux_serveur);
 proc_close($faux_serveur);
 @unlink($reponse_faux.'.requete');
+@unlink($reponse_faux.'.etag');
 if (!$compteur_existait) { @unlink(DOSSIER_TMP.'/ia_compteur'); @unlink("$travail/ia_compteur"); }
 foreach (glob("$tmp/modeles/*") as $f) unlink($f);
 @rmdir("$tmp/modeles");
