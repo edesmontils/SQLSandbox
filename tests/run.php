@@ -837,7 +837,11 @@ verifie('tenant : /123456/ renvoyée vers /123456', strpos($http_response_header
 list($code, $page) = http("$uq/");
 verifie('sans code : instance par défaut, copies du tenant oubliées', $code == 200 && strpos($page, 'QueryCraft : <strong>') === false
         && count(array_intersect($copies_tenant, nouvelles())) == 0 && count($copies_tenant) > 0);
+// Partage retiré après coup : le tenant 123456, déjà en cache, est refusé par QueryCraft
 file_put_contents($reponse_faux, "404\n{}");
+list($code, $page) = http("$uq/?123456");
+verifie('partage retiré : le cache du tenant ne sert plus', $code == 200 && strpos($page, 'instance QueryCraft 123456') !== false
+        && strpos($page, 'QueryCraft : <strong>') === false && !is_file("$travail/exos-catalogue-123456.json"), substr($page, 0, 300));
 @unlink("$travail/exos-catalogue-654321.json");
 list($code, $page) = http("$uq/?654321");
 verifie('tenant inconnu ou non autorisé : message, instance par défaut', $code == 200 && strpos($page, 'instance QueryCraft 654321') !== false

@@ -232,6 +232,13 @@ function exos_distants($conf) {
 				}
 			} elseif ($code == 304 && $cache) {
 				$cache['verifie'] = time();
+			} elseif (in_array($code, array(401, 403, 404), true)) {
+				// Refus explicite (jeton révoqué, partage retiré, tenant supprimé) : le cache ne
+				// doit plus servir, sinon l'accès survivrait à sa révocation. Seule une panne
+				// (réseau, 5xx) laisse servir le dernier catalogue obtenu.
+				error_log("SQLSandbox exercices : le catalogue refuse l'accès ($code) : cache oublié");
+				$cache = null;
+				@unlink($fic);
 			} elseif ($code != 0) {
 				error_log("SQLSandbox exercices : le catalogue répond $code (jeton ? source ?)");
 			}
