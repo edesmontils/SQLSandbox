@@ -40,14 +40,14 @@ Les copies des bases et les sessions sont rangées hors du site (`sqlsandbox-tmp
 
 ## Déploiement derrière Caddy
 
-Exemple de l'instance du Raspberry Pi : l'application est dans `/home/ed/programmation/SQLSandbox`, servie sous `/SQLSandbox/` par Caddy et PHP-FPM (paquets `php8.4-fpm`, `php8.4-sqlite3` et `php8.4-xml`, à installer avec `--no-install-recommends` pour ne pas tirer Apache).
+Exemple d'installation sous Debian (remplacer `<utilisateur>` par le compte qui héberge l'application) : l'application est dans `/home/<utilisateur>/programmation/SQLSandbox`, servie sous `/SQLSandbox/` par Caddy et PHP-FPM (paquets `php8.4-fpm`, `php8.4-sqlite3` et `php8.4-xml`, à installer avec `--no-install-recommends` pour ne pas tirer Apache).
 
-**Pool PHP-FPM dédié.** `/home/ed` est en `700` : PHP tourne donc sous `ed` plutôt que sous `www-data`, dans son propre pool (`/etc/php/8.4/fpm/pool.d/sqlsandbox.conf`) :
+**Pool PHP-FPM dédié.** Si `/home/<utilisateur>` est en `700`, PHP tourne sous `<utilisateur>` plutôt que sous `www-data`, dans son propre pool (`/etc/php/8.4/fpm/pool.d/sqlsandbox.conf`) :
 
 ```ini
 [sqlsandbox]
-user = ed
-group = ed
+user = <utilisateur>
+group = <utilisateur>
 listen = /run/php/sqlsandbox.sock
 listen.owner = caddy
 listen.group = caddy
@@ -62,10 +62,10 @@ php_admin_value[expose_php] = Off
 
 puis `sudo php-fpm8.4 -t && sudo systemctl reload php8.4-fpm`.
 
-**Accès de Caddy aux fichiers statiques.** Caddy (utilisateur `caddy`) sert lui-même les CSS, JS et polices : il doit pouvoir traverser `/home/ed`, sans pouvoir en lister le contenu :
+**Accès de Caddy aux fichiers statiques.** Caddy (utilisateur `caddy`) sert lui-même les CSS, JS et polices : il doit pouvoir traverser `/home/<utilisateur>`, sans pouvoir en lister le contenu :
 
 ```sh
-sudo setfacl -m u:caddy:x /home/ed
+sudo setfacl -m u:caddy:x /home/<utilisateur>
 ```
 
 **Route Caddy**, dans le bloc du site :
@@ -73,7 +73,7 @@ sudo setfacl -m u:caddy:x /home/ed
 ```caddy
 redir /SQLSandbox /SQLSandbox/ 308
 handle /SQLSandbox/* {
-	root * /home/ed/programmation
+	root * /home/<utilisateur>/programmation
 	@interdit path_regexp ^/SQLSandbox/(\.[^/]*|tmp|bdd|lib|tests)(/|$)
 	respond @interdit 403
 	php_fastcgi unix//run/php/sqlsandbox.sock
@@ -90,23 +90,23 @@ redir @tenant_barre /SQLSandbox/{re.tenant_barre.1} 308
 rewrite @tenant /SQLSandbox/index.php?qc={re.tenant.1}
 ```
 
-Caddy ignore les `.htaccess` : la règle `@interdit` les remplace, et interdit aussi les fichiers cachés, dont `.git/`. Utiliser `handle` et non `handle_path`, qui retirerait le préfixe et changerait le `DOCUMENT_ROOT`. Celui-ci vaut ici `/home/ed/programmation` : les dossiers de travail sont donc créés dans `/home/ed` (`/home/ed/sqlsandbox-tmp` et `/home/ed/sessions-sqlsandbox`), ce que permet le pool sous `ed`. Valider avant de recharger : `caddy validate --config /etc/caddy/Caddyfile`, puis `sudo systemctl reload caddy`.
+Caddy ignore les `.htaccess` : la règle `@interdit` les remplace, et interdit aussi les fichiers cachés, dont `.git/`. Utiliser `handle` et non `handle_path`, qui retirerait le préfixe et changerait le `DOCUMENT_ROOT`. Celui-ci vaut ici `/home/<utilisateur>/programmation` : les dossiers de travail sont donc créés dans `/home/<utilisateur>` (`/home/<utilisateur>/sqlsandbox-tmp` et `/home/<utilisateur>/sessions-sqlsandbox`), ce que permet le pool sous `<utilisateur>`. Valider avant de recharger : `caddy validate --config /etc/caddy/Caddyfile`, puis `sudo systemctl reload caddy`.
 
 **Installation et mises à jour par git.** Le dossier est un clone du dépôt public (HTTPS, sans clé) :
 
 ```sh
-cd /home/ed/programmation && git clone https://github.com/edesmontils/SQLSandbox.git
+cd /home/<utilisateur>/programmation && git clone https://github.com/edesmontils/SQLSandbox.git
 ```
 
 Pour passer à la dernière version poussée sur GitHub :
 
 ```sh
-cd /home/ed/programmation/SQLSandbox && git pull --ff-only
+cd /home/<utilisateur>/programmation/SQLSandbox && git pull --ff-only
 ```
 
 Rien à recharger ensuite : PHP relit les fichiers modifiés. Les copies des bases et les sessions étant hors du clone, celui-ci reste propre (`git status` vide) et `git pull` ne rencontre pas de conflit ; ne pas modifier les fichiers directement sur le serveur. `tests/`, `.github/` et `.git/` sont présents dans le dossier mais interdits par la règle `@interdit`. Les dossiers de travail existant, `tmp/` ne sert pas.
 
-Pour vérifier : `https://<site>/SQLSandbox/bdd/em/em.db` et `https://<site>/SQLSandbox/.git/config` doivent répondre 403, et une session ouverte doit apparaître dans `/home/ed/sessions-sqlsandbox`.
+Pour vérifier : `https://<site>/SQLSandbox/bdd/em/em.db` et `https://<site>/SQLSandbox/.git/config` doivent répondre 403, et une session ouverte doit apparaître dans `/home/<utilisateur>/sessions-sqlsandbox`.
 
 ## Génération de données par IA (facultatif)
 

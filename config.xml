@@ -4,7 +4,7 @@
 <!ENTITY seuil '10800'>
 ]>
 
-<mab version="7.3" debug="false" name="SQL Sandbox">
+<mab version="7.4" debug="false" name="SQL Sandbox">
 	<!-- numéro de version de l'application -->
 	<!-- durée limite de vie d'une copie de base : 60*60*3 = 3 heures -->
 	<seuil>&seuil;</seuil>
@@ -102,8 +102,9 @@
 				<h3>Les bases</h3>
 				<p>Cliquez sur le nom d'une base pour lire sa description et ses travaux
 					pratiques. « ✏️ Interroger cette base » ouvre l'édition d'une
-					requête sur cette base, « 📋 Voir les tables » affiche le contenu de ses tables
-					dans un nouvel onglet.</p>
+					requête sur cette base, « 📋 Voir les tables » ouvre dans un nouvel onglet le
+					diagramme de la base : cliquez sur une table pour afficher son contenu,
+					Ctrl+clic (⌘+clic sur Mac) pour en afficher plusieurs, côte à côte.</p>
 				<p>« 🧩 Modèle de la base » montre son diagramme (tables et liens entre clés
 					étrangères et tables référencées ; survolez une table pour faire ressortir ses
 					liens), son schéma relationnel (clé primaire soulignée, clé étrangère précédée de
@@ -148,11 +149,21 @@
 	<listeMessages>
 		<!--message titre="" post=""><p></p>
 		</message-->
+		<message titre="Version 7.4" date="11/11/26" auteur="E. Desmontils">
+			<div>
+				<ul>
+					<li><b>📋 Voir les tables</b> présente le diagramme de la base : un clic sur une table
+						affiche son contenu, <b>Ctrl+clic</b> (⌘+clic sur Mac) en affiche plusieurs, côte à côte ;</li>
+					<li>les pages profitent des <b>grands écrans</b> (jusqu'à 1800 pixels de large) ;</li>
+					<li>le retour à la base d'origine se fait depuis la page <b>🧩 Modèle</b>.</li>
+				</ul>
+			</div>
+		</message>
 		<message titre="Version 7.3" date="11/11/26" auteur="E. Desmontils">
 			<div>
 				<ul>
-					<li>l'adresse <b>/SQLSandbox/?123456</b> donnée par votre enseignant présente les
-						exercices et les bases de son instance QueryCraft (123456), et le bouton
+					<li>l'adresse <b>/SQLSandbox/?</b> suivie du <b>code à 6 chiffres</b> donné par votre
+						enseignant présente les exercices et les bases de son instance QueryCraft, et le bouton
 						<b>🚀 Ouvrir dans QueryCraft</b> y mène ;</li>
 					<li>l'enseignant l'autorise dans la configuration de son instance QueryCraft
 						(« Partage avec SQLSandbox »).</li>

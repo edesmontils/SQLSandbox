@@ -5,7 +5,7 @@
 ; Ne jamais mettre la vraie clé dans le dépôt.
 
 ; Point d'entrée de ProxyIAg (HTTPS obligatoire, sauf pour localhost)
-url = "https://pedago.desmontils.net/proxyiag/v1"
+url = "https://<hôte>/proxyiag/v1"
 ; Clé propre à l'application (créée avec : proxyiag-keys add --name SQLSandbox ...)
 cle = "sk-..."
 ; Alias du modèle : gemma-4-31b, le plus fiable à l'essai (~9 s par génération) ;
