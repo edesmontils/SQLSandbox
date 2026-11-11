@@ -66,7 +66,7 @@ function exos_lit_ini($fichier) {
 // Réglages de la source des exercices. Le fichier est cherché d'abord dans la variable
 // d'environnement SQLSANDBOX_INI, puis à côté de la racine web (~/sqlsandbox.ini chez OVH),
 // comme le fichier de l'IA.
-function exos_config() {
+function exos_ini() {
 	static $conf = null;
 	if (!is_null($conf)) return $conf;
 	$candidats = array();
@@ -75,6 +75,71 @@ function exos_config() {
 		$candidats[] = dirname(rtrim($_SERVER['DOCUMENT_ROOT'], '/')).'/'.INSTANCE.'.ini';
 	foreach ($candidats as $f) if (is_file($f)) return $conf = exos_lit_ini($f);
 	return $conf = exos_lit_ini('');
+}
+
+// Tenants de QueryCraft. /SQLSandbox/123456 (réécrite en index.php?qc=123456) suit le tenant
+// 123456 de l'instance exos_source : ses exercices et ses bases, et le bouton « Ouvrir dans
+// QueryCraft » y mène. Le tenant est gardé dans la session (les appels AJAX et les pages de TP
+// n'ont pas le code dans leur adresse) ; '' : l'instance exos_source elle-même (la démo).
+// QueryCraft n'ouvre le catalogue d'un tenant qu'au jeton exos_jeton s'il s'agit de son jeton
+// général et que l'enseignant a autorisé SQLSandbox (« Partage avec SQLSandbox »).
+function tenant_valide($code) {
+	return is_string($code) && preg_match('/^[0-9]{6}$/D', $code) === 1;
+}
+
+// Réglages de la source pour le tenant $tenant ('' : la source elle-même)
+function exos_conf_tenant($ini, $tenant) {
+	$ini['tenant'] = ($ini['source'] !== '' && tenant_valide($tenant)) ? $tenant : '';
+	if ($ini['tenant'] !== '') $ini['source'] .= '/'.$ini['tenant'];
+	return $ini;
+}
+
+// Réglages de la source des exercices pour le tenant de la session
+function exos_config() {
+	static $conf = null;
+	if (!is_null($conf)) return $conf;
+	return $conf = exos_conf_tenant(exos_ini(), (string)($_SESSION['qc'] ?? ''));
+}
+
+// Choix du tenant à l'ouverture de l'application (index.php) : $demande est le code de
+// l'adresse (null pour /SQLSandbox/, donc l'instance de la source). Un tenant injoignable,
+// inconnu ou qui n'autorise pas SQLSandbox ramène à la source, et le message est renvoyé.
+// Changer de tenant oublie les copies de bases de la session : deux tenants peuvent avoir
+// une base du même nom, mais pas le même contenu.
+function tenant_choisi($demande) {
+	$ini = exos_ini();
+	$tenant = ($ini['source'] !== '' && tenant_valide($demande)) ? $demande : '';
+	$message = null;
+	if ($tenant !== '' && is_null(exos_distants(exos_conf_tenant($ini, $tenant)))) {
+		$message = "L'instance QueryCraft $tenant est inconnue, injoignable ou n'autorise pas SQLSandbox"
+		         ." (réglage « Partage avec SQLSandbox » de sa configuration) : voici les bases par défaut.";
+		$tenant = '';
+	}
+	if ((string)($_SESSION['qc'] ?? '') !== $tenant) {
+		if (function_exists('purge_db')) purge_db();
+		foreach (array_keys($_SESSION) as $cle)
+			if (substr($cle, 0, 6) === 'copie_') unset($_SESSION[$cle]);
+		unset($_SESSION['configs'], $_SESSION['descriptions'], $_SESSION['references'], $_SESSION['originaux']);
+		$_SESSION['qc'] = $tenant;
+	}
+	return $message;
+}
+
+// Fichier du cache du catalogue (exos-catalogue.json, exos-catalogue-123456.json pour un tenant)
+function exos_fichier_cache($conf, $extension = 'json') {
+	$tenant = (string)($conf['tenant'] ?? '');
+	return DOSSIER_TMP.'/exos-catalogue'.(tenant_valide($tenant) ? "-$tenant" : '').'.'.$extension;
+}
+
+// Dossier des bases synchronisées : DOSSIER_BASES, ou DOSSIER_BASES/.tenant-123456 pour un
+// tenant (dossier caché : jamais pris pour une base de la source), ou null
+function bases_racine($conf = null) {
+	if (is_null(DOSSIER_BASES)) return null;
+	$tenant = (string)((is_null($conf) ? exos_config() : $conf)['tenant'] ?? '');
+	if (!tenant_valide($tenant)) return DOSSIER_BASES;
+	$dossier = DOSSIER_BASES.'/.tenant-'.$tenant;
+	if (!is_dir($dossier) && !@mkdir($dossier, 0700)) return null;
+	return $dossier;
 }
 
 // Exercices valides d'un tableau décodé {code: {database, questions}} : les codes et les
@@ -139,13 +204,13 @@ function exos_appel($conf, $etag) {
 // une fois toutes les ttl secondes. Retourne null si aucun catalogue n'a jamais été obtenu.
 function exos_distants($conf) {
 	if (is_null(DOSSIER_TMP) || !function_exists('curl_init')) return null;
-	$fic = DOSSIER_TMP.'/exos-catalogue.json';
+	$fic = exos_fichier_cache($conf);
 	$cache = is_file($fic) ? json_decode((string)@file_get_contents($fic), true) : null;
 	if (!is_array($cache) || ($cache['source'] ?? '') !== $conf['source']) $cache = null;
 	$a_jour = $cache && (time() - (int)($cache['verifie'] ?? 0)) < $conf['ttl'];
 	if (!$a_jour) {
 		// Un seul processus rafraîchit le cache ; les autres servent l'existant
-		$verrou = @fopen(DOSSIER_TMP.'/exos-catalogue.verrou', 'c');
+		$verrou = @fopen(exos_fichier_cache($conf, 'verrou'), 'c');
 		if ($verrou && flock($verrou, LOCK_EX | LOCK_NB)) {
 			// Cache antérieur à la version 7.2 (sans base_active) : relu en entier, car QueryCraft
 			// répondrait 304 tant que son catalogue ne change pas
@@ -175,6 +240,9 @@ function exos_distants($conf) {
 				if (@file_put_contents($tmp, json_encode($cache, JSON_UNESCAPED_UNICODE)) !== false) @rename($tmp, $fic);
 			}
 			flock($verrou, LOCK_UN);
+			// Rien à garder (tenant inconnu, par exemple) : pas de verrou laissé, sans quoi
+			// chaque code essayé laisserait un fichier dans le dossier de travail
+			if (!$cache) @unlink(exos_fichier_cache($conf, 'verrou'));
 		}
 		if ($verrou) fclose($verrou);
 	}
@@ -204,7 +272,7 @@ function querycraft_cible($conf = null) {
 		if ($conf['source'] !== '') exos_catalogue(); // rafraîchit le cache si son délai est écoulé
 	}
 	if ($conf['source'] === '' || is_null(DOSSIER_TMP)) return null;
-	$cache = json_decode((string)@file_get_contents(DOSSIER_TMP.'/exos-catalogue.json'), true);
+	$cache = json_decode((string)@file_get_contents(exos_fichier_cache($conf)), true);
 	if (!is_array($cache) || ($cache['source'] ?? '') !== $conf['source']) return null;
 	$base = (string)($cache['base_active'] ?? '');
 	if (!bases_nom_valide($base)) return null;
@@ -308,7 +376,7 @@ function exos_question_client($base, $code_ex, $code_q, $q, $numero) {
 
 // Nom de fichier de base acceptable (em.db), sans chemin
 function bases_nom_valide($fichier) {
-	return is_string($fichier) && preg_match('/^[A-Za-z0-9][A-Za-z0-9_.-]{0,99}\.db$/', $fichier) === 1;
+	return is_string($fichier) && preg_match('/^[A-Za-z0-9][A-Za-z0-9_.-]{0,99}\.db$/D', $fichier) === 1;
 }
 
 // Télécharge la base $fichier du catalogue dans $cible, en vérifiant taille, empreinte et
@@ -352,7 +420,8 @@ function bases_telecharge($conf, $fichier, $sha256, $cible) {
 // Reproduit dans DOSSIER_BASES les bases $bases du catalogue (fichier => {sha256, taille,
 // description}). Retourne false si une base n'a pas pu être mise à jour.
 function bases_synchronise($conf, $bases) {
-	if (is_null(DOSSIER_BASES)) return false;
+	$racine = bases_racine($conf);
+	if (is_null($racine)) return false;
 	$tout_ok = true;
 	$presentes = array();
 	foreach ($bases as $fichier => $b) {
@@ -360,7 +429,7 @@ function bases_synchronise($conf, $bases) {
 		    || !preg_match('/^[0-9a-f]{64}$/', $b['sha256']) || (int)($b['taille'] ?? 0) > BASES_TAILLE_MAX) continue;
 		$nom = substr($fichier, 0, -3);
 		$presentes[$nom] = true;
-		$dossier = DOSSIER_BASES.'/'.$nom;
+		$dossier = $racine.'/'.$nom;
 		if (!is_dir($dossier) && !@mkdir($dossier, 0700)) { $tout_ok = false; continue; }
 		$meta_fic = $dossier.'/meta.json';
 		$meta = is_file($meta_fic) ? json_decode((string)@file_get_contents($meta_fic), true) : null;
@@ -384,8 +453,8 @@ function bases_synchronise($conf, $bases) {
 	}
 	// Bases retirées de QueryCraft : à la corbeille, seulement sur un catalogue non vide
 	if (count($presentes) > 0) {
-		$corbeille = DOSSIER_BASES.'/.corbeille';
-		foreach (bases_dossiers() as $nom => $dossier) {
+		$corbeille = $racine.'/.corbeille';
+		foreach (bases_dossiers($conf) as $nom => $dossier) {
 			if (isset($presentes[$nom])) continue;
 			if (!is_dir($corbeille)) @mkdir($corbeille, 0700);
 			@rename($dossier, $corbeille.'/'.$nom.'-'.date('Ymd-His'));
@@ -404,10 +473,11 @@ function bases_supprime_dossier($dossier) {
 }
 
 // Dossiers des bases synchronisées complètes : nom => dossier
-function bases_dossiers() {
+function bases_dossiers($conf = null) {
 	$liste = array();
-	if (is_null(DOSSIER_BASES)) return $liste;
-	foreach ((array)glob(DOSSIER_BASES.'/*', GLOB_ONLYDIR) as $dossier) {
+	$racine = bases_racine($conf);
+	if (is_null($racine)) return $liste;
+	foreach ((array)glob($racine.'/*', GLOB_ONLYDIR) as $dossier) {
 		$nom = basename($dossier);
 		if (is_file("$dossier/meta.json") && is_file("$dossier/$nom.db")) $liste[$nom] = $dossier;
 	}

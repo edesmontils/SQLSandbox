@@ -12,6 +12,9 @@ exos_source = ""
 
 ; Jeton du catalogue de cette instance, créé côté QueryCraft avec :
 ;   tenant-sbs --set-catalogue-token demo      (ou le code à 6 chiffres du tenant)
+; Le jeton de la démo sert aussi de jeton général : il ouvre chaque tenant dont l'enseignant
+; a coché « Partage avec SQLSandbox » dans sa configuration, suivi à l'adresse
+; /SQLSandbox/?123456 (exos_source désigne alors la racine de QueryCraft, https://<hôte>/).
 exos_jeton = ""
 
 ; Secondes entre deux vérifications du catalogue (300 par défaut ; 0 = à chaque page)

@@ -576,6 +576,29 @@ unset($_SESSION['descriptions']);
 foreach (array_merge((array)glob($dossier_bases.'/*', GLOB_ONLYDIR), (array)glob($dossier_bases.'/.corbeille/*', GLOB_ONLYDIR)) as $d)
 	bases_supprime_dossier($d);
 @rmdir($dossier_bases.'/.corbeille');
+
+echo "Tenants de QueryCraft (faux QueryCraft)\n";
+verifie('tenant : code à 6 chiffres seulement', tenant_valide('123456') && !tenant_valide('12345')
+        && !tenant_valide('../12345') && !tenant_valide("123456\n") && !tenant_valide(array('123456')));
+$conf_t = exos_conf_tenant($conf_cat, '123456');
+verifie('tenant : source du tenant', $conf_t['source'] === $conf_cat['source'].'/123456' && $conf_t['tenant'] === '123456');
+verifie('tenant : ignoré sans source', exos_conf_tenant(array('source' => '') + $conf_cat, '123456')['tenant'] === '');
+verifie('tenant : cache du catalogue séparé', basename(exos_fichier_cache($conf_t)) === 'exos-catalogue-123456.json'
+        && basename(exos_fichier_cache($conf_cat)) === 'exos-catalogue.json');
+copy('./bdd/em/em.db', $reponse_faux.'.bases/em.db');
+catalogue_faux(array('em.db' => array('taille' => filesize('./bdd/em/em.db'), 'sha256' => $sha_em)), 'em.db');
+@unlink(exos_fichier_cache($conf_t));
+$d = exos_distants($conf_t);
+verifie('tenant : catalogue lu à l\'adresse du tenant', is_array($d)
+        && (string)@file_get_contents($reponse_faux.'.uri') === '/qc/123456/catalogue/exos', (string)@file_get_contents($reponse_faux.'.uri'));
+$bt = bases_dossiers($conf_t);
+verifie('tenant : bases dans un dossier caché, à part', isset($bt['em']) && strpos($bt['em'], $dossier_bases.'/.tenant-123456/') === 0
+        && !isset(bases_dossiers($conf_cat)['em']), json_encode($bt));
+verifie('tenant : bouton vers QueryCraft du tenant', querycraft_cible($conf_t) === array('url' => $conf_t['source'], 'fichier' => 'em.db'));
+bases_supprime_dossier($bt['em']);
+@rmdir($dossier_bases.'/.tenant-123456');
+@unlink(exos_fichier_cache($conf_t));
+@unlink(exos_fichier_cache($conf_t, 'verrou'));
 foreach ((array)glob($reponse_faux.'.bases/*') as $f) unlink($f);
 @rmdir($reponse_faux.'.bases');
 @unlink(DOSSIER_TMP.'/exos-catalogue.json');
@@ -676,7 +699,7 @@ verifie('copie introuvable : message explicite', $r === null && strpos($o, 'Rouv
 echo "Application (serveur intégré)\n";
 $port = 18000 + getmypid() % 1000;
 $u = "http://127.0.0.1:$port";
-$serveur = proc_open(array(PHP_BINARY, '-S', "127.0.0.1:$port", '-t', $racine),
+$serveur = proc_open(array(PHP_BINARY, '-S', "127.0.0.1:$port", '-t', $racine, "$racine/tests/routeur.php"),
                      array(array('file', '/dev/null', 'r'), array('file', '/dev/null', 'w'),
                            array('file', '/dev/null', 'w')), $tubes, $racine, $env_serveurs);
 for ($i = 0; $i < 50 && !@fsockopen('127.0.0.1', $port); $i++) usleep(100000);
@@ -788,10 +811,57 @@ verifie('fin de session : copies purgées', strpos($corps, 'purgées') !== false
 
 proc_terminate($serveur);
 proc_close($serveur);
+
+echo "Application reliée à un faux QueryCraft (tenants)\n";
+$port_qc = $port + 1;
+file_put_contents("$tmp/qc.ini", "exos_source = \"http://127.0.0.1:$port_faux/qc\"\nexos_jeton = \"jeton-general\"\nexos_ttl = 0\n");
+$caches_avant = array();
+foreach (array('exos-catalogue.json', 'exos-catalogue-123456.json') as $f)
+	$caches_avant[$f] = is_file("$travail/$f") ? file_get_contents("$travail/$f") : null;
+$serveur_qc = proc_open(array(PHP_BINARY, '-S', "127.0.0.1:$port_qc", '-t', $racine, "$racine/tests/routeur.php"),
+                        array(array('file', '/dev/null', 'r'), array('file', '/dev/null', 'w'), array('file', '/dev/null', 'w')),
+                        $tubes_qc, $racine, array_merge($env_serveurs, array('SQLSANDBOX_INI' => "$tmp/qc.ini")));
+for ($i = 0; $i < 50 && !@fsockopen('127.0.0.1', $port_qc); $i++) usleep(100000);
+$uq = "http://127.0.0.1:$port_qc";
+$cookie = '';
+catalogue_faux(array(), 'em.db');
+list($code, $page) = http("$uq/?123456");
+verifie('tenant par ?123456 : catalogue du tenant', $code == 200 && strpos($page, 'QueryCraft : <strong>123456</strong>') !== false
+        && strpos($page, '"url":"http://127.0.0.1:'.$port_faux.'/qc/123456","base":"tp-em"') !== false, substr($page, 0, 300));
+$copies_tenant = nouvelles();
+list($code, $page) = http("$uq/123456");
+verifie('tenant par /123456 (réécriture du serveur)', $code == 200 && strpos($page, 'QueryCraft : <strong>123456</strong>') !== false);
+@file_get_contents("$uq/123456/", false, stream_context_create(array('http' => array('follow_location' => 0, 'ignore_errors' => true))));
+verifie('tenant : /123456/ renvoyée vers /123456', strpos($http_response_header[0] ?? '', ' 308') !== false
+        && in_array('Location: /123456', $http_response_header ?? array()), json_encode($http_response_header ?? null));
+list($code, $page) = http("$uq/");
+verifie('sans code : instance par défaut, copies du tenant oubliées', $code == 200 && strpos($page, 'QueryCraft : <strong>') === false
+        && count(array_intersect($copies_tenant, nouvelles())) == 0 && count($copies_tenant) > 0);
+file_put_contents($reponse_faux, "404\n{}");
+@unlink("$travail/exos-catalogue-654321.json");
+list($code, $page) = http("$uq/?654321");
+verifie('tenant inconnu ou non autorisé : message, instance par défaut', $code == 200 && strpos($page, 'instance QueryCraft 654321') !== false
+        && strpos($page, 'QueryCraft : <strong>') === false, substr($page, 0, 300));
+verifie('tenant inconnu : aucun fichier laissé', count(glob("$travail/exos-catalogue-654321.*")) == 0, json_encode(glob("$travail/exos-catalogue-654321.*")));
+list($code, $page) = http("$uq/?12345");
+verifie('code mal formé ignoré', $code == 200 && strpos($page, 'QueryCraft : <strong>') === false && strpos($page, '12345') === false);
+proc_terminate($serveur_qc);
+proc_close($serveur_qc);
+foreach ($caches_avant as $f => $contenu) {
+	if (is_null($contenu)) @unlink("$travail/$f"); else file_put_contents("$travail/$f", $contenu);
+}
+foreach (array('exos-catalogue.verrou', 'exos-catalogue-123456.verrou', 'exos-catalogue-654321.verrou') as $f) @unlink("$travail/$f");
+$bases_serveur = dirname($racine).'/'.INSTANCE.'-bases';
+@rmdir("$bases_serveur/.tenant-123456");
+@rmdir("$bases_serveur/.tenant-654321");
+$session_qc = dirname($racine).'/sessions-'.INSTANCE.'/sess_'.substr($cookie, strlen(INSTANCE.'='));
+if (is_file($session_qc)) unlink($session_qc);
+foreach (nouvelles() as $f) @unlink($f);
 proc_terminate($faux_serveur);
 proc_close($faux_serveur);
 @unlink($reponse_faux.'.requete');
 @unlink($reponse_faux.'.etag');
+@unlink($reponse_faux.'.uri');
 if (!$compteur_existait) { @unlink(DOSSIER_TMP.'/ia_compteur'); @unlink("$travail/ia_compteur"); }
 foreach (glob("$tmp/modeles/*") as $f) unlink($f);
 @rmdir("$tmp/modeles");

@@ -81,6 +81,15 @@ handle /SQLSandbox/* {
 }
 ```
 
+Facultatif, l'adresse `/SQLSandbox/123456` d'un tenant de QueryCraft (`/SQLSandbox/?123456` fonctionne sans cela), dans le bloc `handle /SQLSandbox/*`, avant `php_fastcgi` :
+
+```caddy
+@tenant_barre path_regexp tenant_barre ^/SQLSandbox/([0-9]{6})/$
+redir @tenant_barre /SQLSandbox/{re.tenant_barre.1} 308
+@tenant path_regexp tenant ^/SQLSandbox/([0-9]{6})$
+rewrite @tenant /SQLSandbox/index.php?qc={re.tenant.1}
+```
+
 Caddy ignore les `.htaccess` : la règle `@interdit` les remplace, et interdit aussi les fichiers cachés, dont `.git/`. Utiliser `handle` et non `handle_path`, qui retirerait le préfixe et changerait le `DOCUMENT_ROOT`. Celui-ci vaut ici `/home/ed/programmation` : les dossiers de travail sont donc créés dans `/home/ed` (`/home/ed/sqlsandbox-tmp` et `/home/ed/sessions-sqlsandbox`), ce que permet le pool sous `ed`. Valider avant de recharger : `caddy validate --config /etc/caddy/Caddyfile`, puis `sudo systemctl reload caddy`.
 
 **Installation et mises à jour par git.** Le dossier est un clone du dépôt public (HTTPS, sans clé) :
@@ -136,6 +145,15 @@ L'intention rédigée pour une question `…->I` est corrigée par l'IA quand el
 Un exercice dont la base n'existe pas dans SQLSandbox n'est pas proposé.
 
 **Ouvrir une requête dans QueryCraft.** Le catalogue indique aussi la base que l'instance QueryCraft interroge (`base_active`, réglée par l'enseignant dans QueryCraft). Sur cette base seulement, la page d'édition propose « 🚀 Ouvrir dans QueryCraft » : QueryCraft s'ouvre dans un nouvel onglet avec la requête de l'étudiant, passée dans le fragment de l'URL (`<source>/#requete=…`), que le navigateur n'envoie pas au serveur. QueryCraft l'exécute sur sa base d'origine, sans les modifications faites dans la copie de session.
+
+**Tenants de QueryCraft.** Une même installation suit aussi les tenants (instances d'enseignants) de l'instance `exos_source`, qui doit alors en être la racine (`https://<hôte>/`) : l'adresse `/SQLSandbox/?123456` présente les exercices et les bases du tenant 123456, et son bouton « 🚀 Ouvrir dans QueryCraft » mène à `https://<hôte>/123456/`. Il faut pour cela :
+
+- dans `exos_jeton`, le jeton de la démo, qui sert de **jeton général** (rien à changer si SQLSandbox suit déjà la démo) ;
+- que l'enseignant ait coché **« Partage avec SQLSandbox »** dans la configuration de son instance : sans cela, QueryCraft refuse le jeton général pour ce tenant, et SQLSandbox revient à l'instance par défaut avec un message (de même pour un code inconnu).
+
+Le tenant est gardé dans la session : `/SQLSandbox/` sans code revient à l'instance par défaut. Changer de tenant oublie les copies de bases de la session (deux tenants peuvent avoir une base du même nom mais pas du même contenu). Chaque tenant a son cache de catalogue (`exos-catalogue-123456.json`) et ses bases synchronisées (`sqlsandbox-bases/.tenant-123456/`).
+
+L'adresse `/SQLSandbox/123456` fonctionne aussi là où le serveur la réécrit en `index.php?qc=123456` : le `.htaccess` fourni à la racine s'en charge sous Apache (à envoyer avec les autres), et pour Caddy voir ci-dessous. Sans barre finale : `/SQLSandbox/123456/` y est renvoyée, pour que les adresses relatives de l'application restent valables.
 
 **Bases et exercices locaux** : le package QueryCraft en est la référence. `outils/importe-querycraft.sh <dépôt QueryCraft>` (avec `--dry-run` pour voir ce qui changerait) recopie ses bases dans les dossiers de `bdd/` qui les déclarent, ses exercices dans `bdd/exercices/` et le prompt de correction des intentions dans `templates/`. Une nouvelle base de QueryCraft demande d'écrire son `config.xml` (description).
 

@@ -4,7 +4,7 @@
 <!ENTITY seuil '10800'>
 ]>
 
-<mab version="7.2" debug="false" name="SQL Sandbox">
+<mab version="7.3" debug="false" name="SQL Sandbox">
 	<!-- numéro de version de l'application -->
 	<!-- durée limite de vie d'une copie de base : 60*60*3 = 3 heures -->
 	<seuil>&seuil;</seuil>
@@ -148,6 +148,17 @@
 	<listeMessages>
 		<!--message titre="" post=""><p></p>
 		</message-->
+		<message titre="Version 7.3" date="11/11/26" auteur="E. Desmontils">
+			<div>
+				<ul>
+					<li>l'adresse <b>/SQLSandbox/?123456</b> donnée par votre enseignant présente les
+						exercices et les bases de son instance QueryCraft (123456), et le bouton
+						<b>🚀 Ouvrir dans QueryCraft</b> y mène ;</li>
+					<li>l'enseignant l'autorise dans la configuration de son instance QueryCraft
+						(« Partage avec SQLSandbox »).</li>
+				</ul>
+			</div>
+		</message>
 		<message titre="Version 7.2" date="10/11/26" auteur="E. Desmontils">
 			<div>
 				<ul>

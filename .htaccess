@@ -1,0 +1,10 @@
+# Tenants de QueryCraft (Apache, par exemple chez OVH) : /SQLSandbox/123456 suit le tenant
+# 123456 de l'instance exos_source (voir le README). Sans barre finale, pour que les adresses
+# relatives de l'application (controler.php, js/…) restent valables : /123456/ y est renvoyée.
+# Équivalent pour Caddy : voir le README, « Déploiement derrière Caddy ».
+<IfModule mod_rewrite.c>
+	RewriteEngine On
+	RewriteCond %{REQUEST_URI} ^(.*/[0-9]{6})/$
+	RewriteRule ^[0-9]{6}/$ %1 [R=308,L]
+	RewriteRule ^([0-9]{6})$ index.php?qc=$1 [L,QSA]
+</IfModule>

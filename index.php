@@ -21,6 +21,14 @@ prolonge_copies();
 session_regenerate_id(true);
 if (empty($_SESSION['csrf'])) $_SESSION['csrf'] = bin2hex(random_bytes(16));
 
+// Tenant QueryCraft suivi : /SQLSandbox/?123456 (sans règle de serveur), ou /SQLSandbox/123456
+// là où le serveur web la réécrit en index.php?qc=123456 (.htaccess, Caddyfile) ;
+// /SQLSandbox/ revient à l'instance par défaut (voir tenant_choisi())
+$demandeTenant = null;
+if (isset($_GET['qc'])) $demandeTenant = (string)$_GET['qc'];
+elseif (preg_match('/^[0-9]{6}$/D', (string)($_SERVER['QUERY_STRING'] ?? ''))) $demandeTenant = $_SERVER['QUERY_STRING'];
+$messageTenant = tenant_choisi($demandeTenant);
+
 try { 
 	$config = new SimpleXMLElement('./config.xml',
                                    LIBXML_DTDATTR|LIBXML_DTDLOAD|LIBXML_DTDVALID
@@ -257,6 +265,9 @@ $listeNoms = array_keys($listeBase);
 	<p class="badges">
 		<span>🗄️ SGBD : <strong>SQLite <?php echo htmlspecialchars(SQLite3::version()['versionString']);?></strong></span>
 		<span>📚 Bases : <strong><?php echo count($listeNoms);?></strong></span>
+<?php if (exos_config()['tenant'] !== '') { ?>
+		<span>🔗 QueryCraft : <strong><?php echo htmlspecialchars(exos_config()['tenant']);?></strong></span>
+<?php } ?>
 		<span>🏷️ Version : <strong><?php echo htmlspecialchars($version);?></strong></span>
 	</p>
 </header>
@@ -284,6 +295,11 @@ $listeNoms = array_keys($listeBase);
 <!-- ============ Contenu ============= -->
 <!-- ================================== -->
 <main id="contenu">
+	<?php if (!is_null($messageTenant)) {
+		echo "<div class='post'><h2 class='title'>Instance QueryCraft</h2><div class='story'>";
+		echo "<p class='message'>".htmlspecialchars($messageTenant)."</p>";
+		echo "</div></div>";
+	} ?>
 	<?php if (count($erreursCopie) > 0) {
 		echo "<div class='post'><h2 class='title'>Problème d'installation</h2><div class='story'>";
 		foreach($erreursCopie as $m) echo "<p class='message'>$m</p>";
