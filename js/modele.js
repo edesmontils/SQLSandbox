@@ -607,3 +607,58 @@ function active_liens() {
         });
     });
 }
+
+// Page des tables (dbListe.php) : le diagramme sert à choisir les tables affichées.
+// Clic : cette table seule (un second clic la masque) ; Ctrl+clic ou ⌘+clic : ajoute ou
+// retire la table de la sélection. Par défaut, aucune table n'est affichée.
+function choix_tables(m) {
+    var cible = $('diagramme');
+    if (!cible) return;
+    var choisies = [];
+    function applique() {
+        var svg = cible.querySelector('svg');
+        if (svg) svg.querySelectorAll('.boite').forEach(function (g) {
+            var oui = choisies.indexOf(g.getAttribute('data-table')) >= 0;
+            g.classList.toggle('choisie', oui);
+            g.setAttribute('aria-pressed', oui ? 'true' : 'false');
+        });
+        document.querySelectorAll('.contenu-table').forEach(function (d) {
+            d.hidden = choisies.indexOf(d.getAttribute('data-table')) < 0;
+        });
+        $('nb-tables').textContent = choisies.length == 0 ? 'Aucune table sélectionnée.'
+            : choisies.length == 1 ? '1 table affichée.' : choisies.length + ' tables affichées.';
+        $('aucune-table').disabled = choisies.length == 0;
+    }
+    function choisit(nom, ajout) {
+        var i = choisies.indexOf(nom);
+        if (ajout) {
+            if (i >= 0) choisies.splice(i, 1); else choisies.push(nom);
+        } else {
+            choisies = (i >= 0 && choisies.length == 1) ? [] : [nom];
+        }
+        applique();
+    }
+    var dessin = function () {
+        cible.innerHTML = dessine_modele(m);
+        active_liens();
+        cible.querySelectorAll('.boite').forEach(function (g) {
+            var nom = g.getAttribute('data-table');
+            g.setAttribute('tabindex', '0');
+            g.setAttribute('role', 'button');
+            g.setAttribute('aria-label', 'Table ' + nom);
+            g.addEventListener('click', function (e) { choisit(nom, e.ctrlKey || e.metaKey); });
+            // Sur Mac, Ctrl+clic ouvre le menu contextuel au lieu de produire un clic
+            g.addEventListener('contextmenu', function (e) {
+                if (!e.ctrlKey) return;
+                e.preventDefault();
+                choisit(nom, true);
+            });
+            g.addEventListener('keydown', function (e) {
+                if (e.key == 'Enter' || e.key == ' ') { e.preventDefault(); choisit(nom, e.ctrlKey || e.metaKey); }
+            });
+        });
+        applique();
+    };
+    $('aucune-table').addEventListener('click', function () { choisies = []; applique(); });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(dessin); else dessin();
+}

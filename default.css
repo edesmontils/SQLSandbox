@@ -86,7 +86,7 @@ pre, code, textarea {
 /* Page : une carte blanche centrée */
 
 .container {
-	max-width: 1200px;
+	max-width: 1800px;
 	margin: 0 auto;
 	background: var(--sb-surface);
 	border-radius: 15px;
@@ -604,6 +604,52 @@ table.historique td .btn {
 .diagramme .boite.fort .cadre {
 	stroke: var(--sb-accent-2);
 	stroke-width: 2.5;
+}
+
+/* Page des tables : les tables du diagramme se sélectionnent */
+.diagramme.selectionnable .boite {
+	cursor: pointer;
+}
+
+.diagramme.selectionnable .boite:focus {
+	outline: none;
+}
+
+.diagramme.selectionnable .boite:focus-visible .cadre {
+	stroke: var(--sb-accent);
+	stroke-width: 3;
+	stroke-dasharray: 5 3;
+}
+
+.diagramme .boite.choisie .cadre {
+	fill: color-mix(in srgb, var(--sb-accent) 12%, var(--sb-surface));
+	stroke: var(--sb-accent);
+	stroke-width: 3.5;
+}
+
+/* Page des tables : les tables affichées se rangent côte à côte */
+.grille-tables {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	gap: 16px;
+	margin-bottom: 24px;
+}
+
+.grille-tables .contenu-table {
+	flex: 0 1 auto;
+	max-width: 100%;
+	min-width: 0;
+	margin: 0;
+	padding: 16px 18px;
+}
+
+.grille-tables .contenu-table[hidden] {
+	display: none;
+}
+
+.grille-tables .contenu-table .story {
+	overflow-x: auto;
 }
 
 /* Diagrammes avant/après une requête qui modifie le schéma */

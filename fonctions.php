@@ -495,16 +495,40 @@ function liste_base($base) {
 		return;
 	}
 	$tables = get_tables($base);
-	sommaire($tables);
+	$modele = modele_base($base);
+	if (is_null($modele) || count($modele['tables']) == 0) {
+		sommaire($tables); // pas de diagramme possible : sommaire et tables affichées
+		$cache = '';
+	} else {
+		choix_tables($base, $modele);
+		$cache = ' hidden';
+	}
+	// Tables les unes à côté des autres, tant que la largeur le permet
+	echo "<div class='grille-tables'>";
 	foreach($tables as $ta) {
 		$nom = htmlspecialchars($ta, ENT_QUOTES);
-		echo "<a id='$nom'></a><div class='post'>";
+		echo "<div class='post contenu-table' id='$nom' data-table='$nom'$cache>";
 		echo '	<h2 class="title">'."Table $nom".'</h2>';
 		echo '    <div class="story">';
 		get('select * from "'.str_replace('"','""',$ta).'" order by 1',$base);
-		echo "<p class='retour-sommaire'><a href='#matiere'>⬆️ Retour au sommaire</a></p>";
+		echo "<p class='retour-sommaire'><a href='#matiere'>⬆️ Retour ".($cache ? 'au diagramme' : 'au sommaire')."</a></p>";
 		echo '</div></div>';
 	}
+	echo "</div>";
+}
+
+// Diagramme de la base pour choisir les tables à afficher (js/modele.js, choix_tables)
+function choix_tables($base, $modele) {
+	unset($modele['sql']);
+	echo "<a id='matiere'></a><div class='post modele'><h2 class='title'>Tables de la base ".html($base)."</h2><div class='story'>"
+	    ."<p class='astuce'>Cliquez sur une table du diagramme pour afficher son contenu, "
+	    ."Ctrl+clic (⌘+clic sur Mac) pour en afficher plusieurs.</p>"
+	    ."<div class='actions'><button type='button' class='btn secondaire petit' id='aucune-table' disabled>Tout désélectionner</button>"
+	    ."<span class='astuce' id='nb-tables'>Aucune table sélectionnée.</span></div>"
+	    ."<div class='diagramme selectionnable' id='diagramme'></div></div></div>";
+	echo "<script>document.addEventListener('DOMContentLoaded', function () { choix_tables("
+	    .json_encode($modele, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE)
+	    ."); });</script>";
 }
 
 // Sommaire des tables d'une base

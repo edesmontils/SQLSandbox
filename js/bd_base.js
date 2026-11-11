@@ -393,7 +393,7 @@ function new_query() {
     t = t + ia_bouton("$('base').value");
     if (querycraft_possible(current_base))
         t = t + '	<button type="button" class="btn secondaire" onclick="vers_querycraft()" title="Ouvre QueryCraft dans un nouvel onglet avec cette requête (sur la base d\'origine, sans vos modifications)">🚀 Ouvrir dans QueryCraft</button>';
-    t = t + '	<button type="button" class="btn secondaire" onclick="reinitialise_base($(\'base\').value)" title="Efface vos modifications : la base redevient comme au départ">↩️ Base d\'origine</button></div>';
+    t = t + '	</div>';
     t = t + '	</form>';
     t = t + '	<div id="results"></div>';
     t = t + '</div>';
