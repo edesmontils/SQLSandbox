@@ -826,11 +826,12 @@ $uq = "http://127.0.0.1:$port_qc";
 $cookie = '';
 catalogue_faux(array(), 'em.db');
 list($code, $page) = http("$uq/?123456");
-verifie('tenant par ?123456 : catalogue du tenant', $code == 200 && strpos($page, 'QueryCraft : <strong>123456</strong>') !== false
+verifie('tenant par ?123456 : catalogue du tenant, lien vers le tenant', $code == 200 && strpos($page, '>123456</a></strong>') !== false
+        && strpos($page, 'href="http://127.0.0.1:'.$port_faux.'/qc/123456/"') !== false
         && strpos($page, '"url":"http://127.0.0.1:'.$port_faux.'/qc/123456","base":"tp-em"') !== false, substr($page, 0, 300));
 $copies_tenant = nouvelles();
 list($code, $page) = http("$uq/123456");
-verifie('tenant par /123456 (réécriture du serveur)', $code == 200 && strpos($page, 'QueryCraft : <strong>123456</strong>') !== false);
+verifie('tenant par /123456 (réécriture du serveur)', $code == 200 && strpos($page, '>123456</a></strong>') !== false);
 @file_get_contents("$uq/123456/", false, stream_context_create(array('http' => array('follow_location' => 0, 'ignore_errors' => true))));
 verifie('tenant : /123456/ renvoyée vers /123456', strpos($http_response_header[0] ?? '', ' 308') !== false
         && in_array('Location: /123456', $http_response_header ?? array()), json_encode($http_response_header ?? null));

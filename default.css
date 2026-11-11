@@ -145,6 +145,16 @@ pre, code, textarea {
 	font-size: .9em;
 }
 
+.badges a {
+	color: inherit;
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.badges a:hover, .badges a:focus-visible {
+	text-decoration-thickness: 2px;
+}
+
 /* En-tête compact des pages ouvertes dans un nouvel onglet (TP, thèmes, tables) */
 .entete.compacte {
 	padding: 14px 30px;

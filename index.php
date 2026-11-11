@@ -266,7 +266,7 @@ $listeNoms = array_keys($listeBase);
 		<span>🗄️ SGBD : <strong>SQLite <?php echo htmlspecialchars(SQLite3::version()['versionString']);?></strong></span>
 		<span>📚 Bases : <strong><?php echo count($listeNoms);?></strong></span>
 <?php if (exos_config()['tenant'] !== '') { ?>
-		<span>🔗 QueryCraft : <strong><?php echo htmlspecialchars(exos_config()['tenant']);?></strong></span>
+		<span>🔗 QueryCraft : <strong><a href="<?php echo htmlspecialchars(exos_config()['source']);?>/" target="_blank" rel="noopener" title="Ouvrir ce tenant dans QueryCraft"><?php echo htmlspecialchars(exos_config()['tenant']);?></a></strong></span>
 <?php } ?>
 		<span>🏷️ Version : <strong><?php echo htmlspecialchars($version);?></strong></span>
 	</p>
