@@ -36,7 +36,7 @@ define('EXOS_TAILLE_MAX', 5 * 1024 * 1024);
 define('BASES_TAILLE_MAX', 20 * 1024 * 1024);   // taille maximale d'une base téléchargée
 define('BASES_CORBEILLE_JOURS', 7);              // conservation des bases retirées
 
-// Bases synchronisées depuis QueryCraft : <DOSSIER_BASES>/<nom>/<nom>.db, description.html
+// Bases synchronisées depuis QueryCraft : <DOSSIER_BASES>/<nom>/<nom>.db, description.html (et .md)
 // et meta.json (hors du site, comme les copies de session ; null si aucun dossier utilisable)
 if (!defined('DOSSIER_BASES')) define('DOSSIER_BASES', dossier_prive(INSTANCE.'-bases', __DIR__.'/tmp/bases'));
 
@@ -455,6 +455,8 @@ function bases_synchronise($conf, $bases) {
 			'synchronise' => date('c'),
 		);
 		@file_put_contents($dossier.'/description.html', (string)($d['html'] ?? ''));
+		// Markdown d'origine : texte de la description donné au modèle d'IA (ia_description_base)
+		@file_put_contents($dossier.'/description.md', is_string($d['markdown'] ?? null) ? $d['markdown'] : '');
 		@file_put_contents($meta_fic.'.tmp', json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
 		@rename($meta_fic.'.tmp', $meta_fic);
 	}

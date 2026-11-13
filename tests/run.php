@@ -147,6 +147,9 @@ verifie('IA : clé envoyée au proxy', strpos($requete_faux, 'Bearer sk-cle-de-t
 verifie('IA : schéma, consigne et clés existantes dans le prompt', strpos($requete_faux, 'CREATE TABLE etudiants') !== false
         && strpos($requete_faux, 'prénoms bretons') !== false && strpos($requete_faux, '28936E') !== false, substr($requete_faux, 0, 400));
 verifie('IA : la clé n\'est pas renvoyée au navigateur', strpos(json_encode($r), 'sk-cle-de-test') === false);
+verifie('IA : base sans description, pas de section description', strpos($requete_faux, 'description_base') === false);
+verifie('IA : HTML de description ramené à du texte', ia_html_texte("<p>Une base</p>\n  <ul><li><b>T</b> (<em>k</em>,\n  v)<br/>une ligne &amp; plus</li></ul>")
+        === "Une base\n\n- **T** (*k*, v)\n une ligne & plus", json_encode(ia_html_texte("<p>Une base</p>\n  <ul><li><b>T</b> (<em>k</em>,\n  v)<br/>une ligne &amp; plus</li></ul>")));
 verifie('IA : générations restantes comptées', $r['restantes'] == 29, $r['restantes']);
 $bonnes = array();
 foreach ($r['lignes'] as $l) if ($l['ok']) $bonnes[] = $l['valeurs'];
@@ -544,6 +547,7 @@ verifie('nom de fichier dangereux ignoré', count($b) == 1 && !file_exists(dirna
 $meta = json_decode((string)@file_get_contents($b['em'].'/meta.json'), true);
 verifie('description et nom repris, lien non http refusé', ($meta['nom'] ?? '') === 'tp-em' && ($meta['reference'] ?? 'x') === ''
         && strpos((string)@file_get_contents($b['em'].'/description.html'), 'synchronisée') !== false, json_encode($meta));
+verifie('description Markdown gardée pour l\'IA', (string)@file_get_contents($b['em'].'/description.md') === 'x');
 $avant = filemtime($b['em'].'/em.db');
 sleep(1);
 $requetes_avant = (string)@file_get_contents($reponse_faux.'.requete');
@@ -571,6 +575,10 @@ $_SESSION['descriptions']['tp-cinema-sync'] = $b['cinema'].'/description.html';
 file_put_contents($b['cinema'].'/description.html', '<p>Les cinémas</p>');
 ob_start(); description_base('tp-cinema-sync'); $o = ob_get_clean();
 verifie('description d\'une base synchronisée affichée', strpos($o, 'Les cinémas') !== false, $o);
+file_put_contents($b['cinema'].'/description.md', "Les **cinémas** et leurs salles");
+verifie('IA : description synchronisée lue en Markdown', ia_description_base('tp-cinema-sync') === 'Les **cinémas** et leurs salles');
+unlink($b['cinema'].'/description.md');
+verifie('IA : sans Markdown, HTML synchronisé ramené à du texte', ia_description_base('tp-cinema-sync') === 'Les cinémas');
 unset($_SESSION['descriptions']);
 // Nettoyage
 foreach (array_merge((array)glob($dossier_bases.'/*', GLOB_ONLYDIR), (array)glob($dossier_bases.'/.corbeille/*', GLOB_ONLYDIR)) as $d)
@@ -614,6 +622,8 @@ $envoye = (string)@file_get_contents($reponse_faux.'.requete');
 verifie('intention : requête et référence relues côté serveur, dans le prompt', strpos($envoye, 'NATURAL JOIN') !== false
         && strpos($envoye, 'Le nom des fleuves qui se jettent dans une mer.') !== false && strpos($envoye, 'Les fleuves') !== false
         && strpos($envoye, 'CREATE TABLE') !== false, substr($envoye, 0, 300));
+verifie('intention : description de la base dans le prompt système', strpos($envoye, '<description_base>') !== false
+        && strpos($envoye, 'prend sa source') !== false, substr($envoye, 0, 300));
 verifie('intention : compteur à part, « Remplir » non décompté', ($_SESSION['ia_intention']['n'] ?? 0) == 1 && !isset($_SESSION['ia']),
         json_encode($_SESSION));
 verifie('intention : question qui attend une requête refusée', ia_corriger_intention('tp-em', 'tp-em-01', 'tr-em-01', 'x')['statut'] ?? 0) == 400;
