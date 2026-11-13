@@ -548,6 +548,14 @@ $meta = json_decode((string)@file_get_contents($b['em'].'/meta.json'), true);
 verifie('description et nom repris, lien non http refusé', ($meta['nom'] ?? '') === 'tp-em' && ($meta['reference'] ?? 'x') === ''
         && strpos((string)@file_get_contents($b['em'].'/description.html'), 'synchronisée') !== false, json_encode($meta));
 verifie('description Markdown gardée pour l\'IA', (string)@file_get_contents($b['em'].'/description.md') === 'x');
+// Base synchronisée par une version sans description.md : catalogue relu en entier
+unlink($b['em'].'/description.md');
+$c = json_decode((string)file_get_contents(DOSSIER_TMP.'/exos-catalogue.json'), true);
+$c['verifie'] = 0;
+file_put_contents(DOSSIER_TMP.'/exos-catalogue.json', json_encode($c));
+exos_distants($conf_cat);
+verifie('description.md absente : catalogue relu en entier', (string)@file_get_contents($reponse_faux.'.etag') === ''
+        && (string)@file_get_contents($b['em'].'/description.md') === 'x');
 $avant = filemtime($b['em'].'/em.db');
 sleep(1);
 $requetes_avant = (string)@file_get_contents($reponse_faux.'.requete');

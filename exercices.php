@@ -212,9 +212,11 @@ function exos_distants($conf) {
 		// Un seul processus rafraîchit le cache ; les autres servent l'existant
 		$verrou = @fopen(exos_fichier_cache($conf, 'verrou'), 'c');
 		if ($verrou && flock($verrou, LOCK_EX | LOCK_NB)) {
-			// Cache antérieur à la version 7.2 (sans base_active) : relu en entier, car QueryCraft
+			// Cache antérieur à la version 7.2 (sans base_active), ou base synchronisée avant que la
+			// description Markdown soit gardée (description.md) : relu en entier, car QueryCraft
 			// répondrait 304 tant que son catalogue ne change pas
-			$etag_cache = ($cache && array_key_exists('base_active', $cache)) ? (string)($cache['etag'] ?? '') : '';
+			$etag_cache = ($cache && array_key_exists('base_active', $cache) && !bases_sans_markdown($conf))
+			            ? (string)($cache['etag'] ?? '') : '';
 			list($code, $corps, $etag) = exos_appel($conf, $etag_cache);
 			if ($code == 200 && strlen($corps) <= EXOS_TAILLE_MAX) {
 				$d = json_decode($corps, true);
@@ -479,6 +481,13 @@ function bases_synchronise($conf, $bases) {
 function bases_supprime_dossier($dossier) {
 	foreach ((array)glob($dossier.'/*') as $f) @unlink($f);
 	@rmdir($dossier);
+}
+
+// Vrai si une base synchronisée n'a pas encore de description.md (synchronisée par une version
+// qui ne gardait que le HTML)
+function bases_sans_markdown($conf) {
+	foreach (bases_dossiers($conf) as $dossier) if (!is_file("$dossier/description.md")) return true;
+	return false;
 }
 
 // Dossiers des bases synchronisées complètes : nom => dossier
