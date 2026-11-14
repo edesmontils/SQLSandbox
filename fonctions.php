@@ -62,6 +62,8 @@ define('CROISSANCE_MAX_BASE', 10 * 1024 * 1024);
 // Espace disque : n'importe qui pouvant ouvrir une session, le total des copies est
 // plafonné. Au-delà (ou si le disque manque de place), aucune copie n'est créée et les
 // copies existantes ne grossissent plus, jusqu'à ce que la purge en libère.
+// Valeurs par défaut, prudentes pour un hébergement mutualisé ; sqlsandbox.ini peut les
+// changer (occupation_max_mo, espace_libre_min_mo), voir exos_lit_ini().
 define('OCCUPATION_MAX', 1024 * 1024 * 1024);   // total des copies (octets)
 define('ESPACE_LIBRE_MIN', 200 * 1024 * 1024);  // espace libre à garder sur le disque (octets)
 // Mémoire maximale (octets) de SQLite, qui alloue hors du memory_limit de PHP
@@ -207,13 +209,14 @@ function fichier_occupation() {
 	return is_null(DOSSIER_TMP) ? null : DOSSIER_TMP.'/occupation';
 }
 
-// Vrai si les copies ne doivent plus grossir : total des copies au-delà de OCCUPATION_MAX
+// Vrai si les copies ne doivent plus grossir : total des copies au-delà du plafond
 // (relevé par la purge de index.php) ou disque presque plein
 function espace_sature() {
 	if (is_null(DOSSIER_TMP)) return false;
+	$conf = exos_ini();
 	$libre = @disk_free_space(DOSSIER_TMP);
-	if ($libre !== false && $libre < ESPACE_LIBRE_MIN) return true;
-	return (int)@file_get_contents(fichier_occupation()) > OCCUPATION_MAX;
+	if ($libre !== false && $libre < $conf['espace_libre_min']) return true;
+	return (int)@file_get_contents(fichier_occupation()) > $conf['occupation_max'];
 }
 
 // Taille maximale (octets) de la copie d'une base d'origine de $taille_origine octets

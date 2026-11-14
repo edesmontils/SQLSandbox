@@ -657,6 +657,13 @@ verifie('HTML assaini : liens http gardés, éléments actifs retirés',
         === '<a href="https://ex.org/" rel="noopener noreferrer">a</a>t', assainit_html('<a href="https://ex.org/">a</a><iframe></iframe><x-y>t</x-y>'));
 verifie('durée lisible', duree_lisible(10800) === '3 heures' && duree_lisible(3600) === '1 heure'
         && duree_lisible(5400) === '1 h 30' && duree_lisible(2700) === '45 minutes', duree_lisible(5400));
+verifie('plafonds disque par défaut sans sqlsandbox.ini', exos_lit_ini('')['occupation_max'] == OCCUPATION_MAX
+        && exos_lit_ini('')['espace_libre_min'] == ESPACE_LIBRE_MIN);
+$ini_disque = tempnam(sys_get_temp_dir(), 'ini');
+file_put_contents($ini_disque, "occupation_max_mo = 10240\nespace_libre_min_mo = 0\n");
+verifie('plafonds disque lus dans sqlsandbox.ini (Mo)', exos_lit_ini($ini_disque)['occupation_max'] == 10240 * 1048576
+        && exos_lit_ini($ini_disque)['espace_libre_min'] === 0);
+@unlink($ini_disque);
 verifie('config.xml chargé une seule fois', charge_config() === charge_config() && isset(charge_config()->accueil));
 // Erreurs XML : le détail (chemins compris) va au journal, pas à la page
 require_once __DIR__.'/../lib/LibXML.php';
@@ -906,9 +913,9 @@ verifie('Soumettre=tables : tables de la base', $code == 200 && strpos($corps, '
 list($code, $corps) = http("$u/controler.php?Soumettre=aides");
 verifie('rubrique Aide', $code == 200 && strlen($corps) > 200 && stripos($corps, 'Exception') === false, $corps);
 list($code, $corps) = http("$u/controler.php?Soumettre=rien");
-verifie('accueil : présentation et mode d\'emploi, sans les nouveautés', $code == 200 && strpos($corps, 'Mode d\'emploi rapide') !== false && strpos($corps, 'Version 7.4') === false, $corps);
+verifie('accueil : présentation et mode d\'emploi, sans les nouveautés', $code == 200 && strpos($corps, 'Mode d\'emploi rapide') !== false && strpos($corps, 'Version 7.5') === false, $corps);
 list($code, $corps) = http("$u/controler.php?Soumettre=news");
-verifie('rubrique Nouveautés', $code == 200 && strpos($corps, 'Version 7.4') !== false && strpos($corps, 'Mode d\'emploi rapide') === false, $corps);
+verifie('rubrique Nouveautés', $code == 200 && strpos($corps, 'Version 7.5') !== false && strpos($corps, 'Mode d\'emploi rapide') === false, $corps);
 list($code, $corps) = http("$u/controler.php?Soumettre=credits");
 verifie('rubrique Crédits', $code == 200 && strpos($corps, 'hal-04144210') !== false && strpos($corps, 'hal-05030037v1') !== false, $corps);
 list($code, $corps) = http("$u/controler.php?Soumettre=SQL");

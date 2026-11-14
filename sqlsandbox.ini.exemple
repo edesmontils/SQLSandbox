@@ -19,3 +19,11 @@ exos_jeton = ""
 
 ; Secondes entre deux vérifications du catalogue (300 par défaut ; 0 = à chaque page)
 exos_ttl = 300
+
+; Espace disque des copies de bases des étudiants (facultatif, en Mo). Au-delà du total
+; occupation_max_mo, ou s'il reste moins de espace_libre_min_mo sur le disque, aucune
+; nouvelle copie n'est faite et les copies existantes ne grossissent plus.
+; Valeurs par défaut prudentes pour un hébergement mutualisé : à relever sur un serveur
+; dédié qui a de la place.
+; occupation_max_mo = 1024
+; espace_libre_min_mo = 200

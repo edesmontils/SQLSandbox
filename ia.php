@@ -17,7 +17,8 @@ define('IA_PAR_SESSION', 20);   // générations par session et par jour
 define('IA_PAR_SESSION_INTENTION', 30); // corrections d'intention par session et par jour (compteur à part)
 define('IA_DELAI', 5);          // secondes minimum entre deux générations d'une session
 define('IA_LIGNES_MAX', 30);    // lignes par génération
-define('IA_PAR_IP', 150);        // appels par adresse IP et par jour, générations et corrections confondues (0 = sans limite)
+define('IA_PAR_IP', 250);        // appels par adresse IP et par jour, générations et corrections confondues (0 = sans limite) :
+                                 // la moitié du plafond global, pour une salle de TP derrière une même adresse
 define('IA_PLAFOND_GLOBAL', 500); // générations par jour pour toute l'application (0 = sans limite)
 define('IA_MAX_TOKENS', 3000);  // longueur maximale de la réponse
 define('IA_DELAI_APPEL', 60);   // secondes d'attente de la réponse du proxy

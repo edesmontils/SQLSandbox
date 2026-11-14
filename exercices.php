@@ -65,6 +65,9 @@ function exos_lit_ini($fichier) {
 		'source' => $source,
 		'jeton' => trim((string)($ini['exos_jeton'] ?? '')),
 		'ttl' => max(0, (int)($ini['exos_ttl'] ?? EXOS_TTL)),
+		// Plafonds d'espace disque des copies (fonctions.php, espace_sature), en Mo dans le fichier
+		'occupation_max' => isset($ini['occupation_max_mo']) ? max(1, (int)$ini['occupation_max_mo']) * 1048576 : OCCUPATION_MAX,
+		'espace_libre_min' => isset($ini['espace_libre_min_mo']) ? max(0, (int)$ini['espace_libre_min_mo']) * 1048576 : ESPACE_LIBRE_MIN,
 	);
 }
 

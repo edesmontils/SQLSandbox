@@ -4,7 +4,7 @@
 <!ENTITY seuil '10800'>
 ]>
 
-<mab version="7.4" debug="false" name="SQL Sandbox">
+<mab version="7.5" debug="false" name="SQL Sandbox">
 	<!-- numéro de version de l'application -->
 	<!-- durée limite de vie d'une copie de base : 60*60*3 = 3 heures -->
 	<seuil>&seuil;</seuil>
@@ -344,6 +344,22 @@
 	<listeMessages>
 		<!--message titre="" post=""><p></p>
 		</message-->
+		<message titre="Version 7.5" date="14/11/26" auteur="E. Desmontils">
+			<div>
+				<ul>
+					<li><b>sécurité renforcée</b> après un audit du code : l'espace occupé par les copies
+						des bases est plafonné, les textes venus de QueryCraft sont filtrés et les requêtes
+						des exercices ont les mêmes limites que les vôtres ;</li>
+					<li>la <b>correction des intentions</b> par l'IA ne peut plus être détournée par des
+						consignes glissées dans votre texte, et ne révèle pas l'intention attendue ;</li>
+					<li>l'IA est limitée aussi <b>par poste</b> (ou par réseau), pour qu'un seul utilisateur ne
+						puisse pas épuiser le quota de tous ;</li>
+					<li>le <b>retour à la base d'origine</b> ne laisse jamais une base à moitié copiée, même
+						pendant une requête ;</li>
+					<li>les messages donnent la <b>durée réelle d'une session</b>.</li>
+				</ul>
+			</div>
+		</message>
 		<message titre="Version 7.4" date="11/11/26" auteur="E. Desmontils">
 			<div>
 				<ul>
