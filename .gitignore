@@ -13,3 +13,4 @@ tmp/exos-catalogue.*
 sqlsandbox.ini
 tmp/bases/
 .claude/launch.json
+graphify-out/
