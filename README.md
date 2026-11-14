@@ -80,10 +80,14 @@ handle /SQLSandbox/* {
 	root * /home/<utilisateur>/programmation
 	@interdit path_regexp ^/SQLSandbox/(\.[^/]*|tmp|bdd|lib|tests)(/|$)
 	respond @interdit 403
+	@repertoire path */
+	rewrite @repertoire {path}index.php
 	php_fastcgi unix//run/php/sqlsandbox.sock
 	file_server
 }
 ```
+
+La règle `@repertoire` est nécessaire avec Caddy 2.11 : sans elle, `/SQLSandbox/` est servi comme un répertoire (404) au lieu de son `index.php`. La chaîne de requête est conservée (`/SQLSandbox/?123456`).
 
 Facultatif, l'adresse `/SQLSandbox/123456` d'un tenant de QueryCraft (`/SQLSandbox/?123456` fonctionne sans cela), dans le bloc `handle /SQLSandbox/*`, avant `php_fastcgi` :
 
@@ -95,6 +99,19 @@ rewrite @tenant /SQLSandbox/index.php?qc={re.tenant.1}
 ```
 
 Caddy ignore les `.htaccess` : la règle `@interdit` les remplace, et interdit aussi les fichiers cachés, dont `.git/`. Utiliser `handle` et non `handle_path`, qui retirerait le préfixe et changerait le `DOCUMENT_ROOT`. Celui-ci vaut ici `/home/<utilisateur>/programmation` : les dossiers de travail sont donc créés dans `/home/<utilisateur>` (`/home/<utilisateur>/sqlsandbox-tmp` et `/home/<utilisateur>/sessions-sqlsandbox`), ce que permet le pool sous `<utilisateur>`. Valider avant de recharger : `caddy validate --config /etc/caddy/Caddyfile`, puis `sudo systemctl reload caddy`.
+
+**Derrière des relais HTTPS.** Si Caddy reçoit les requêtes en HTTP depuis des relais qui terminent TLS (déclarés dans `trusted_proxies`, avec `client_ip_headers X-Forwarded-For`), PHP verrait l'adresse du relais pour tous les étudiants, et les limites par adresse (places d'exécution, `par_ip` de l'IA) seraient communes à tous ; il ne saurait pas non plus que le site est en HTTPS, et le cookie de session perdrait l'attribut `Secure`. Remplacer alors `php_fastcgi` par :
+
+```caddy
+map {http.request.header.X-Forwarded-Proto} {sqlsandbox_https} {
+	https on
+	default off
+}
+php_fastcgi unix//run/php/sqlsandbox.sock {
+	env REMOTE_ADDR {client_ip}
+	env HTTPS {sqlsandbox_https}
+}
+```
 
 **Installation et mises à jour par git.** Le dossier est un clone du dépôt public (HTTPS, sans clé) :
 
@@ -110,7 +127,7 @@ cd /home/<utilisateur>/programmation/SQLSandbox && git pull --ff-only
 
 Rien à recharger ensuite : PHP relit les fichiers modifiés. Les copies des bases et les sessions étant hors du clone, celui-ci reste propre (`git status` vide) et `git pull` ne rencontre pas de conflit ; ne pas modifier les fichiers directement sur le serveur. `tests/`, `.github/` et `.git/` sont présents dans le dossier mais interdits par la règle `@interdit`. Les dossiers de travail existant, `tmp/` ne sert pas.
 
-Pour vérifier : `https://<site>/SQLSandbox/bdd/em/em.db` et `https://<site>/SQLSandbox/.git/config` doivent répondre 403, et une session ouverte doit apparaître dans `/home/<utilisateur>/sessions-sqlsandbox`.
+Pour vérifier : `https://<site>/SQLSandbox/bdd/em/em.db` et `https://<site>/SQLSandbox/.git/config` doivent répondre 403 (un relais peut répondre lui-même autrement à une adresse en `.db` : vérifier alors `https://<site>/SQLSandbox/bdd/`), et une session ouverte doit apparaître dans `/home/<utilisateur>/sessions-sqlsandbox`.
 
 ## Génération de données par IA (facultatif)
 
