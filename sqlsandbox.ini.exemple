@@ -10,6 +10,14 @@
 ; HTTPS obligatoire, sauf pour localhost.
 exos_source = ""
 
+; Facultatif : adresse par laquelle le serveur lit QueryCraft, si elle diffère de
+; exos_source, qui reste l'adresse publique des liens « Ouvrir dans QueryCraft ». Utile
+; quand QueryCraft est sur la même machine derrière un relais qui filtre certaines
+; adresses (téléchargement des bases en .db), par exemple :
+;   exos_acces = "http://127.0.0.1:8080/querycraft"
+; HTTPS obligatoire, sauf pour localhost.
+; exos_acces = ""
+
 ; Jeton du catalogue de cette instance, créé côté QueryCraft avec :
 ;   tenant-sbs --set-catalogue-token demo      (ou le code à 6 chiffres du tenant)
 ; Le jeton de la démo sert aussi de jeton général : il ouvre chaque tenant dont l'enseignant

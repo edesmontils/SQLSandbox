@@ -550,6 +550,17 @@ verifie('source : jeton jamais envoyé en HTTP vers une autre machine', exos_lit
 file_put_contents("$tmp/sqlsandbox.ini", "exos_source = \"https://asql.example/123456/\"\nexos_jeton = \"j\"\n");
 verifie('source : HTTPS accepté, / final retiré', exos_lit_ini("$tmp/sqlsandbox.ini")['source'] === 'https://asql.example/123456');
 verifie('source absente : exercices locaux', exos_lit_ini("$tmp/inexistant.ini")['source'] === '');
+verifie('accès : la source elle-même par défaut', exos_lit_ini("$tmp/sqlsandbox.ini")['acces'] === 'https://asql.example/123456');
+file_put_contents("$tmp/sqlsandbox.ini", "exos_source = \"https://asql.example/qc\"\nexos_acces = \"http://127.0.0.1:8080/qc/\"\nexos_jeton = \"j\"\n");
+$ini_acces = exos_lit_ini("$tmp/sqlsandbox.ini");
+verifie('accès : adresse locale en HTTP acceptée, source publique gardée',
+        $ini_acces['acces'] === 'http://127.0.0.1:8080/qc' && $ini_acces['source'] === 'https://asql.example/qc');
+$conf_acces = exos_conf_tenant($ini_acces, '123456');
+verifie('accès : tenant ajouté à l\'accès et à la source',
+        $conf_acces['acces'] === 'http://127.0.0.1:8080/qc/123456' && $conf_acces['source'] === 'https://asql.example/qc/123456');
+file_put_contents("$tmp/sqlsandbox.ini", "exos_source = \"https://asql.example/qc\"\nexos_acces = \"http://serveur-distant.example/qc\"\nexos_jeton = \"j\"\n");
+verifie('accès : HTTP vers une autre machine refusé, retour à la source',
+        exos_lit_ini("$tmp/sqlsandbox.ini")['acces'] === 'https://asql.example/qc');
 unlink("$tmp/sqlsandbox.ini");
 $conf_cat = array('source' => "http://127.0.0.1:$port_faux/qc", 'jeton' => 'jeton-de-test', 'ttl' => 0);
 $cache_existait = is_file(DOSSIER_TMP.'/exos-catalogue.json');

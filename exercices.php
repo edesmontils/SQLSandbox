@@ -50,19 +50,24 @@ if (!defined('DOSSIER_BASES')) define('DOSSIER_BASES', dossier_prive(INSTANCE.'-
 function exos_lit_ini($fichier) {
 	$ini = (is_file($fichier) && is_readable($fichier)) ? @parse_ini_file($fichier) : false;
 	if (!is_array($ini)) $ini = array();
-	$source = rtrim(trim((string)($ini['exos_source'] ?? '')), '/');
-	if ($source !== '') {
-		// Le jeton ne circule en clair que vers la machine elle-même : HTTPS exigé sauf localhost
-		$hote = parse_url($source, PHP_URL_HOST);
-		$local = in_array($hote, array('localhost', '127.0.0.1', '[::1]'), true);
-		$schema = parse_url($source, PHP_URL_SCHEME);
-		if (!($schema === 'https' || ($schema === 'http' && $local))) {
-			error_log("SQLSandbox exercices : exos_source doit être en HTTPS ($source ignorée)");
-			$source = '';
-		}
-	}
+	// Le jeton ne circule en clair que vers la machine elle-même : HTTPS exigé sauf localhost
+	$valide = function ($cle) use ($ini) {
+		$url = rtrim(trim((string)($ini[$cle] ?? '')), '/');
+		if ($url === '') return '';
+		$local = in_array(parse_url($url, PHP_URL_HOST), array('localhost', '127.0.0.1', '[::1]'), true);
+		$schema = parse_url($url, PHP_URL_SCHEME);
+		if ($schema === 'https' || ($schema === 'http' && $local)) return $url;
+		error_log("SQLSandbox exercices : $cle doit être en HTTPS ($url ignorée)");
+		return '';
+	};
+	$source = $valide('exos_source');
+	// exos_acces : adresse par laquelle le serveur lit QueryCraft quand elle diffère de
+	// l'adresse publique exos_source (liens montrés aux étudiants), par exemple derrière un
+	// relais qui filtre les adresses en .db
+	$acces = ($source !== '') ? $valide('exos_acces') : '';
 	return array(
 		'source' => $source,
+		'acces' => ($acces !== '') ? $acces : $source,
 		'jeton' => trim((string)($ini['exos_jeton'] ?? '')),
 		'ttl' => max(0, (int)($ini['exos_ttl'] ?? EXOS_TTL)),
 		// Plafonds d'espace disque des copies (fonctions.php, espace_sature), en Mo dans le fichier
@@ -94,7 +99,10 @@ function tenant_valide($code) {
 // Réglages de la source pour le tenant $tenant ('' : la source elle-même)
 function exos_conf_tenant($ini, $tenant) {
 	$ini['tenant'] = ($ini['source'] !== '' && tenant_valide($tenant)) ? $tenant : '';
-	if ($ini['tenant'] !== '') $ini['source'] .= '/'.$ini['tenant'];
+	if ($ini['tenant'] !== '') {
+		$ini['acces'] = ($ini['acces'] ?? $ini['source']).'/'.$ini['tenant'];
+		$ini['source'] .= '/'.$ini['tenant'];
+	}
 	return $ini;
 }
 
@@ -243,7 +251,7 @@ function exos_appel($conf, $etag) {
 	$entetes = array('Accept: application/json', 'Authorization: Bearer '.$conf['jeton']);
 	if ($etag !== '') $entetes[] = 'If-None-Match: '.$etag;
 	$etag_recu = '';
-	$c = curl_init($conf['source'].'/catalogue/exos');
+	$c = curl_init(($conf['acces'] ?? $conf['source']).'/catalogue/exos');
 	curl_setopt_array($c, array(
 		CURLOPT_HTTPHEADER => $entetes,
 		CURLOPT_RETURNTRANSFER => true,
@@ -553,7 +561,7 @@ function bases_telecharge($conf, $fichier, $sha256, $cible) {
 	$tmp = $cible.'.'.getmypid().'.tmp';
 	$f = @fopen($tmp, 'wb');
 	if (!$f) return false;
-	$c = curl_init($conf['source'].'/catalogue/bases/'.rawurlencode($fichier));
+	$c = curl_init(($conf['acces'] ?? $conf['source']).'/catalogue/bases/'.rawurlencode($fichier));
 	curl_setopt_array($c, array(
 		CURLOPT_HTTPHEADER => array('Authorization: Bearer '.$conf['jeton']),
 		CURLOPT_FILE => $f,
