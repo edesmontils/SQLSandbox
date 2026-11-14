@@ -762,71 +762,44 @@ function libelle_type($type) {
 	return $t['modele'] ? 'compléter une requête' : 'écrire une requête';
 }
 
-// Liste des TP (exercices au format QueryCraft) d'une base
+// Liste des TP (exercices au format QueryCraft) d'une base : une carte par TP,
+// qui ouvre ses questions dans la page (page_tp() en JavaScript)
 function liste_TP($base) {
 	$exos = exos_de_base($base);
-	echo "<div class='post'><h2 class='title'>Travaux pratiques</h2><ul>";
+	echo "<div class='post'><h2 class='title'>Travaux pratiques</h2>";
+	if (count($exos) == 0) {
+		echo "<p class='indicateur'>Aucun TP disponible actuellement pour cette base.</p></div>";
+		return;
+	}
+	echo "<ul class='cartes-tp'>";
 	foreach ($exos as $code => $exo) {
-		echo "<li><a href='#' onClick='page_tp(".args_js($base, (string)$code).");return false;'>"
-		    .html($code)."</a> (".count($exo['questions'])." question(s))</li>";
+		$sortes = array();
+		foreach ($exo['questions'] as $q) $sortes[libelle_type($q[3])] = true;
+		$nb = count($exo['questions']);
+		echo "<li><button type='button' class='carte-tp' onclick='page_tp(".args_js($base, (string)$code).")'>"
+		    ."<span class='carte-tp-titre'>📝 ".html($code)."</span>"
+		    ."<span class='carte-tp-detail'>".$nb." question".($nb > 1 ? 's' : '')
+		    .($sortes ? " · ".html(implode(', ', array_keys($sortes))) : '')."</span>"
+		    ."<span class='carte-tp-suivi' data-tp='".html(json_encode(array((string)$base, (string)$code)))."'></span>"
+		    ."</button></li>";
 	}
-	echo "</ul>";
-	if (count($exos) == 0) echo "<h3 class='indicateur'>Aucun TP disponible actuellement</h3>";
-	echo "</div>";
+	echo "</ul></div>";
 }
 
-// Page d'accueil d'un TP
-function page_tp($base, $code) {
+// Questions d'un TP, telles qu'envoyées au navigateur (sans les réponses attendues), ou null
+function questions_tp($base, $code) {
 	$exos = exos_de_base($base);
-	if (!is_string($code) || !isset($exos[$code])) {
-		echo "<p>TP inconnu.</p>";
-		return;
-	}
-	$questions = $exos[$code]['questions'];
-	$sortes = array();
-	foreach ($questions as $q) $sortes[libelle_type($q[3])] = true;
-
-	echo "<div class='post'><h2 class='title'>".html($code)."</h2>";
-	echo "<p class='actions'><a class='btn' href='tp.php?base=".html(urlencode($base))."&amp;tp=".html(urlencode($code))."' target='_blank'>🚀 Commencer le TP</a></p>";
-	echo "</div>";
-	echo "<div class='post'><h2 class='title'>Nombre de questions : ".count($questions)."</h2>";
-	if ($sortes) echo "<h3 class='indicateur'>Questions pour ".html(implode(', ', array_keys($sortes)))."</h3>";
-	echo "</div>";
-	echo "<div class='post'><h2 class='title'>Déroulement</h2><ul>"
-	    ."<li>Pour débuter le TP, appuyez sur « 🚀 Commencer le TP » : la liste des questions s'ouvre dans un nouvel onglet.</li>"
-	    ."<li>Pour traiter une question, cliquez sur « ✏️ Répondre ».</li>"
-	    ."<li>Dans une question :<ul>"
-	    ."<li>« ▶️ Exécuter » (ou Ctrl+Entrée) lance votre requête, ou la requête donnée quand il faut en trouver l'intention ;</li>"
-	    ."<li>pour une question d'intention, « ✅ Faire corriger mon intention » la fait évaluer (par l'IA quand le serveur l'a activée) ;</li>"
-	    ."<li>« 🧺 Mémoriser la réponse » garde votre réponse ;</li>"
-	    ."<li>« ⬅️ Retour aux questions » revient à la liste, en mémorisant votre réponse.</li>"
-	    ."</ul></li></ul>"
-	    ."<p><a href='aides.php' target='_blank'>❓ Aide de l'application</a></p></div>";
-}
-
-// Bouton d'ouverture d'une question (données passées à ouvre_question() en JavaScript)
-function bouton_question($question) {
-	echo "<p class='question'><span>Question ".(int)$question['numero']."</span> ";
-	echo "<button type='button' class='btn petit' title='Répondre à la question' "
-	    ."onclick='ouvre_question(".args_js($question).")'>✏️ Répondre</button></p>";
-}
-
-// Liste des questions d'un TP (page tp.php)
-function liste_question($base, $code) {
-	$exos = exos_de_base($base);
-	if (!is_string($code) || !isset($exos[$code])) {
-		echo "<p>TP inconnu.</p>";
-		return;
-	}
-	description_base($base);
-	echo "<div class='post'><h2 class='title'>Questions du TP ".html($code)."</h2>";
-	$i = 0;
+	if (!is_string($code) || !isset($exos[$code])) return null;
+	$questions = array();
 	foreach ($exos[$code]['questions'] as $code_q => $q) {
 		$q = exos_question($base, $code, (string)$code_q);
-		if ($q) bouton_question(exos_question_client($base, $code, (string)$code_q, $q, ++$i));
+		if ($q) {
+			$c = exos_question_client($base, $code, (string)$code_q, $q, count($questions) + 1);
+			$c['libelle'] = libelle_type($q['type']);
+			$questions[] = $c;
+		}
 	}
-	if ($i == 0) echo "<h3 class='indicateur'>Aucune question n'est disponible actuellement</h3>";
-	echo "</div>";
+	return array('base' => (string)$base, 'tp' => $code, 'questions' => $questions);
 }
 
 // En-tête commun des pages ouvertes dans un nouvel onglet (TP, thèmes, tables, aide)

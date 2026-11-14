@@ -608,57 +608,186 @@ function active_liens() {
     });
 }
 
+// Sélection de tables par le diagramme. Clic : cette table seule (un second clic la
+// masque) ; Ctrl+clic ou ⌘+clic : ajoute ou retire la table de la sélection.
+function nouvelle_selection(choisies, nom, ajout) {
+    var i = choisies.indexOf(nom);
+    if (ajout) {
+        choisies = choisies.slice();
+        if (i >= 0) choisies.splice(i, 1); else choisies.push(nom);
+        return choisies;
+    }
+    return (i >= 0 && choisies.length == 1) ? [] : [nom];
+}
+
+// Rend sélectionnables les boîtes du diagramme dessiné dans `cible` : choisit(nom, ajout)
+// est appelé au clic et au clavier (Entrée, Espace)
+function boites_selectionnables(cible, choisit) {
+    cible.querySelectorAll('.boite').forEach(function (g) {
+        var nom = g.getAttribute('data-table');
+        g.setAttribute('tabindex', '0');
+        g.setAttribute('role', 'button');
+        g.setAttribute('aria-label', 'Table ' + nom);
+        g.addEventListener('click', function (e) { choisit(nom, e.ctrlKey || e.metaKey); });
+        // Sur Mac, Ctrl+clic ouvre le menu contextuel au lieu de produire un clic
+        g.addEventListener('contextmenu', function (e) {
+            if (!e.ctrlKey) return;
+            e.preventDefault();
+            choisit(nom, true);
+        });
+        g.addEventListener('keydown', function (e) {
+            if (e.key == 'Enter' || e.key == ' ') { e.preventDefault(); choisit(nom, e.ctrlKey || e.metaKey); }
+        });
+    });
+}
+
+// Met en évidence les tables choisies dans le diagramme de `cible`
+function marque_choisies(cible, choisies) {
+    var svg = cible.querySelector('svg');
+    if (svg) svg.querySelectorAll('.boite').forEach(function (g) {
+        var oui = choisies.indexOf(g.getAttribute('data-table')) >= 0;
+        g.classList.toggle('choisie', oui);
+        g.setAttribute('aria-pressed', oui ? 'true' : 'false');
+    });
+}
+
+function texte_nb_tables(n) {
+    return n == 0 ? 'Aucune table sélectionnée.' : n == 1 ? '1 table affichée.' : n + ' tables affichées.';
+}
+
 // Page des tables (dbListe.php) : le diagramme sert à choisir les tables affichées.
-// Clic : cette table seule (un second clic la masque) ; Ctrl+clic ou ⌘+clic : ajoute ou
-// retire la table de la sélection. Par défaut, aucune table n'est affichée.
+// Par défaut, aucune table n'est affichée.
 function choix_tables(m) {
     var cible = $('diagramme');
     if (!cible) return;
     var choisies = [];
     function applique() {
-        var svg = cible.querySelector('svg');
-        if (svg) svg.querySelectorAll('.boite').forEach(function (g) {
-            var oui = choisies.indexOf(g.getAttribute('data-table')) >= 0;
-            g.classList.toggle('choisie', oui);
-            g.setAttribute('aria-pressed', oui ? 'true' : 'false');
-        });
+        marque_choisies(cible, choisies);
         document.querySelectorAll('.contenu-table').forEach(function (d) {
             d.hidden = choisies.indexOf(d.getAttribute('data-table')) < 0;
         });
-        $('nb-tables').textContent = choisies.length == 0 ? 'Aucune table sélectionnée.'
-            : choisies.length == 1 ? '1 table affichée.' : choisies.length + ' tables affichées.';
+        $('nb-tables').textContent = texte_nb_tables(choisies.length);
         $('aucune-table').disabled = choisies.length == 0;
-    }
-    function choisit(nom, ajout) {
-        var i = choisies.indexOf(nom);
-        if (ajout) {
-            if (i >= 0) choisies.splice(i, 1); else choisies.push(nom);
-        } else {
-            choisies = (i >= 0 && choisies.length == 1) ? [] : [nom];
-        }
-        applique();
     }
     var dessin = function () {
         cible.innerHTML = dessine_modele(m);
         active_liens();
-        cible.querySelectorAll('.boite').forEach(function (g) {
-            var nom = g.getAttribute('data-table');
-            g.setAttribute('tabindex', '0');
-            g.setAttribute('role', 'button');
-            g.setAttribute('aria-label', 'Table ' + nom);
-            g.addEventListener('click', function (e) { choisit(nom, e.ctrlKey || e.metaKey); });
-            // Sur Mac, Ctrl+clic ouvre le menu contextuel au lieu de produire un clic
-            g.addEventListener('contextmenu', function (e) {
-                if (!e.ctrlKey) return;
-                e.preventDefault();
-                choisit(nom, true);
-            });
-            g.addEventListener('keydown', function (e) {
-                if (e.key == 'Enter' || e.key == ' ') { e.preventDefault(); choisit(nom, e.ctrlKey || e.metaKey); }
-            });
+        boites_selectionnables(cible, function (nom, ajout) {
+            choisies = nouvelle_selection(choisies, nom, ajout);
+            applique();
         });
         applique();
     };
     $('aucune-table').addEventListener('click', function () { choisies = []; applique(); });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(dessin); else dessin();
+}
+
+//----------------------------------------------------------------
+// Volet de la base dans une question de TP : diagramme de la copie de l'étudiant, dont
+// les tables choisies s'affichent juste en dessous. Le volet reste ouvert, avec les mêmes
+// tables, d'une question à l'autre du même TP.
+//----------------------------------------------------------------
+
+var volet_base = {ouvert: false, base: null, choisies: []};
+
+// Code HTML du volet pour la base `nom`
+function html_volet_base(nom) {
+    if (volet_base.base !== nom) volet_base = {ouvert: false, base: nom, choisies: []};
+    return '<details class="volet-base" id="volet-base"' + (volet_base.ouvert ? ' open' : '')
+        + ' ontoggle="bascule_volet_base(this)"><summary>🗄️ Base ' + echappe(nom)
+        + ' : diagramme et contenu des tables</summary>'
+        + '<p class="astuce">Cliquez sur une table du diagramme pour voir son contenu (celui de votre copie), '
+        + 'Ctrl+clic (⌘+clic sur Mac) pour en voir plusieurs.</p>'
+        + '<div class="actions"><button type="button" class="btn secondaire petit" onclick="bascule_ajustement(this)">⤢ Ajuster à la largeur</button>'
+        + '<button type="button" class="btn secondaire petit" id="aucune-table" onclick="choisit_table_volet(null)">Tout désélectionner</button>'
+        + '<span class="astuce" id="nb-tables"></span></div>'
+        + '<div class="diagramme selectionnable" id="diagramme"><p class="astuce">Chargement du diagramme…</p></div>'
+        + '<div class="tables-volet" id="tables-volet"></div></details>';
+}
+
+function bascule_volet_base(details) {
+    volet_base.ouvert = details.open;
+    if (details.open && !details.dataset.charge) charge_volet_base();
+}
+
+// (Re)charge le diagramme et le contenu des tables choisies (le schéma a pu changer)
+function charge_volet_base() {
+    var details = $('volet-base');
+    if (!details) return;
+    details.dataset.charge = '1';
+    var nom = volet_base.base;
+    appel('get', {Soumettre: 'modele', nom_base: nom},
+        function (trs) {
+            var m = null;
+            try { m = JSON.parse(trs.responseText); } catch (e) { m = null; }
+            var cible = $('diagramme');
+            if (!cible || volet_base.base !== nom) return;
+            if (!m || !m.tables) {
+                cible.innerHTML = '<p class="message">Impossible de lire le modèle de cette base.</p>';
+                return;
+            }
+            // Tables disparues (DROP) : retirées de la sélection
+            var noms = m.tables.map(function (t) { return t.nom; });
+            volet_base.choisies = volet_base.choisies.filter(function (n) { return noms.indexOf(n) >= 0; });
+            var dessin = function () {
+                cible.innerHTML = dessine_modele(m);
+                active_liens();
+                boites_selectionnables(cible, function (n, ajout) {
+                    choisit_table_volet(nouvelle_selection(volet_base.choisies, n, ajout));
+                });
+                choisit_table_volet(volet_base.choisies, true);
+            };
+            if (document.fonts && document.fonts.ready) document.fonts.ready.then(dessin); else dessin();
+        },
+        function (trs) {
+            if (!session_perdue(trs) && $('diagramme'))
+                $('diagramme').innerHTML = '<p class="message">Impossible de lire le modèle de cette base.</p>';
+        });
+}
+
+// Nouvelle sélection de tables (null : aucune) ; recharge : relit aussi les tables déjà affichées
+function choisit_table_volet(choisies, recharge) {
+    volet_base.choisies = choisies || [];
+    var cible = $('diagramme'), zone = $('tables-volet');
+    if (!cible || !zone) return;
+    marque_choisies(cible, volet_base.choisies);
+    $('nb-tables').textContent = texte_nb_tables(volet_base.choisies.length);
+    $('aucune-table').disabled = volet_base.choisies.length == 0;
+    // Les cadres sont rangés dans l'ordre de la sélection ; les autres disparaissent
+    var presents = {};
+    zone.querySelectorAll('.contenu-table').forEach(function (d) {
+        var n = d.getAttribute('data-table');
+        if (volet_base.choisies.indexOf(n) < 0) d.remove(); else presents[n] = d;
+    });
+    volet_base.choisies.forEach(function (n) {
+        var d = presents[n];
+        if (!d) {
+            d = document.createElement('div');
+            d.className = 'contenu-table';
+            d.setAttribute('data-table', n);
+            d.innerHTML = '<h3>Table ' + echappe(n) + '</h3><div class="story"><p class="astuce">Chargement…</p></div>';
+        }
+        zone.appendChild(d);
+        if (!presents[n] || recharge) charge_table_volet(d, n);
+    });
+}
+
+function charge_table_volet(cadre, nom_table) {
+    var base = volet_base.base;
+    appel('get', {Soumettre: 'table', nom_base: base, table: nom_table},
+        function (trs) {
+            if (volet_base.base === base) cadre.querySelector('.story').innerHTML = sans_scripts(trs.responseText);
+        },
+        function (trs) {
+            if (!session_perdue(trs)) cadre.querySelector('.story').innerHTML = '<p class="message">Contenu indisponible.</p>';
+        });
+}
+
+// Après une requête qui modifie la base : le volet ouvert est mis à jour
+function rafraichit_volet_base(requete) {
+    var d = $('volet-base');
+    if (!d) return;
+    delete d.dataset.charge;
+    if (d.open && !/^\s*(select|with|values|explain)\b/i.test(requete || '')) charge_volet_base();
+    else if (d.open) d.dataset.charge = '1';
 }

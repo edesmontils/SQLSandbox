@@ -561,17 +561,18 @@ verifie('table attendue : requête non réexécutée', $c['table'] === '<p>depui
 verifie('table attendue : PRAGMA refusé (autorizer)', exos_table_resultat('tp-em', 'select * from pragma_database_list')
         === '<p>Table indisponible.</p>');
 foreach (glob(DOSSIER_TMP.'/table_*') as $f) unlink($f);
-ob_start(); liste_question('tp-em', '<script>x</script>'); $o = ob_get_clean();
-verifie('nom de TP non reconnu non affiché', strpos($o, '<script>x') === false && strpos($o, 'TP inconnu') !== false, $o);
-ob_start(); liste_question('tp-em', 'tp-em-01'); $o = ob_get_clean();
-verifie('questions du TP dans l\'ordre', preg_match_all("/onclick='ouvre_question\\(([^']*)\\)/i", $o, $m) == 4
-        && array_map(function ($a) { return json_decode(html_entity_decode($a, ENT_QUOTES))->code; }, $m[1])
-           === array('tr-em-01', 're-em-01', 'int-em-01', 'cmp-em-01'), $o);
-verifie('données de question encodées dans l\'attribut', json_decode(html_entity_decode($m[1][0], ENT_QUOTES))->modele
-        === "SELECT ___\nFROM Fleuve\nWHERE longueur>1000", $m[1][0]);
-$fuites = array_filter(array_map(function ($a) { return json_decode(html_entity_decode($a, ENT_QUOTES), true); }, $m[1]),
+verifie('nom de TP non reconnu refusé', questions_tp('tp-em', '<script>x</script>') === null
+        && questions_tp('tp-em', array('x')) === null);
+$tp = questions_tp('tp-em', 'tp-em-01');
+verifie('questions du TP dans l\'ordre', array_column($tp['questions'], 'code')
+        === array('tr-em-01', 're-em-01', 'int-em-01', 'cmp-em-01'), json_encode($tp));
+verifie('questions numérotées et typées', array_column($tp['questions'], 'numero') === array(1, 2, 3, 4)
+        && $tp['questions'][0]['libelle'] !== '', json_encode($tp));
+verifie('requête à trous transmise', $tp['questions'][0]['modele'] === "SELECT ___\nFROM Fleuve\nWHERE longueur>1000",
+        $tp['questions'][0]['modele']);
+$fuites = array_filter($tp['questions'],
                        function ($q) { return $q['attendu'] === 'R' ? $q['requete'] !== '' : $q['intention'] !== ''; });
-verifie('aucune réponse attendue dans la page du TP', count($fuites) == 0, json_encode($fuites));
+verifie('aucune réponse attendue dans les questions du TP', count($fuites) == 0, json_encode($fuites));
 
 // Chaque requête de référence des exercices locaux doit s'exécuter sur sa base
 $fichiers_bd = array();
@@ -979,12 +980,17 @@ verifie('rubrique Crédits', $code == 200 && strpos($corps, 'hal-04144210') !== 
 list($code, $corps) = http("$u/controler.php?Soumettre=SQL");
 verifie('À propos de SQLite : fonctionnalités testées sur le serveur', $code == 200 && substr_count($corps, '✅ oui') + substr_count($corps, '❌ non') == 11
         && strpos($corps, 'Particularités de SQLite') !== false, $corps);
-list($code, $corps) = http("$u/tp.php?base=tp-em&tp=tp-em-01");
-verifie('page d\'un TP', substr_count($corps, 'ouvre_question(') == 4, $corps);
-list($code, $corps) = http("$u/tp.php?base=tp-em&tp=".urlencode('<img src=x>'));
-verifie('page d\'un TP : paramètre non affiché', strpos($corps, '<img src=x>') === false && strpos($corps, 'TP inconnu') !== false);
-list($code, $corps) = http("$u/tp.php?base=tp-em&tp[]=x");
-verifie('paramètre en tableau ignoré sans warning', strpos($corps, 'TP inconnu') !== false && stripos($corps, 'warning') === false, $corps);
+list($code, $corps) = http("$u/controler.php?Soumettre=questions&nom_base=tp-em&tp_name=tp-em-01");
+$tp = json_decode($corps, true);
+verifie('questions d\'un TP en JSON', $code == 200 && count($tp['questions'] ?? array()) == 4, $corps);
+list($code, $corps) = http("$u/controler.php?Soumettre=questions&nom_base=tp-em&tp_name=".urlencode('<img src=x>'));
+verifie('questions d\'un TP inconnu : 404 sans écho', $code == 404 && strpos($corps, '<img') === false, $corps);
+list($code, $corps) = http("$u/controler.php?Soumettre=questions&nom_base=tp-em&tp_name[]=x");
+verifie('paramètre en tableau ignoré sans warning', $code == 404 && stripos($corps, 'warning') === false, $corps);
+$r = @file_get_contents("$u/tp.php?base=tp-em&tp=tp-em-01", false,
+                        stream_context_create(array('http' => array('follow_location' => 0, 'ignore_errors' => true))));
+verifie('ancienne adresse tp.php : renvoi vers la page principale',
+        in_array('Location: index.php?base=tp-em&tp=tp-em-01', $http_response_header ?? array()), json_encode($http_response_header ?? null));
 list($code, $corps) = http("$u/controler.php", array('Soumettre' => 'corriger_intention', 'base' => 'tp-em',
                            'exercice' => 'tp-em-01', 'question' => 'int-em-01', 'intention' => 'Les fleuves'));
 verifie('intention sans jeton refusée (403)', $code == 403, $corps);
@@ -994,6 +1000,13 @@ list($code, $corps) = http("$u/controler.php", array('Soumettre' => 'corriger_in
 verifie('intention corrigée via l\'application', $code == 200 && (json_decode($corps, true)['verdict'] ?? '') === 'correct', $corps);
 list($code, $corps) = http("$u/controler.php?Soumettre=tp&nom_base=tp-em");
 verifie('liste des TP', strpos($corps, 'page_tp(') !== false && strpos($corps, 'tp-em-02') !== false, $corps);
+list($code, $corps) = http("$u/controler.php?Soumettre=table&nom_base=tp-em&table=Fleuve");
+verifie('contenu d\'une table (volet des questions)', $code == 200 && strpos($corps, '<table class="resultat">') !== false
+        && strpos($corps, 'longueur') !== false, substr($corps, 0, 300));
+list($code, $corps) = http("$u/controler.php?Soumettre=table&nom_base=tp-em&table=".urlencode('Fleuve" --'));
+verifie('contenu d\'une table : nom hors de la base refusé', $code == 404 && strpos($corps, '<table') === false, $corps);
+list($code, $corps) = http("$u/controler.php?Soumettre=table&nom_base=inconnue&table=Fleuve");
+verifie('contenu d\'une table : base inconnue refusée', $code == 404, $corps);
 list($code, $corps) = http("$u/controler.php?Soumettre=modele&nom_base=tp-cinema");
 $m = json_decode($corps, true);
 verifie('modèle en JSON', $code == 200 && count($m['tables']) == 5 && count($m['sql']) == 5, $corps);

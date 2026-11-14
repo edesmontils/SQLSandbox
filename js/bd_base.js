@@ -286,7 +286,10 @@ function maj_session_restante() {
 
 function init() {
     clear();
-    accueil();
+    // index.php?base=…&tp=… (ancienne adresse tp.php) : ouvre directement ce TP
+    var p = new URLSearchParams(window.location.search);
+    if (p.get('tp') && listeBases[p.get('base')]) page_tp(p.get('base'), p.get('tp'));
+    else accueil();
     maj_session_restante();
     setInterval(maj_session_restante, 30000);
 }
@@ -500,7 +503,7 @@ function db(nom) {
     cache($('posts'));
     maj($('posts'), description_base(nom));
     montre($('posts'));
-    insere_rubrique({Soumettre: 'tp', nom_base: nom});
+    insere_rubrique({Soumettre: 'tp', nom_base: nom}, maj_suivi_tp);
 }
 
 // Contenu des tables d'une base, dans un nouvel onglet
@@ -508,56 +511,197 @@ function db_tables(nom) {
     window.open('dbListe.php?base=' + encodeURIComponent(nom));
 }
 
-// Page d'accueil d'un TP
-function page_tp(nom, tp) {
-    marque_actif(pastille_base(nom));
-    cache($('posts'));
-    maj($('posts'), description_base(nom));
-    montre($('posts'));
-    insere_rubrique({Soumettre: 'pageIni', nom_base: nom, tp_name: tp});
-}
-
 //=================================================================
-// Questions (page tp.php), au format des exercices de QueryCraft.
+// Travaux pratiques, au format des exercices de QueryCraft : tout se passe dans la page
+// (liste des questions, question, précédente / suivante), sans nouvel onglet.
 // q.attendu : 'R' (écrire la requête) ou 'I' (rédiger l'intention de q.requete) ;
 // q.modele : requête à trous (types rI->R, rIT->R) ; q.table : table résultat affichée
 // d'emblée (types en T). Le serveur n'envoie jamais la solution d'une question …->R,
 // ni l'intention attendue d'une question …->I.
 //=================================================================
 
-var reponses = {};          // réponses mémorisées, par numéro de question
+var reponses = {};          // réponses mémorisées, par TP et question (cle_reponse())
+var tp_courant = null;      // {base, tp, questions} du TP ouvert
+var tps_charges = {};       // TP déjà chargés, par cle_reponse(base, tp)
 var question_courante = null;
-var page_questions = null;  // liste des questions, pour y revenir
+
+function cle_reponse(base, tp, code) {
+    return JSON.stringify([base, tp, code]);
+}
+
+function reponse_de(q) {
+    return reponses[cle_reponse(q.base, q.exercice, q.code)];
+}
+
+// Une réponse compte si elle diffère de la requête à trous donnée au départ
+function est_repondue(q) {
+    var r = reponse_de(q);
+    return r != null && r.trim() !== '' && r.trim() !== (q.modele || '').trim();
+}
+
+function nb_repondues(questions) {
+    var n = 0;
+    questions.forEach(function (q) { if (est_repondue(q)) n++; });
+    return n;
+}
+
+// Avancement des TP déjà ouverts, sur leurs cartes (liste des TP d'une base)
+function maj_suivi_tp() {
+    document.querySelectorAll('.carte-tp-suivi').forEach(function (e) {
+        var c = JSON.parse(e.dataset.tp);
+        var tp = tps_charges[cle_reponse(c[0], c[1])];
+        if (!tp || !tp.questions.length) return;
+        var n = nb_repondues(tp.questions);
+        e.textContent = n == tp.questions.length ? '✅ Toutes les questions ont une réponse'
+                                                  : n + ' / ' + tp.questions.length + ' avec une réponse';
+        e.classList.toggle('fini', n == tp.questions.length);
+    });
+}
+
+// Fil d'Ariane : Base › TP › Question
+function fil_ariane(question) {
+    var t = '<nav class="fil-ariane" aria-label="Fil d\'Ariane">';
+    t = t + '<button type="button" onclick="db(' + attr_js(tp_courant.base) + ')">🗄️ ' + echappe(tp_courant.base) + '</button>';
+    t = t + '<span aria-hidden="true">›</span>';
+    if (question) {
+        t = t + '<button type="button" onclick="retour_questions()">📝 ' + echappe(tp_courant.tp) + '</button>';
+        t = t + '<span aria-hidden="true">›</span><span aria-current="page">Question ' + question.numero + '</span>';
+    } else {
+        t = t + '<span aria-current="page">📝 ' + echappe(tp_courant.tp) + '</span>';
+    }
+    return t + '</nav>';
+}
+
+// Description de la base, repliée, pour l'avoir sous la main pendant le TP
+function description_repliee(nom) {
+    var b = listeBases[nom] || {};
+    var t = '<details class="description-base"><summary>📖 Description de la base ' + echappe(nom) + '</summary>';
+    t = t + '<div class="story"><p>' + (b['description'] || '') + '</p>';
+    if (b['tables'] && b['tables'].length) t = t + '<p><strong>Tables :</strong> ' + b['tables'].map(echappe).join(', ') + '</p>';
+    return t + '</div></details>';
+}
+
+// Ouvre un TP : ses questions sont chargées une fois, puis la navigation reste dans la page
+function page_tp(nom, tp) {
+    marque_actif(pastille_base(nom));
+    var deja = tps_charges[cle_reponse(nom, tp)];
+    if (deja) {
+        tp_courant = deja;
+        affiche_questions();
+        return;
+    }
+    cache($('posts'));
+    maj($('posts'), '<div class="post"><p>⏳ Chargement du TP…</p></div>');
+    montre($('posts'));
+    appel('get', {Soumettre: 'questions', nom_base: nom, tp_name: tp},
+        function (trs) {
+            var r = null;
+            try { r = JSON.parse(trs.responseText); } catch (e) { r = null; }
+            if (!r || !r.questions) {
+                maj($('posts'), '<div class="post"><p class="message">Impossible de charger ce TP.</p></div>');
+                return;
+            }
+            tp_courant = tps_charges[cle_reponse(nom, tp)] = r;
+            affiche_questions();
+        },
+        function (trs) {
+            if (session_perdue(trs)) return;
+            maj($('posts'), '<div class="post"><p class="message">Ce TP est introuvable.</p></div>');
+        });
+}
+
+// Résumé d'une question pour la liste
+function resume_question(q) {
+    if (q.attendu == 'I') return 'Que recherche cette requête ?';
+    return q.intention;
+}
+
+// Liste des questions du TP courant
+function affiche_questions() {
+    question_courante = null;
+    var qs = tp_courant.questions;
+    var faites = nb_repondues(qs);
+    var t = fil_ariane(null);
+    t = t + '<div class="post">';
+    t = t + '<h2 class="title">TP ' + echappe(tp_courant.tp) + '</h2>';
+    t = t + '<div class="progression"><div class="progression-barre"><span style="width:'
+          + (qs.length ? Math.round(100 * faites / qs.length) : 0) + '%"></span></div>';
+    t = t + '<span>' + faites + ' / ' + qs.length + ' question' + (qs.length > 1 ? 's' : '') + ' avec une réponse</span></div>';
+    t = t + description_repliee(tp_courant.base);
+    t = t + '<details class="deroulement"><summary>❔ Comment ça marche ?</summary><ul>'
+          + '<li>Cliquez sur une question pour y répondre ; « Précédente » et « Suivante » passent d\'une question à l\'autre.</li>'
+          + '<li>« ▶️ Exécuter » (ou Ctrl+Entrée) lance votre requête sur votre copie de la base, ou la requête donnée quand il faut en trouver l\'intention.</li>'
+          + '<li>Pour une question d\'intention, « ✅ Faire corriger mon intention » la fait évaluer (par l\'IA quand le serveur l\'a activée).</li>'
+          + '<li>Votre réponse est gardée quand vous changez de question ; elle est perdue si vous rechargez la page.</li>'
+          + '</ul></details>';
+    if (qs.length == 0) {
+        t = t + '<p class="indicateur">Aucune question n\'est disponible actuellement.</p>';
+    } else {
+        t = t + '<ol class="liste-questions">';
+        qs.forEach(function (q, i) {
+            var faite = est_repondue(q);
+            t = t + '<li><button type="button" class="ligne-question' + (faite ? ' faite' : '') + '" onclick="ouvre_question(' + i + ')">';
+            t = t + '<span class="numero">' + q.numero + '</span>';
+            t = t + '<span class="corps"><span class="type">' + echappe(q.libelle || '') + '</span>';
+            t = t + '<span class="resume">' + echappe(resume_question(q)) + '</span></span>';
+            t = t + '<span class="etat">' + (faite ? '✅ Répondue' : 'À faire') + '</span>';
+            t = t + '</button></li>';
+        });
+        t = t + '</ol>';
+        var suivante = qs.findIndex(function (q) { return !est_repondue(q); });
+        t = t + '<div class="actions"><button type="button" class="btn" onclick="ouvre_question(' + (suivante < 0 ? 0 : suivante) + ')">'
+              + (faites == 0 ? '🚀 Commencer' : (suivante < 0 ? '🔁 Revoir la question 1' : '▶️ Reprendre à la question ' + qs[suivante].numero)) + '</button></div>';
+    }
+    t = t + '</div>';
+    cache($('posts'));
+    maj($('posts'), t);
+    apparait($('posts'));
+    window.scrollTo(0, 0);
+}
 
 function bascule_aide() {
     var aide = $('div1');
     aide.style.display = (aide.style.display == 'block') ? 'none' : 'block';
 }
 
-function ouvre_question(q) {
-    if (page_questions == null) page_questions = $('posts').innerHTML;
+// Ouvre la question d'indice i du TP courant
+function ouvre_question(i) {
+    var qs = tp_courant.questions;
+    if (i < 0 || i >= qs.length) return;
+    var q = qs[i];
     question_courante = q;
-    t = '<div class="post">';
-    t = t + '<h2>Base ' + echappe(q.base) + '</h2>';
-    t = t + '<h2 class="title">Question ' + q.numero + '</h2>';
+    var t = fil_ariane(q);
+    t = t + '<div class="post question-tp">';
+    // Pastilles des questions : position, réponses données, accès direct
+    t = t + '<div class="navigation-questions" role="group" aria-label="Questions du TP">';
+    qs.forEach(function (autre, j) {
+        t = t + '<button type="button" class="pastille-question' + (j == i ? ' courante' : '') + (est_repondue(autre) ? ' faite' : '')
+              + '" title="Question ' + autre.numero + (est_repondue(autre) ? ' (répondue)' : '') + '"'
+              + (j == i ? ' aria-current="step"' : '') + ' onclick="ouvre_question(' + j + ')">' + autre.numero + '</button>';
+    });
+    t = t + '</div>';
+    t = t + '<h2 class="title">Question ' + q.numero + ' <span class="sur">/ ' + qs.length + '</span>'
+          + ' <span class="type">' + echappe(q.libelle || '') + '</span></h2>';
     t = t + '<div class="story">';
-    // Le commentaire de l'enseignant (indice) est du texte : il est échappé
-    if (q.aide) {
-        t = t + '<p><button type="button" class="btn secondaire petit" onclick="bascule_aide()">💡 Aide</button></p>';
-        t = t + '<div id="div1"><p>' + echappe(q.aide) + '</p></div>';
-    }
     if (q.instructions) t = t + '<p class="message">' + echappe(q.instructions) + '</p>';
     if (q.attendu == 'I') {
-        t = t + '<p class="libelle">Requête :</p><pre class="cm-s-default">' + colore_sql(q.requete) + '</pre>';
+        t = t + '<p class="libelle">Requête :</p><pre class="cm-s-default enonce-requete">' + colore_sql(q.requete) + '</pre>';
         if (q.table) t = t + '<p class="libelle">Son résultat :</p><div class="table-attendue">' + q.table + '</div>';
+        t = t + html_volet_base(q.base);
         t = t + '<p class="libelle"><label for="requete">Que recherche la requête ci-dessus ? Rédigez son intention :</label></p>';
         t = t + '<textarea rows="3" cols="80" id="requete" maxlength="2000"></textarea>';
     } else {
-        t = t + '<p>' + echappe(q.intention) + '</p>';
+        t = t + '<p class="enonce">' + echappe(q.intention) + '</p>';
         if (q.table) t = t + '<p class="libelle">Table attendue :</p><div class="table-attendue">' + q.table + '</div>';
+        t = t + html_volet_base(q.base);
         t = t + '<p class="libelle"><label for="requete">' + (q.modele ? 'Complétez la requête suivante' : 'Écrivez la requête');
         t = t + ' <span class="astuce">(Ctrl+Entrée pour l\'exécuter)</span></label></p>';
         t = t + '<textarea rows="10" cols="80" id="requete"></textarea>';
+    }
+    // Le commentaire de l'enseignant (indice) est du texte : il est échappé
+    if (q.aide) {
+        t = t + '<p><button type="button" class="btn secondaire petit" onclick="bascule_aide()">💡 Indice</button></p>';
+        t = t + '<div id="div1"><p>' + echappe(q.aide) + '</p></div>';
     }
     t = t + '<div class="actions">';
     if (q.attendu == 'I') {
@@ -566,19 +710,30 @@ function ouvre_question(q) {
     } else {
         t = t + '<button type="button" class="btn" onclick="reponse()">▶️ Exécuter</button>';
     }
-    t = t + '<button type="button" class="btn secondaire" onclick="memorise_reponse(true)">🧺 Mémoriser la réponse</button>';
-    t = t + '<button type="button" class="btn secondaire" onclick="retour_questions()">⬅️ Retour aux questions</button>';
     t = t + '</div><div id="correction"></div><div id="results"></div>';
-    t = t + '</div></div>';
+    t = t + '</div>';
+    // Navigation entre questions
+    t = t + '<div class="pied-question">';
+    t = t + '<button type="button" class="btn secondaire" onclick="ouvre_question(' + (i - 1) + ')"' + (i == 0 ? ' disabled' : '') + '>◀️ Précédente</button>';
+    t = t + '<button type="button" class="btn secondaire" onclick="retour_questions()">☰ Toutes les questions</button>';
+    if (i < qs.length - 1) t = t + '<button type="button" class="btn" onclick="ouvre_question(' + (i + 1) + ')">Suivante ▶️</button>';
+    else t = t + '<button type="button" class="btn" onclick="retour_questions()">🏁 Terminer</button>';
+    t = t + '</div>';
+    t = t + '</div>';
 
     cache($('posts'));
     maj($('posts'), t);
-    var initiale = reponses[q.numero];
+    var initiale = reponse_de(q);
     if (initiale == null) initiale = q.modele || '';
     $('requete').value = initiale;
     apparait($('posts'));
+    window.scrollTo(0, 0);
+    if (volet_base.ouvert) charge_volet_base();
     // L'intention se rédige en français : zone de saisie simple
-    if (q.attendu != 'I') editeur_sql($('requete'), reponse);
+    // La réponse est gardée à chaque frappe : elle survit à tout changement de vue
+    var editeur = (q.attendu != 'I') ? editeur_sql($('requete'), reponse) : null;
+    if (editeur) editeur.on('change', function () { memorise_reponse(false); });
+    else $('requete').addEventListener('input', function () { memorise_reponse(false); });
 }
 
 // Exécute la réponse de l'élève sur sa copie de la base
@@ -650,22 +805,25 @@ function execute_sur_copie(requete) {
             cache($('results'));
             maj($('results'), trs.responseText);
             apparait($('results'));
+            rafraichit_volet_base(requete);
         },
         function (trs) {
             query_failed(trs);
         });
 }
 
+// Garde la réponse de la question courante (en mémoire de la page)
 function memorise_reponse(message) {
-    reponses[question_courante.numero] = $('requete').value;
+    if (!question_courante || !$('requete')) return;
+    var q = question_courante;
+    reponses[cle_reponse(q.base, q.exercice, q.code)] = $('requete').value;
+    var pastille = document.querySelector('.pastille-question.courante');
+    if (pastille) pastille.classList.toggle('faite', est_repondue(q));
     if (message) ajoute($('results'), '<p class="statut ok">🧺 Réponse mémorisée</p>');
 }
 
 function retour_questions() {
-    memorise_reponse(false);
-    cache($('posts'));
-    maj($('posts'), page_questions);
-    apparait($('posts'));
+    affiche_questions();
 }
 
 // Affiche une rubrique du contrôleur, chargée une seule fois puis gardée dans

@@ -4,7 +4,7 @@
 <!ENTITY seuil '10800'>
 ]>
 
-<mab version="7.5" debug="false" name="SQL Sandbox">
+<mab version="7.6" debug="false" name="SQL Sandbox">
 	<!-- numéro de version de l'application -->
 	<!-- durée limite de vie d'une copie de base : 60*60*3 = 3 heures -->
 	<seuil>&seuil;</seuil>
@@ -189,7 +189,7 @@
 					<li><strong>▶️ Exécuter</strong> (ou Ctrl+Entrée, Cmd+Entrée sur Mac) : lance la
 						requête ; le résultat s'affiche juste en dessous.</li>
 					<li><strong>🧺 Mémoriser</strong> : garde la requête et son résultat dans
-						l'onglet Mémoire (ou, dans un TP, garde votre réponse).</li>
+						l'onglet Mémoire.</li>
 					<li>Dans l'onglet Mémoire, <strong>👁️ Résultat</strong> affiche ou masque le
 						résultat obtenu, <strong>✏️ Modifier</strong> reprend la requête dans
 						l'éditeur, <strong>🗑️ Supprimer</strong> l'efface.</li>
@@ -203,9 +203,16 @@
 						QueryCraft interroge) : ouvre QueryCraft dans un nouvel onglet avec votre
 						requête, pour la suivre pas à pas ou la faire commenter. QueryCraft l'exécute
 						sur la base d'origine, sans vos modifications.</li>
-					<li>Dans un TP, <strong>✏️ Répondre</strong> ouvre une question et
-						<strong>⬅️ Retour aux questions</strong> revient à la liste en mémorisant
-						votre réponse ; <strong>💡 Aide</strong> affiche un indice quand la
+					<li>Dans un TP, tout se passe dans la page : cliquez sur une question pour y
+						répondre, <strong>◀️ Précédente</strong> et <strong>Suivante ▶️</strong> passent
+						d'une question à l'autre (les numéros en haut de la question y mènent aussi
+						directement) et <strong>☰ Toutes les questions</strong> revient à la liste.
+						Le volet <strong>🗄️ Base</strong> de la question montre le diagramme de votre
+						copie : cliquez sur une table pour voir son contenu juste en dessous
+						(Ctrl+clic ou ⌘+clic pour plusieurs) ; il reste ouvert d'une question à
+						l'autre et suit vos modifications.
+						Votre réponse est gardée à chaque frappe, tant que la page n'est pas
+						rechargée ; <strong>💡 Indice</strong> affiche une aide quand la
 						question en propose un. Selon la question, il faut écrire une requête,
 						compléter une requête à trous, ou rédiger l'intention d'une requête donnée
 						(que vous pouvez exécuter) : <strong>✅ Faire corriger mon intention</strong>
@@ -344,6 +351,17 @@
 	<listeMessages>
 		<!--message titre="" post=""><p></p>
 		</message-->
+		<message titre="Version 7.6" date="14/11/26" auteur="E. Desmontils">
+			<div>
+				<ul>
+					<li>les <b>TP s'ouvrent dans la page</b>, sans nouvel onglet : fil d'Ariane, liste des
+						questions avec leur avancement, passage à la question précédente ou suivante, et
+						réponses gardées à chaque frappe ;</li>
+					<li>dans une question, le <b>diagramme de la base</b> sert à choisir les tables dont le
+						contenu s'affiche sur place, à jour de vos modifications.</li>
+				</ul>
+			</div>
+		</message>
 		<message titre="Version 7.5" date="14/11/26" auteur="E. Desmontils">
 			<div>
 				<ul>

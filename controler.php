@@ -143,8 +143,16 @@ if (isset($_SESSION['debug']) && $session_ok) {
 	else if ($Soumettre == "tp") {
 		liste_TP(param('nom_base'));
 	}
-	else if ($Soumettre == "pageIni") {
-		page_tp(param('nom_base'), param('tp_name'));
+	// Questions d'un TP, en JSON : la navigation entre elles se fait dans la page
+	else if ($Soumettre == "questions") {
+		$tp = questions_tp(param('nom_base'), param('tp_name'));
+		header('Content-Type: application/json; charset=utf-8');
+		if (is_null($tp)) {
+			http_response_code(404);
+			echo json_encode(array('erreur' => 'TP inconnu.'), JSON_UNESCAPED_UNICODE);
+		} else {
+			echo json_encode($tp, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+		}
 	}
 	//======================================================
 	// Correction de l'intention rédigée pour une question « R->I » / « RT->I »
@@ -199,6 +207,19 @@ if (isset($_SESSION['debug']) && $session_ok) {
 		}
 		if (isset($r['statut'])) http_response_code($r['statut']);
 		echo json_encode($r, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+	}
+	//======================================================
+	// Contenu d'une table de la copie de l'étudiant (volet de la base dans une question de TP)
+	else if ($Soumettre == "table") {
+		$nb = param('nom_base');
+		$nt = param('table');
+		if (!is_string($nb) || !isset($_SESSION["copie_$nb"]) || !is_string($nt)
+		    || !in_array($nt, get_tables($nb), true)) {
+			http_response_code(404);
+			echo "<p>Table inconnue.</p>";
+		} else {
+			get('select * from "'.str_replace('"', '""', $nt).'" order by 1', $nb);
+		}
 	}
 	//======================================================
 	// Tables d'une base (les pages de l'application passent par dbListe.php)
