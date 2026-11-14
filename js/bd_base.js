@@ -850,12 +850,34 @@ function imprime_copie() {
         $('copie-nom').focus();
         return;
     }
-    // Nom proposé pour le fichier PDF : le titre de la page
-    var titre = document.title;
-    document.title = 'Copie ' + tp_courant.tp + ' - ' + $('copie-nom').value.trim();
     window.print();
-    document.title = titre;
 }
+
+// Nom proposé pour le fichier PDF : les navigateurs reprennent le titre de la page. Il est
+// posé juste avant l'impression (bouton ou Ctrl+P) et rendu après, quand la fenêtre
+// d'impression est fermée (window.print() n'attend pas dans tous les navigateurs).
+// Exemple : « Martin Élise - TP tp-em-01 ».
+var titre_avant_impression = null;
+
+function nom_fichier_copie() {
+    var nom = $('copie-nom') ? $('copie-nom').value : '';
+    // Caractères refusés dans un nom de fichier (Windows, macOS) remplacés, blancs réduits
+    var propre = function (x) { return x.replace(/[\/\\:*?"<>|\u0000-\u001f]+/g, '-').replace(/\s+/g, ' ').trim(); };
+    nom = propre(nom).slice(0, 80);
+    return (nom ? nom + ' - ' : '') + 'TP ' + propre(tp_courant.tp);
+}
+
+window.addEventListener('beforeprint', function () {
+    if (!$('copie-nom') || !tp_courant || titre_avant_impression !== null) return;
+    titre_avant_impression = document.title;
+    document.title = nom_fichier_copie();
+});
+
+window.addEventListener('afterprint', function () {
+    if (titre_avant_impression === null) return;
+    document.title = titre_avant_impression;
+    titre_avant_impression = null;
+});
 
 function bascule_aide() {
     var aide = $('div1');
