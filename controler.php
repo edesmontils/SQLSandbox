@@ -68,6 +68,19 @@ if (isset($_SESSION['debug']) && $session_ok) {
 		try {
 			$config = new SimpleXMLElement('./config.xml',
 		                                LIBXML_DTDATTR|LIBXML_DTDLOAD|LIBXML_DTDVALID
+		                                |LIBXML_NOBLANKS|LIBXML_NOCDATA,
+		                                true);
+			foreach($config->accueil->children() as $c)
+				echo $c->asXML();
+		} catch(Exception $e) {
+  			echo "<p>erreur<br/>Pb (Exception) ! ".htmlspecialchars($e->getMessage())."<br/>".$libxml->afficheErreurs()."<br/></p>";
+		}
+	}
+	//======================================================
+	else if ($Soumettre == "news"){
+		try {
+			$config = new SimpleXMLElement('./config.xml',
+		                                LIBXML_DTDATTR|LIBXML_DTDLOAD|LIBXML_DTDVALID
 		                                |LIBXML_NOBLANKS|LIBXML_NOCDATA|LIBXML_COMPACT,
 		                                true);
 			$listeMessages = $config->listeMessages->message;

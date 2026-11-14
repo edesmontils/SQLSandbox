@@ -3,7 +3,7 @@
 <!ENTITY % html SYSTEM "./xhtml1-strict.dtd">
 %html;
 
-<!ELEMENT mab (seuil,dossierBdD, aPropos,mentions,aides,credits,listeMessages,listeBases?)>
+<!ELEMENT mab (seuil,dossierBdD, accueil, aPropos,mentions,aides,credits,listeMessages,listeBases?)>
 <!ATTLIST mab 
   version CDATA #REQUIRED
   name CDATA #REQUIRED
@@ -11,6 +11,7 @@
 
 <!ELEMENT seuil (#PCDATA)>
 <!ELEMENT dossierBdD (#PCDATA) >
+<!ELEMENT accueil (%Block;)>
 <!ELEMENT aPropos (%Block;)>
 <!ELEMENT mentions (%Block;)>
 <!ELEMENT aides (%Block;)>

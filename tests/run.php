@@ -817,6 +817,10 @@ verifie('requête avec jeton exécutée', $code == 200 && strpos($corps, 'Dupont
 verifie('copie faite à la première requête', tailles() > 0, tailles());
 list($code, $corps) = http("$u/controler.php?Soumettre=inexistante");
 verifie('rubrique inconnue refusée', strpos($corps, 'inconnue') !== false, $corps);
+list($code, $corps) = http("$u/controler.php?Soumettre=rien");
+verifie('accueil : présentation et mode d\'emploi, sans les nouveautés', $code == 200 && strpos($corps, 'Mode d\'emploi rapide') !== false && strpos($corps, 'Version 7.4') === false, $corps);
+list($code, $corps) = http("$u/controler.php?Soumettre=news");
+verifie('rubrique Nouveautés', $code == 200 && strpos($corps, 'Version 7.4') !== false && strpos($corps, 'Mode d\'emploi rapide') === false, $corps);
 list($code, $corps) = http("$u/controler.php?Soumettre=credits");
 verifie('rubrique Crédits', $code == 200 && strpos($corps, 'hal-04144210') !== false && strpos($corps, 'hal-05030037v1') !== false, $corps);
 list($code, $corps) = http("$u/tp.php?base=tp-em&tp=tp-em-01");

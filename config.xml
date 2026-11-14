@@ -11,6 +11,45 @@
 	
 	<dossierBdD>./bdd</dossierBdD>
 	
+	<accueil>
+		<div class="post accueil">
+			<h2 class="title">Bienvenue dans SQL Sandbox</h2>
+			<div class="story">
+				<p>SQL Sandbox est un « bac à sable » pour apprendre SQL : vous interrogez et modifiez
+					de petites bases de données SQLite, directement dans le navigateur, sans rien
+					installer. Chaque étudiant travaille sur <strong>sa propre copie</strong> des
+					bases : vous pouvez tout essayer (SELECT, mais aussi INSERT, UPDATE, CREATE,
+					DROP...), les bases d'origine restent intactes.</p>
+				<p>Vos modifications sont conservées trois heures après votre dernière action, même
+					si vous rechargez la page ou fermez le navigateur. Les bases proposent aussi des
+					<strong>travaux pratiques</strong>, communs avec QueryCraft.</p>
+			</div>
+		</div>
+		<div class="post accueil">
+			<h2 class="title">Mode d'emploi rapide</h2>
+			<div class="story">
+				<ol>
+					<li><strong>Choisissez une base</strong> parmi les pastilles « Bases » en haut de
+						la page : sa description et ses travaux pratiques s'affichent.</li>
+					<li><strong>Découvrez-la</strong> : « 🧩 Modèle de la base » montre ses tables et
+						leurs liens, « 📋 Voir les tables » leur contenu.</li>
+					<li><strong>Écrivez une requête</strong> avec « ✏️ Interroger cette base », puis
+						lancez-la avec <strong>▶️ Exécuter</strong> (ou Ctrl+Entrée, Cmd+Entrée sur
+						Mac) : le résultat s'affiche juste en dessous.</li>
+					<li><strong>Gardez vos requêtes</strong> utiles avec <strong>🧺 Mémoriser</strong> :
+						vous les retrouvez dans l'onglet « Mémoire ».</li>
+					<li><strong>Entraînez-vous</strong> avec les travaux pratiques d'une base :
+						« ✏️ Répondre » ouvre une question.</li>
+					<li>Pour <strong>repartir de zéro</strong>, « ↩️ Revenir à la base d'origine »
+						(page « Modèle ») efface vos modifications.</li>
+				</ol>
+				<p>L'onglet <strong>❓ Aide</strong> détaille tous les boutons ;
+					<strong>📰 Nouveautés</strong>, en bas de page, présente les évolutions de
+					l'application.</p>
+			</div>
+		</div>
+	</accueil>
+
 	<aPropos>
 		<div class="post">
 			<h2 class="title">A propos de SQL et du SGBD utilisé</h2>
@@ -91,7 +130,7 @@
 					base d'origine</strong> les efface. Les bases d'origine restent intactes.</p>
 				<h3>Les onglets</h3>
 				<ul>
-					<li><strong>🏠 Accueil</strong> : les nouvelles de l'application.</li>
+					<li><strong>🏠 Accueil</strong> : la présentation de l'application et son mode d'emploi rapide.</li>
 					<li><strong>✏️ Requête</strong> : écrire et exécuter une requête sur la base
 						choisie (accessible depuis une base, par « Interroger cette base »). Une requête est proposée selon la base.</li>
 					<li><strong>🧺 Mémoire</strong> : les requêtes mémorisées pendant la session,
@@ -140,7 +179,8 @@
 				</ul>
 				<p>En bas de page : <strong>ℹ️ À propos de SQL et SQLite</strong> présente les
 					particularités du SGBD utilisé, <strong>🛡️ Mentions légales</strong> les
-					conditions d'utilisation et les licences, <strong>🙏 Crédits</strong> l'auteur,
+					conditions d'utilisation et les licences, <strong>📰 Nouveautés</strong> les
+						évolutions de l'application, version après version, <strong>🙏 Crédits</strong> l'auteur,
 					les technologies utilisées et les références.</p>
 			</div>
 		</div>

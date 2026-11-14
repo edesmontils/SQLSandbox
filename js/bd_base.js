@@ -277,7 +277,7 @@ function maj_session_restante() {
 
 function init() {
     clear();
-    news();
+    accueil();
     maj_session_restante();
     setInterval(maj_session_restante, 30000);
 }
@@ -677,8 +677,12 @@ function rubrique(soumettre, memoire, nom_erreur, onglet) {
     }
 }
 
+function accueil() {
+    rubrique('rien', 'messages_accueil', 'accueil', 'onglet-accueil');
+}
+
 function news() {
-    rubrique('rien', 'messages', 'messages', 'onglet-accueil');
+    rubrique('news', 'messages', 'nouveautés');
 }
 
 function mentions() {

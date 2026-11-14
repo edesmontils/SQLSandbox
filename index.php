@@ -285,7 +285,7 @@ $listeNoms = array_keys($listeBase);
 <!-- ============================================ -->
 <nav class="navigation" aria-label="Navigation principale">
 	<div class="onglets">
-		<button type="button" class="onglet" id="onglet-accueil" onclick="news()"><span class="icone">🏠</span> <span>Accueil</span></button>
+		<button type="button" class="onglet" id="onglet-accueil" onclick="accueil()"><span class="icone">🏠</span> <span>Accueil</span></button>
 		<button type="button" class="onglet" id="onglet-memoire" onclick="get_histo()"><span class="icone">🧺</span> <span>Mémoire <span class="compteur" id="nb_memo">(0)</span></span></button>
 		<button type="button" class="onglet" id="onglet-aide" onclick="aides()"><span class="icone">❓</span> <span>Aide</span></button>
 	</div>
@@ -323,7 +323,8 @@ $listeNoms = array_keys($listeBase);
 	<p><?php echo "<a href='mailto:emmanuel.desmontils@univ-nantes.fr?subject=".rawurlencode("SQLSandbox $version - question")."'>✉️ Contact</a>"; ?>
 		<span class="separateur">·</span> <button type="button" onclick="apropos()">ℹ️ À propos de SQL et SQLite</button>
 		<span class="separateur">·</span> <button type="button" onclick="mentions()">🛡️ Mentions légales</button>
-		<span class="separateur">·</span> <button type="button" onclick="credits()">🙏 Crédits</button></p>
+		<span class="separateur">·</span> <button type="button" onclick="news()">📰 Nouveautés</button>
+			<span class="separateur">·</span> <button type="button" onclick="credits()">🙏 Crédits</button></p>
 	<p class="session-restante" id="session-restante" title="La session, vos bases modifiées comprises, est conservée tant que vous restez moins de ce temps sans rien faire"></p>
 </footer>
 
