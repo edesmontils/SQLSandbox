@@ -329,10 +329,16 @@ function query_failed(trs) {
         return;
     }
     result_type = 'ko';
-    if (trs && !de_l_application && (trs.status == 403 || trs.status == 406)) {
+    // Pare-feu devant l'application : 403 ou 406 (OVH), 501 (relais du LS2N, qui refuse par
+    // exemple « create table t(a) » mais laisse passer « create  table t(a) »)
+    if (trs && !de_l_application && (trs.status == 403 || trs.status == 406 || trs.status == 501)) {
         message = "La requête a été bloquée avant d'atteindre l'application (code " + trs.status
             + ") : le pare-feu de l'hébergeur l'a sans doute prise pour une attaque. "
-            + "Reformulez-la, ou signalez-la à votre enseignant.";
+            + "Reformulez-la (par exemple avec deux espaces entre CREATE et TABLE), "
+            + "ou signalez-la à votre enseignant.";
+    } else if (trs && !de_l_application && trs.status >= 400) {
+        message = "Le serveur n'a pas pu transmettre la requête à l'application (code " + trs.status
+            + "). Réessayez dans un instant.";
     } else {
         message = "Pas de réponse du serveur : la requête a probablement dépassé la durée maximale "
             + "d'exécution et a été interrompue. Simplifiez-la (conditions de jointure, LIMIT...).";
