@@ -261,7 +261,7 @@ function exos_appel($conf, $etag) {
 	$corps = curl_exec($c);
 	$code = (int)curl_getinfo($c, CURLINFO_RESPONSE_CODE);
 	if ($code == 0) error_log('SQLSandbox exercices : catalogue injoignable : '.curl_error($c));
-	curl_close($c);
+	// pas de curl_close() : sans effet depuis PHP 8.0 et obsolète en 8.5, la poignée est libérée seule
 	return array($code, is_string($corps) ? $corps : '', $etag_recu);
 }
 

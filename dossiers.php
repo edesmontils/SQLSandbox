@@ -37,3 +37,14 @@ function duree_vie() {
 	}
 	return 3 * 60 * 60;
 }
+
+// Durée en clair pour les messages (y compris celui de session perdue de
+// controler.php, qui ne charge pas fonctions.php) : « 3 heures », « 1 heure », « 1 h 30 », « 45 minutes »
+function duree_lisible($secondes) {
+	$minutes = (int)round($secondes / 60);
+	if ($minutes < 60) return $minutes.' minute'.($minutes > 1 ? 's' : '');
+	$h = intdiv($minutes, 60);
+	$m = $minutes % 60;
+	return $m == 0 ? $h.' heure'.($h > 1 ? 's' : '') : $h.' h '.sprintf('%02d', $m);
+}
+

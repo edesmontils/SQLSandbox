@@ -351,7 +351,7 @@ function ia_post($conf, $corps) {
 	$reponse = curl_exec($c);
 	$code = (int)curl_getinfo($c, CURLINFO_RESPONSE_CODE);
 	$erreur = curl_error($c);
-	curl_close($c);
+	// pas de curl_close() : sans effet depuis PHP 8.0 et obsolète en 8.5
 	return array($code, is_string($reponse) ? $reponse : '', $erreur);
 }
 

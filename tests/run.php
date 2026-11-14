@@ -655,6 +655,9 @@ verifie('description synchronisée assainie', strpos($o, 'Les <b>salles</b>') !=
 verifie('HTML assaini : liens http gardés, éléments actifs retirés',
         assainit_html('<a href="https://ex.org/">a</a><iframe src="https://ex.org"></iframe><x-y>t</x-y>')
         === '<a href="https://ex.org/" rel="noopener noreferrer">a</a>t', assainit_html('<a href="https://ex.org/">a</a><iframe></iframe><x-y>t</x-y>'));
+verifie('durée lisible', duree_lisible(10800) === '3 heures' && duree_lisible(3600) === '1 heure'
+        && duree_lisible(5400) === '1 h 30' && duree_lisible(2700) === '45 minutes', duree_lisible(5400));
+verifie('config.xml chargé une seule fois', charge_config() === charge_config() && isset(charge_config()->accueil));
 // Erreurs XML : le détail (chemins compris) va au journal, pas à la page
 require_once __DIR__.'/../lib/LibXML.php';
 $journal = tempnam(sys_get_temp_dir(), 'journal');
@@ -889,7 +892,19 @@ list($code, $corps) = http("$u/controler.php?".http_build_query($requete + array
 verifie('jeton passé en GET refusé (403)', $code == 403, $corps);
 verifie('copie faite à la première requête', tailles() > 0, tailles());
 list($code, $corps) = http("$u/controler.php?Soumettre=inexistante");
-verifie('rubrique inconnue refusée', strpos($corps, 'inconnue') !== false, $corps);
+verifie('rubrique inconnue refusée (400)', $code == 400 && strpos($corps, 'Rubrique inconnue') !== false, $corps);
+$cookie_garde = $cookie;
+$cookie = INSTANCE.'=inconnu';
+list($code, $corps) = http("$u/controler.php?Soumettre=rien");
+$cookie = $cookie_garde;
+verifie('session inconnue : 401, durée tirée de la configuration', $code == 401
+        && strpos($corps, '(une session dure '.duree_lisible(duree_vie()).')') !== false, $corps);
+list($code, $corps) = http("$u/controler.php?Soumettre=cours");
+verifie('un nom de base dans Soumettre n\'affiche plus ses tables', $code == 400 && strpos($corps, 'Table ') === false, $corps);
+list($code, $corps) = http("$u/controler.php?Soumettre=tables&nom_base=cours");
+verifie('Soumettre=tables : tables de la base', $code == 200 && strpos($corps, 'Table etudiants') !== false, substr($corps, 0, 300));
+list($code, $corps) = http("$u/controler.php?Soumettre=aides");
+verifie('rubrique Aide', $code == 200 && strlen($corps) > 200 && stripos($corps, 'Exception') === false, $corps);
 list($code, $corps) = http("$u/controler.php?Soumettre=rien");
 verifie('accueil : présentation et mode d\'emploi, sans les nouveautés', $code == 200 && strpos($corps, 'Mode d\'emploi rapide') !== false && strpos($corps, 'Version 7.4') === false, $corps);
 list($code, $corps) = http("$u/controler.php?Soumettre=news");

@@ -6,13 +6,9 @@ include "./fonctions.php";
 
 debut_page();
 try {
-	$config = new SimpleXMLElement('./config.xml',
-	                               LIBXML_DTDATTR|LIBXML_DTDLOAD|LIBXML_DTDVALID
-	                               |LIBXML_NOBLANKS|LIBXML_NOCDATA,
-	                               true);
-	foreach($config->aides->children() as $c)
+	foreach(charge_config()->aides->children() as $c)
 		echo $c->asXML();
 } catch(Exception $e) {
-	echo "<p>erreur<br/>Pb (Exception) ! ".html($e->getMessage())."<br/>".$libxml->afficheErreurs()."<br/></p>";
+	echo erreur_config($e);
 }
 fin_page();

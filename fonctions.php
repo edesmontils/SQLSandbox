@@ -221,11 +221,12 @@ function taille_max_copie($taille_origine) {
 	return min(TAILLE_MAX_BASE, max(0, (int)$taille_origine) + CROISSANCE_MAX_BASE);
 }
 
-// Réglages communs des connexions SQLite : attente d'un verrou, erreurs sans exception,
-// mémoire de SQLite plafonnée (à faire avant l'autorizer, qui refuse ensuite les PRAGMA)
+// Réglages communs des connexions SQLite : attente d'un verrou, mémoire de SQLite plafonnée
+// (à faire avant l'autorizer, qui refuse ensuite les PRAGMA). Les erreurs sont lues par
+// lastErrorCode()/lastErrorMsg() : c'est le comportement par défaut de PHP 8, et
+// enableExceptions(false), qui le rendait explicite, est obsolète depuis PHP 8.4.
 function limite_connexion($db) {
 	$db->busyTimeout(DELAI_MAX * 1000);
-	$db->enableExceptions(false);
 	$db->exec('PRAGMA hard_heap_limit = '.MEMOIRE_MAX_SQLITE);
 }
 
@@ -766,12 +767,30 @@ function fin_page() {
 	    ."</div>\n</body>\n</html>\n";
 }
 
+// Contenu de config.xml, validé par sa DTD, lu une seule fois par requête. Une exception
+// est levée si le fichier est absent ou invalide (détail des erreurs par $libxml).
+function charge_config() {
+	static $config = null;
+	if (is_null($config))
+		$config = new SimpleXMLElement(__DIR__.'/config.xml',
+		                               LIBXML_DTDATTR|LIBXML_DTDLOAD|LIBXML_DTDVALID
+		                               |LIBXML_NOBLANKS|LIBXML_NOCDATA|LIBXML_COMPACT, true);
+	return $config;
+}
+
+// Message d'erreur de chargement de config.xml
+function erreur_config($e) {
+	global $libxml;
+	return "<p>erreur<br/>Pb (Exception) ! ".htmlspecialchars($e->getMessage())."<br/>"
+	      .(isset($libxml) ? $libxml->afficheErreurs() : '')."<br/></p>";
+}
+
 // Vérifie que la session a été initialisée par index.php (copies des bases)
 function session_initialisee() {
 	if (isset($_SESSION['debug'])) return true;
 	echo "<div class='post'><h2 class='title'>Session expirée ou absente</h2><div class='story'>"
 	    ."<p class='message'>Le serveur ne reconnaît pas votre session : l'application n'a pas encore été "
-	    ."ouverte dans ce navigateur, ou la session a expiré (elle dure 3 heures).</p>"
+	    ."ouverte dans ce navigateur, ou la session a expiré (elle dure ".duree_lisible(DUREE_SESSION).").</p>"
 	    ."<p>Ouvrez l'application depuis sa page d'accueil, puis rouvrez cette page (TP, thème ou tables).</p>"
 	    ."<p class='actions'><a class='btn' href='index.php'>🏠 Ouvrir l'application</a></p></div></div>";
 	return false;

@@ -2,6 +2,9 @@
 
 require './session.php';
 
+// Rubriques affichées telles quelles depuis config.xml : valeur de Soumettre => élément
+const RUBRIQUES_CONFIG = array('aides' => 'aides', 'rien' => 'accueil', 'SQL' => 'aPropos', 'credits' => 'credits');
+
 // Section de « À propos de SQL et SQLite » calculée sur le serveur : ce que permet la
 // version de SQLite installée (chaque fonctionnalité est essayée sur une base en mémoire)
 // et les limites propres à SQL Sandbox
@@ -65,7 +68,7 @@ if (isset($_SESSION['debug']) && $session_ok) {
 	if ($debug) ini_set('display_errors', '1');
 	require_once('./lib/LibXML.php');
 	include "./fonctions.php";
-		prolonge_copies();
+	prolonge_copies();
 
 	$Soumettre = is_null(param('Soumettre')) ? 'rien' : param('Soumettre');
 	$requete = param('requete');
@@ -109,39 +112,20 @@ if (isset($_SESSION['debug']) && $session_ok) {
 		}
 	} 
 	//======================================================
-	else if ($Soumettre == 'aides') {
+	// Rubriques tirées de config.xml (aides, accueil, crédits, à propos de SQL)
+	else if (isset(RUBRIQUES_CONFIG[$Soumettre])) {
 		try {
-			$config = new SimpleXMLElement('./config.xml',
-	                                LIBXML_DTDATTR|LIBXML_DTDLOAD|LIBXML_DTDVALID
-	                                |LIBXML_NOBLANKS|LIBXML_NOCDATA,
-	                                true);
-			foreach($config->aides->children() as $c)
-			echo $c->asXML();
-		} catch(Exception $e) {
-  			echo "<p>erreur<br/>Pb (Exception) ! ".htmlspecialchars($e->getMessage())."<br/>".$libxml->afficheErreurs()."<br/></p>";
-		}	
-	}
-	//======================================================
-	else if ($Soumettre == "rien"){
-		try {
-			$config = new SimpleXMLElement('./config.xml',
-		                                LIBXML_DTDATTR|LIBXML_DTDLOAD|LIBXML_DTDVALID
-		                                |LIBXML_NOBLANKS|LIBXML_NOCDATA,
-		                                true);
-			foreach($config->accueil->children() as $c)
+			foreach (charge_config()->{RUBRIQUES_CONFIG[$Soumettre]}->children() as $c)
 				echo $c->asXML();
-		} catch(Exception $e) {
-  			echo "<p>erreur<br/>Pb (Exception) ! ".htmlspecialchars($e->getMessage())."<br/>".$libxml->afficheErreurs()."<br/></p>";
+			if ($Soumettre == 'SQL') echo fonctionnalites_sqlite();
+		} catch (Exception $e) {
+			echo erreur_config($e);
 		}
 	}
 	//======================================================
 	else if ($Soumettre == "news"){
 		try {
-			$config = new SimpleXMLElement('./config.xml',
-		                                LIBXML_DTDATTR|LIBXML_DTDLOAD|LIBXML_DTDVALID
-		                                |LIBXML_NOBLANKS|LIBXML_NOCDATA|LIBXML_COMPACT,
-		                                true);
-			$listeMessages = $config->listeMessages->message;
+			$listeMessages = charge_config()->listeMessages->message;
 			foreach($listeMessages as $post_message) {
 				$att = $post_message->attributes();
 				$titre = $att['titre'];
@@ -151,35 +135,7 @@ if (isset($_SESSION['debug']) && $session_ok) {
 				echo "</div></div>\n";
 			}
 		} catch(Exception $e) {
-  			echo "<p>erreur<br/>Pb (Exception) ! ".htmlspecialchars($e->getMessage())."<br/>".$libxml->afficheErreurs()."<br/></p>";
-		}	
-	}
-	//======================================================
-	else  if ($Soumettre == "SQL"){
-		try {
-			$config = new SimpleXMLElement('./config.xml',
-		                                LIBXML_DTDATTR|LIBXML_DTDLOAD|LIBXML_DTDVALID
-		                                |LIBXML_NOBLANKS|LIBXML_NOCDATA,
-		                                true);
-			$apropos = $config->aPropos;
-			foreach($apropos->children() as $c)
-				echo $c->asXML();
-			echo fonctionnalites_sqlite();
-		} catch(Exception $e) {
-  			echo "<p>erreur<br/>Pb (Exception) ! ".htmlspecialchars($e->getMessage())."<br/>".$libxml->afficheErreurs()."<br/></p>";
-		}	
-	}
-	//======================================================
-	else if ($Soumettre == "credits"){
-		try {
-			$config = new SimpleXMLElement('./config.xml',
-		                                LIBXML_DTDATTR|LIBXML_DTDLOAD|LIBXML_DTDVALID
-		                                |LIBXML_NOBLANKS|LIBXML_NOCDATA,
-		                                true);
-			foreach($config->credits->children() as $c)
-				echo $c->asXML();
-		} catch(Exception $e) {
-  			echo "<p>erreur<br/>Pb (Exception) ! ".htmlspecialchars($e->getMessage())."<br/>".$libxml->afficheErreurs()."<br/></p>";
+			echo erreur_config($e);
 		}
 	}
 	//======================================================
@@ -211,23 +167,23 @@ if (isset($_SESSION['debug']) && $session_ok) {
 			http_response_code(404);
 			echo json_encode(array('erreur' => 'Base inconnue ou inaccessible.'));
 		} else {
-				$modele['origine'] = modele_origine(param('nom_base'), $modele);
+			$modele['origine'] = modele_origine(param('nom_base'), $modele);
 			echo json_encode($modele, JSON_UNESCAPED_UNICODE);
 		}
 	}
-		//======================================================
-		// Retour à la base d'origine : la copie de l'étudiant est remplacée par l'original
-		else if ($Soumettre == "reinitialiser") {
-			if (!jeton_valide()) {
-				http_response_code(403);
-				echo "<p>Session expirée : l'application a sans doute été ouverte ou rechargée dans un autre onglet. Rechargez cette page pour continuer.</p>";
-			} else if (reinitialise_base(param('nom_base'))) {
-				echo "ok";
-			} else {
-				http_response_code(404);
-				echo "<p>Base inconnue ou inaccessible.</p>";
-			}
+	//======================================================
+	// Retour à la base d'origine : la copie de l'étudiant est remplacée par l'original
+	else if ($Soumettre == "reinitialiser") {
+		if (!jeton_valide()) {
+			http_response_code(403);
+			echo "<p>Session expirée : l'application a sans doute été ouverte ou rechargée dans un autre onglet. Rechargez cette page pour continuer.</p>";
+		} else if (reinitialise_base(param('nom_base'))) {
+			echo "ok";
+		} else {
+			http_response_code(404);
+			echo "<p>Base inconnue ou inaccessible.</p>";
 		}
+	}
 	//======================================================
 	// Génération de lignes par IA : aperçu à blanc (ia_generer), puis écriture (ia_appliquer)
 	else if ($Soumettre == "ia_generer" || $Soumettre == "ia_appliquer") {
@@ -245,8 +201,14 @@ if (isset($_SESSION['debug']) && $session_ok) {
 		echo json_encode($r, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
 	}
 	//======================================================
-	else {//echo "<p>liste base $Soumettre</p>";
-		liste_base($Soumettre);
+	// Tables d'une base (les pages de l'application passent par dbListe.php)
+	else if ($Soumettre == "tables") {
+		liste_base(param('nom_base'));
+	}
+	//======================================================
+	else {
+		http_response_code(400);
+		echo "<p>Rubrique inconnue.</p>";
 	}
 } else {
 	// Session inconnue du serveur (expirée, cookie effacé...) : code 401, pour que le
@@ -255,7 +217,7 @@ if (isset($_SESSION['debug']) && $session_ok) {
 	echo "<div class='post' id='session-perdue'><h2 class='title'>Session expirée</h2><div class='story'>"
 	    ."<p class='message'>Le serveur ne reconnaît plus votre session, ni donc vos copies des bases. "
 	    ."Cela arrive quand la page est restée ouverte longtemps sans être utilisée (une session dure "
-	    ."3 heures) ou quand le navigateur a effacé ses cookies.</p>"
+	    .duree_lisible(DUREE_SESSION).") ou quand le navigateur a effacé ses cookies.</p>"
 	    ."<p>Rechargez l'application pour repartir avec des bases neuves. Les requêtes de l'onglet "
 	    ."Mémoire seront perdues : copiez d'abord celles que vous voulez garder.</p>"
 	    ."<p class='actions'><a class='btn' href='index.php'>🔄 Recharger l'application</a></p>"

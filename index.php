@@ -30,10 +30,7 @@ elseif (preg_match('/^[0-9]{6}$/D', (string)($_SERVER['QUERY_STRING'] ?? ''))) $
 $messageTenant = tenant_choisi($demandeTenant);
 
 try { 
-	$config = new SimpleXMLElement('./config.xml',
-                                   LIBXML_DTDATTR|LIBXML_DTDLOAD|LIBXML_DTDVALID
-                                   |LIBXML_NOBLANKS|LIBXML_NOCDATA,
-                                   true);
+	$config = charge_config();
 	$att = $config->attributes();
 	
 	//Gestion de la version
