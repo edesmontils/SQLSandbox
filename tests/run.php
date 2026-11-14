@@ -85,6 +85,39 @@ verifie('clé étrangère : insertion orpheline refusée', $r === null && strpos
         && strpos($o, 'Une clé étrangère') !== false, $o);
 list($r, $o) = execute("delete from etudiants where noetu in (select noetu from notes)");
 verifie('clé étrangère : suppression d\'une ligne référencée refusée', $r === null && strpos($o, 'FOREIGN KEY') !== false, $o);
+// Plusieurs modifications de données : une transaction, clés étrangères vérifiées à la fin
+execute("create table pa(id integer primary key, b integer not null references pb(id))");
+execute("create table pb(id integer primary key, a integer not null references pa(id))");
+list($r, $o) = execute("insert into pa values(1, 1)");
+verifie('références croisées : insertion seule refusée', $r === null && strpos($o, 'FOREIGN KEY') !== false, $o);
+list($r, $o) = execute("insert into pa values(1, 1); insert into pb values(1, 1);");
+$db = new SQLite3($copie);
+verifie('références croisées : deux INSERT validés ensemble', $r === true && strpos($o, 'Transaction validée') !== false
+        && strpos($o, '2 ligne(s)') !== false && $db->querySingle("select count(*) from pa") == 1
+        && $db->querySingle("select count(*) from pb") == 1, $o);
+$db->close();
+list($r, $o) = execute("BEGIN TRANSACTION; insert into pa values(2, 2); update pa set b = b; insert into pb values(2, 2); COMMIT;");
+verifie('transaction : BEGIN ... COMMIT accepté', $r === true && strpos($o, '3 instruction(s)') !== false, $o);
+list($r, $o) = execute("begin; insert into pa values(5, 2); end");
+verifie('transaction : BEGIN ... END avec une seule instruction', $r === true && strpos($o, 'Transaction validée') !== false, $o);
+list($r, $o) = execute("insert into pa values(3, 3); insert into pb values(3, 4)");
+$db = new SQLite3($copie);
+verifie('transaction : clé étrangère fausse à la validation, rien appliqué', $r === null
+        && strpos($o, 'Validation de la transaction impossible') !== false && strpos($o, 'FOREIGN KEY') !== false
+        && $db->querySingle("select count(*) from pa where id = 3") == 0, $o);
+$db->close();
+list($r, $o) = execute("insert into pa values(4, 4); insert into pb values(4, 4); insert into pb values(4, 4)");
+$db = new SQLite3($copie);
+verifie('transaction : erreur dans une instruction, rien appliqué', $r === null
+        && strpos($o, 'instruction 3 sur 3') !== false && strpos($o, 'UNIQUE') !== false
+        && $db->querySingle("select count(*) from pa where id = 4") == 0, $o);
+$db->close();
+list($r, $o) = execute("insert into pa values(6, 6); insert into pb values(6, 6); drop table pa");
+verifie('transaction : refusée si une instruction n\'est pas une modification de données', strpos($o, 'seule la première instruction') !== false
+        && strpos($o, 'Transaction') === false, $o);
+list($r, $o) = execute("insert into pa values(7, 7); pragma defer_foreign_keys = off; insert into pb values(7, 7)");
+verifie('transaction : un PRAGMA glissé entre deux INSERT la fait refuser', strpos($o, 'Transaction validée') === false, $o);
+execute("drop table pb"); execute("drop table pa");
 list($r, $o) = execute("select '<script>x</script>' as \"<b>\"");
 verifie('sortie échappée', strpos($o, '<script>x') === false && strpos($o, '&lt;script&gt;') !== false
                            && strpos($o, '<b>') === false, $o);
@@ -470,6 +503,20 @@ $cas = array(
 	array("select 1; drop table t", true),
 	array("create trigger tr after insert on t begin select 1; end; drop table t", true),
 );
+foreach (array(
+	array("insert into t values(1); insert into t values(2)", 2),
+	array("insert into t values('a;b'); -- x\n update t set a = 1;", 2),
+	array("begin; delete from t; commit", 1),
+	array("begin transaction; delete from t; end transaction;", 1),
+	array("begin; delete from t", null),
+	array("insert into t values(1)", null),
+	array("select 1; insert into t values(1)", null),
+	array("insert into t values(1); create table x(a)", null),
+	array("begin; commit", null),
+) as $c) {
+	$t = instructions_transaction($c[0]);
+	verifie('transaction : '.str_replace("\n", ' ', $c[0]), is_null($c[1]) ? is_null($t) : (is_array($t) && count($t) == $c[1]), json_encode($t));
+}
 foreach ($cas as $c) {
 	verifie(($c[1] ? 'plusieurs : ' : 'une seule : ').str_replace("\n", ' ', $c[0]),
 	        plusieurs_instructions($c[0]) === $c[1]);

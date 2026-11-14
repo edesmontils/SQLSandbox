@@ -134,6 +134,15 @@ Rien à recharger ensuite : PHP relit les fichiers modifiés. Les copies des bas
 
 Pour vérifier : `https://<site>/SQLSandbox/bdd/em/em.db` et `https://<site>/SQLSandbox/.git/config` doivent répondre 403 (un relais peut répondre lui-même autrement à une adresse en `.db` : vérifier alors `https://<site>/SQLSandbox/bdd/`), et une session ouverte doit apparaître dans `/home/<utilisateur>/sessions-sqlsandbox`.
 
+## Plusieurs instructions dans une requête
+
+Une requête n'exécute normalement que sa première instruction (un avertissement signale la suite ignorée). Seule exception : une suite de modifications de données (`INSERT`, `UPDATE`, `DELETE`, `REPLACE`) séparées par des `;`, éventuellement encadrée par `BEGIN [TRANSACTION]` et `COMMIT` (ou `END`). Elle est exécutée dans une seule transaction : toutes les instructions sont appliquées, ou aucune. Les clés étrangères n'y sont vérifiées qu'à la validation (`PRAGMA defer_foreign_keys`, posé par l'application), ce qui permet de remplir des tables qui se référencent l'une l'autre :
+
+```sql
+INSERT INTO Departement VALUES (1, 'Recherche', 10);  -- 10 : son directeur, pas encore inséré
+INSERT INTO Employe VALUES (10, 'Durand', 1);
+```
+
 ## Génération de données par IA (facultatif)
 
 Le bouton « ✨ Remplir » (page d'une base et édition d'une requête) fait générer par une IA des lignes pour une table, ou le contenu d'une colonne ajoutée avec `ALTER TABLE`. Le modèle ne produit pas de SQL : il renvoie des lignes en JSON, qui sont contrôlées sur la copie de l'étudiant (types, contraintes, clés étrangères) et présentées en aperçu ; rien n'est écrit tant que l'étudiant ne le valide pas.

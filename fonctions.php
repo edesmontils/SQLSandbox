@@ -115,7 +115,7 @@ function autorisation_sql($action, $arg1 = null, $arg2 = null) {
 
 // Découpe $sql en jetons, en ignorant espaces et commentaires : array('mot', 'SELECT'),
 // array('chaine', ...) pour les chaînes et identifiants entre délimiteurs, array(';', ';')
-// et array('car', '(') pour les autres caractères.
+// et array('car', '(') pour les autres caractères. Le 3e élément est la position du jeton.
 function jetons_sql($sql) {
 	$jetons = array();
 	$n = strlen($sql);
@@ -125,7 +125,7 @@ function jetons_sql($sql) {
 		if ($c == "'" || $c == '"' || $c == '`' || $c == '[') {
 			$ferme = ($c == '[') ? ']' : $c;
 			$j = strpos($sql, $ferme, $i + 1);
-			$jetons[] = array('chaine', substr($sql, $i, ($j === false ? $n : $j + 1) - $i));
+			$jetons[] = array('chaine', substr($sql, $i, ($j === false ? $n : $j + 1) - $i), $i);
 			$i = ($j === false) ? $n : $j + 1;
 		} else if ($c == '-' && $i + 1 < $n && $sql[$i + 1] == '-') {
 			$j = strpos($sql, "\n", $i);
@@ -136,27 +136,34 @@ function jetons_sql($sql) {
 		} else if (ctype_alpha($c) || $c == '_') {
 			$j = $i;
 			while ($j < $n && (ctype_alnum($sql[$j]) || $sql[$j] == '_')) $j++;
-			$jetons[] = array('mot', strtoupper(substr($sql, $i, $j - $i)));
+			$jetons[] = array('mot', strtoupper(substr($sql, $i, $j - $i)), $i);
 			$i = $j;
 		} else {
-			if (!ctype_space($c)) $jetons[] = array($c == ';' ? ';' : 'car', $c);
+			if (!ctype_space($c)) $jetons[] = array($c == ';' ? ';' : 'car', $c, $i);
 			$i++;
 		}
 	}
 	return $jetons;
 }
 
-// Indique si $sql contient autre chose qu'une seule instruction (SQLite n'exécute
-// que la première). Tient compte des chaînes, identifiants, commentaires et
-// des corps de triggers (BEGIN ... END), qui contiennent des ';'.
-function plusieurs_instructions($sql) {
+// Découpe $sql en instructions (texte de chacune, sans le ';' final), en tenant compte
+// des chaînes, identifiants, commentaires et des corps de triggers (BEGIN ... END), qui
+// contiennent des ';'. Une instruction vide (';' seul, commentaire seul) est ignorée.
+function decoupe_instructions($sql) {
+	$instructions = array();
+	$debut = null;     // position du premier jeton de l'instruction en cours
 	$mots = array();   // premiers mots de l'instruction
 	$trigger = false;  // dans le corps BEGIN ... END d'un CREATE TRIGGER
 	$cas = 0;          // profondeur des CASE ... END dans un trigger
-	$fin = false;      // un ';' terminant la première instruction a été vu
 	foreach (jetons_sql($sql) as $jeton) {
-		list($type, $valeur) = $jeton;
-		if ($fin && $type != ';') return true;
+		list($type, $valeur, $position) = $jeton;
+		if ($type == ';' && !$trigger) {
+			if (!is_null($debut)) $instructions[] = trim(substr($sql, $debut, $position - $debut));
+			$debut = null;
+			$mots = array();
+			continue;
+		}
+		if (is_null($debut)) $debut = $position;
 		if ($type == 'mot') {
 			if (count($mots) < 4) $mots[] = $valeur;
 			if ($valeur == 'BEGIN' && $mots[0] == 'CREATE' && in_array('TRIGGER', $mots)) $trigger = true;
@@ -164,11 +171,47 @@ function plusieurs_instructions($sql) {
 			else if ($trigger && $valeur == 'END') {
 				if ($cas > 0) $cas--; else $trigger = false;
 			}
-		} else if ($type == ';' && !$trigger) {
-			$fin = true;
 		}
 	}
-	return false;
+	if (!is_null($debut)) $instructions[] = trim(substr($sql, $debut));
+	return $instructions;
+}
+
+// Indique si $sql contient autre chose qu'une seule instruction (SQLite n'exécute
+// que la première).
+function plusieurs_instructions($sql) {
+	return count(decoupe_instructions($sql)) > 1;
+}
+
+// Instructions de $sql si elles peuvent être exécutées ensemble dans une transaction :
+// au moins deux modifications de données (INSERT, UPDATE, DELETE, REPLACE), éventuellement
+// encadrées par BEGIN [TRANSACTION] et COMMIT (ou END) [TRANSACTION]. Retourne null sinon.
+// Cela permet de remplir des tables qui se référencent l'une l'autre : les clés étrangères
+// ne sont vérifiées qu'à la fin de la transaction.
+function instructions_transaction($sql) {
+	$instructions = decoupe_instructions($sql);
+	$premiers = array_map(function ($i) {
+		$mots = array();
+		foreach (jetons_sql($i) as $j) {
+			if ($j[0] != 'mot') break;
+			$mots[] = $j[1];
+		}
+		return $mots;
+	}, $instructions);
+	$n = count($instructions);
+	if ($n >= 2 && preg_match('/^BEGIN( (DEFERRED|IMMEDIATE|EXCLUSIVE))?( TRANSACTION)?$/', implode(' ', $premiers[0]))
+	    && count(jetons_sql($instructions[0])) == count($premiers[0])) {
+		$fin = $premiers[$n - 1];
+		if (!preg_match('/^(COMMIT|END)( TRANSACTION)?$/', implode(' ', $fin))
+		    || count(jetons_sql($instructions[$n - 1])) != count($fin)) return null;
+		$instructions = array_slice($instructions, 1, $n - 2);
+		$premiers = array_slice($premiers, 1, $n - 2);
+		if (count($instructions) < 1) return null;
+	} else if ($n < 2) return null;
+	foreach ($premiers as $mots) {
+		if (count($mots) == 0 || !in_array($mots[0], array('INSERT', 'UPDATE', 'DELETE', 'REPLACE'), true)) return null;
+	}
+	return $instructions;
 }
 
 // Avant SQLite 3.32.3, plusieurs failles connues touchent les fonctions de fenêtrage
@@ -372,8 +415,15 @@ function get($requete,$base) {
 		$db->close();
 		return null;
 	}
+	$transaction = instructions_transaction($requete);
+	if (!is_null($transaction)) {
+		$ok = execute_transaction($db, $transaction);
+		$db->close();
+		return $ok;
+	}
 	if (plusieurs_instructions($requete)) {
-		echo "<p><strong>Attention :</strong> seule la première instruction a été exécutée, la suite a été ignorée.</p>";
+		echo "<p><strong>Attention :</strong> seule la première instruction a été exécutée, la suite a été ignorée. "
+		    ."Plusieurs INSERT, UPDATE ou DELETE séparés par des « ; » sont, eux, exécutés ensemble dans une transaction.</p>";
 	}
 	// Requête sur le schéma : le modèle avant est lu maintenant, le modèle après une fois exécutée
 	$avant = modifie_schema($requete) ? modele_base($base) : null;
@@ -427,6 +477,47 @@ function get($requete,$base) {
 		}
 	}
 	return $ok;
+}
+
+// Exécute les modifications de données $instructions dans une seule transaction et affiche
+// le résultat : toutes sont appliquées, ou aucune. Les clés étrangères ne sont vérifiées
+// qu'à la validation (PRAGMA defer_foreign_keys, remis à zéro par SQLite à la fin de la
+// transaction), ce qui permet de remplir des tables qui se référencent l'une l'autre.
+// Retourne true en cas de succès, null sinon.
+function execute_transaction($db, $instructions) {
+	$n = count($instructions);
+	if (!@$db->exec('BEGIN')) {
+		echo "<script>result_type='ko';</script><p>".message_erreur($db)."</p>";
+		return null;
+	}
+	// PRAGMA refusé par l'autorizer : levé le temps de cette instruction
+	$db->setAuthorizer(null);
+	$db->exec('PRAGMA defer_foreign_keys = ON');
+	$db->setAuthorizer('autorisation_sql');
+	$annule = '<p>La transaction est annulée : '.($n == 1 ? "l'instruction n'a pas été appliquée"
+	          : "aucune des $n instructions n'a été appliquée").'.</p>';
+	$lignes = 0;
+	foreach ($instructions as $k => $instruction) {
+		if (!@$db->exec($instruction)) {
+			$erreur = message_erreur($db);
+			@$db->exec('ROLLBACK');
+			echo "<script>result_type='ko';</script><p>Erreur dans l'instruction ".($k + 1)." sur $n :</p>"
+			    .'<pre>'.htmlspecialchars($instruction).'</pre>'
+			    ."<p>$erreur</p>$annule";
+			return null;
+		}
+		$lignes += $db->changes();
+	}
+	if (!@$db->exec('COMMIT')) {
+		$erreur = message_erreur($db);
+		@$db->exec('ROLLBACK');
+		echo "<script>result_type='ko';</script><p>Validation de la transaction impossible :</p><p>$erreur</p>"
+		    .$annule;
+		return null;
+	}
+	echo "<script>result_type='ok';</script><p>Transaction validée : $n instruction(s) exécutée(s), "
+	    ."$lignes ligne(s) modifiée(s). Les clés étrangères ont été vérifiées à la fin de la transaction.</p>";
+	return true;
 }
 
 // Indique si $requete est une instruction qui peut changer la structure des tables
