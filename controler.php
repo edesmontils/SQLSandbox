@@ -102,8 +102,14 @@ if (isset($_SESSION['debug']) && $session_ok) {
 			echo "<p>Session expirée : l'application a sans doute été ouverte ou rechargée dans un autre onglet. Rechargez cette page pour continuer.</p>";
 		} else if (is_string($requete) && is_string($base)){
 			$t=get($requete,$base);  
-			echo (!is_null($t) ? "<p class='statut ok'>✅ Requête réussie</p>"
-			           : "<p class='statut ko'>❌ Échec de la requête</p>");
+			// Dans un TP (mode 0 : réponse de l'élève, 2 : requête donnée à comprendre), une
+			// requête qui s'exécute n'est pas pour autant une bonne réponse : message neutre
+			if (is_null($t)) echo "<p class='statut ko' data-execution='ko'>❌ Échec de la requête</p>";
+			else if ($mode == '0') echo "<p class='statut neutre' data-execution='ok'>▶️ Requête exécutée sans erreur</p>"
+			    ."<p class='astuce'>Cela ne veut pas dire qu'elle répond à la question : vérifiez que son résultat "
+			    ."correspond bien à ce qui est demandé.</p>";
+			else if ($mode == '2') echo "<p class='statut neutre' data-execution='ok'>▶️ Requête exécutée</p>";
+			else echo "<p class='statut ok' data-execution='ok'>✅ Requête réussie</p>";
 			           
 			if ($mode == '1') 
 				echo '<button type="button" class="btn secondaire" id="memoriser" title="Garder cette requête et son résultat dans l\'onglet Mémoire" onclick="remember()">🧺 Mémoriser</button>';

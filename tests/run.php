@@ -1053,6 +1053,14 @@ verifie('rechargement : même jeton', strpos($page2, '"'.$jeton.'"') !== false);
 list($code, $corps) = http("$u/controler.php", array('Soumettre' => 'Envoyer', 'base' => 'cours', 'mode' => '1',
                            'csrf' => $jeton, 'requete' => 'select * from rechargement'));
 verifie('rechargement : modifications de la base conservées', $code == 200 && strpos($corps, 'Requête réussie') !== false, $corps);
+// Dans un TP, une requête qui s'exécute n'est pas une bonne réponse : message neutre
+list($code, $corps) = http("$u/controler.php", array('Soumettre' => 'Envoyer', 'base' => 'cours', 'mode' => '0',
+                           'csrf' => $jeton, 'requete' => 'select * from rechargement'));
+verifie('TP : exécution sans « Requête réussie »', $code == 200 && strpos($corps, 'Requête réussie') === false
+        && strpos($corps, "data-execution='ok'") !== false && strpos($corps, 'répond à la question') !== false, $corps);
+list($code, $corps) = http("$u/controler.php", array('Soumettre' => 'Envoyer', 'base' => 'cours', 'mode' => '0',
+                           'csrf' => $jeton, 'requete' => 'select * from table_absente'));
+verifie('TP : échec signalé', strpos($corps, "data-execution='ko'") !== false, $corps);
 // SQL encodé en base64 (requete64) : passe les pare-feu qui refusent « create table t(a) »
 list($code, $corps) = http("$u/controler.php", array('Soumettre' => 'Envoyer', 'base' => 'cours', 'mode' => '1',
                            'csrf' => $jeton, 'requete64' => base64_encode("create table encodée(é); insert into etudiants values('B64', 'Élise', 'Ève')")));

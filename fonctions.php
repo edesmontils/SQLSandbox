@@ -780,7 +780,7 @@ function liste_TP($base) {
 		    ."<span class='carte-tp-titre'>📝 ".html($code)."</span>"
 		    ."<span class='carte-tp-detail'>".$nb." question".($nb > 1 ? 's' : '')
 		    .($sortes ? " · ".html(implode(', ', array_keys($sortes))) : '')."</span>"
-		    ."<span class='carte-tp-suivi' data-tp='".html(json_encode(array((string)$base, (string)$code)))."'></span>"
+		    ."<span class='carte-tp-suivi' data-total='$nb' data-tp='".html(json_encode(array((string)$base, (string)$code)))."'></span>"
 		    ."</button></li>";
 	}
 	echo "</ul></div>";

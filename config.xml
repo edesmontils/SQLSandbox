@@ -4,7 +4,7 @@
 <!ENTITY seuil '10800'>
 ]>
 
-<mab version="7.6" debug="false" name="SQL Sandbox">
+<mab version="7.7" debug="false" name="SQL Sandbox">
 	<!-- numéro de version de l'application -->
 	<!-- durée limite de vie d'une copie de base : 60*60*3 = 3 heures -->
 	<seuil>&seuil;</seuil>
@@ -211,13 +211,19 @@
 						copie : cliquez sur une table pour voir son contenu juste en dessous
 						(Ctrl+clic ou ⌘+clic pour plusieurs) ; il reste ouvert d'une question à
 						l'autre et suit vos modifications.
-						Votre réponse est gardée à chaque frappe, tant que la page n'est pas
-						rechargée ; <strong>💡 Indice</strong> affiche une aide quand la
-						question en propose un. Selon la question, il faut écrire une requête,
-						compléter une requête à trous, ou rédiger l'intention d'une requête donnée
-						(que vous pouvez exécuter) : <strong>✅ Faire corriger mon intention</strong>
-						la fait évaluer par une IA quand le serveur l'a activée, sinon affiche
-						celle de l'enseignant pour comparer.</li>
+						<strong>💡 Indice</strong> affiche une aide quand la question en propose
+						un. Selon la question, il faut écrire une requête, compléter une requête à
+						trous (un champ par trou ; Entrée passe au trou suivant), ou rédiger
+						l'intention d'une requête donnée (que vous pouvez exécuter) :
+						<strong>✅ Faire corriger mon intention</strong> la fait évaluer par une IA
+						quand le serveur l'a activée, sinon affiche celle de l'enseignant pour
+						comparer. Attention : une requête qui s'exécute sans erreur ne répond pas
+						forcément à la question ; vérifiez son résultat.</li>
+					<li>Vos réponses aux TP sont gardées dans le navigateur, même si vous rechargez
+						la page (30 jours au plus). <strong>📄 Ma copie</strong> les présente avec ce
+						que vous en avez fait (exécutions, corrections d'intention), prêtes à
+						imprimer ou à enregistrer en PDF ; <strong>🗑️ Effacer mes réponses</strong>
+						les supprime, à faire en quittant un poste partagé.</li>
 				</ul>
 				<p>En bas de page : <strong>ℹ️ À propos de SQL et SQLite</strong> présente les
 					particularités du SGBD utilisé, <strong>📰 Nouveautés</strong> les
@@ -351,6 +357,21 @@
 	<listeMessages>
 		<!--message titre="" post=""><p></p>
 		</message-->
+		<message titre="Version 7.7" date="14/11/26" auteur="E. Desmontils">
+			<div>
+				<ul>
+					<li>dans un TP, une requête qui s'exécute n'est plus annoncée comme « réussie » :
+						s'exécuter sans erreur ne veut pas dire répondre à la question, vérifiez son
+						résultat ;</li>
+					<li>vos <b>réponses aux TP sont gardées dans le navigateur</b>, même si vous rechargez
+						la page ; « 🗑️ Effacer mes réponses » les supprime sur un poste partagé ;</li>
+					<li><b>📄 Ma copie</b> présente vos réponses, avec leurs exécutions et les corrections
+						d'intention demandées, prêtes à imprimer ou à enregistrer en PDF ;</li>
+					<li>les <b>requêtes à trous</b> se complètent directement dans le texte de la requête,
+						un champ par trou, comme dans QueryCraft.</li>
+				</ul>
+			</div>
+		</message>
 		<message titre="Version 7.6" date="14/11/26" auteur="E. Desmontils">
 			<div>
 				<ul>

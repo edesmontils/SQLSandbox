@@ -234,6 +234,9 @@ $listeNoms = array_keys($listeBase);
     noms_bases = <?php echo json_encode($listeNoms, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE); ?>;
     csrf_token = <?php echo json_encode($_SESSION['csrf']); ?>;
     duree_session = <?php echo (int)DUREE_SESSION; ?>;
+    version_appli = <?php echo json_encode((string)$version, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT); ?>;
+    // Instance (tenant QueryCraft) : le suivi des TP gardé dans le navigateur lui est propre
+    instance_tp = <?php echo json_encode((string)exos_config()['tenant'], JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT); ?>;
     ia_disponible = <?php echo ia_config() ? 'true' : 'false'; ?>;
     ia_lignes_max = <?php $ia = ia_config(); echo $ia ? (int)$ia['lignes_max'] : 0; ?>;
     // Instance QueryCraft source et nom (côté SQLSandbox) de la base qu'elle interroge : le

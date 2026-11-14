@@ -286,6 +286,7 @@ function maj_session_restante() {
 
 function init() {
     clear();
+    purge_suivis();
     // index.php?base=…&tp=… (ancienne adresse tp.php) : ouvre directement ce TP
     var p = new URLSearchParams(window.location.search);
     if (p.get('tp') && listeBases[p.get('base')]) page_tp(p.get('base'), p.get('tp'));
@@ -520,7 +521,6 @@ function db_tables(nom) {
 // ni l'intention attendue d'une question …->I.
 //=================================================================
 
-var reponses = {};          // réponses mémorisées, par TP et question (cle_reponse())
 var tp_courant = null;      // {base, tp, questions} du TP ouvert
 var tps_charges = {};       // TP déjà chargés, par cle_reponse(base, tp)
 var question_courante = null;
@@ -529,8 +529,64 @@ function cle_reponse(base, tp, code) {
     return JSON.stringify([base, tp, code]);
 }
 
+//-----------------------------------------------------------------
+// Suivi d'un TP, gardé dans le navigateur (localStorage) : un rechargement de la page
+// ne perd rien. Par question : réponse, dernière exécution, corrections d'intention.
+// Les suivis restés 30 jours sans modification sont effacés.
+//-----------------------------------------------------------------
+
+var PREFIXE_SUIVI = 'sqlsandbox-tp:';
+var DUREE_SUIVI = 30 * 24 * 3600 * 1000;
+var suivis = {};
+
+function cle_suivi(base, tp) {
+    return PREFIXE_SUIVI + JSON.stringify([typeof instance_tp == 'undefined' ? '' : instance_tp, base, tp]);
+}
+
+function suivi_tp(base, tp) {
+    var k = cle_suivi(base, tp);
+    if (!suivis[k]) {
+        var s = null;
+        try { s = JSON.parse(localStorage.getItem(k)); } catch (e) { s = null; }
+        suivis[k] = (s && typeof s.questions == 'object' && s.questions) ? s : {nom: '', questions: {}};
+    }
+    return suivis[k];
+}
+
+function enregistre_suivi(base, tp) {
+    var s = suivi_tp(base, tp);
+    s.maj = Date.now();
+    try { localStorage.setItem(cle_suivi(base, tp), JSON.stringify(s)); } catch (e) { /* stockage indisponible */ }
+}
+
+// Suivi d'une question (créé s'il n'existe pas encore)
+function suivi_question(q) {
+    var s = suivi_tp(q.base, q.exercice);
+    if (!s.questions[q.code]) s.questions[q.code] = {};
+    return s.questions[q.code];
+}
+
+function efface_suivi(base, tp) {
+    var k = cle_suivi(base, tp);
+    delete suivis[k];
+    try { localStorage.removeItem(k); } catch (e) { /* rien */ }
+}
+
+function purge_suivis() {
+    try {
+        for (var i = localStorage.length - 1; i >= 0; i--) {
+            var k = localStorage.key(i);
+            if (k.indexOf(PREFIXE_SUIVI) !== 0) continue;
+            var s = null;
+            try { s = JSON.parse(localStorage.getItem(k)); } catch (e) { s = null; }
+            if (!s || !s.maj || Date.now() - s.maj > DUREE_SUIVI) localStorage.removeItem(k);
+        }
+    } catch (e) { /* stockage indisponible */ }
+}
+
 function reponse_de(q) {
-    return reponses[cle_reponse(q.base, q.exercice, q.code)];
+    var sq = suivi_tp(q.base, q.exercice).questions[q.code];
+    return sq ? sq.reponse : null;
 }
 
 // Une réponse compte si elle diffère de la requête à trous donnée au départ
@@ -545,16 +601,21 @@ function nb_repondues(questions) {
     return n;
 }
 
-// Avancement des TP déjà ouverts, sur leurs cartes (liste des TP d'une base)
+// Avancement des TP sur leurs cartes (liste des TP d'une base), d'après le suivi gardé
 function maj_suivi_tp() {
     document.querySelectorAll('.carte-tp-suivi').forEach(function (e) {
         var c = JSON.parse(e.dataset.tp);
         var tp = tps_charges[cle_reponse(c[0], c[1])];
-        if (!tp || !tp.questions.length) return;
-        var n = nb_repondues(tp.questions);
-        e.textContent = n == tp.questions.length ? '✅ Toutes les questions ont une réponse'
-                                                  : n + ' / ' + tp.questions.length + ' avec une réponse';
-        e.classList.toggle('fini', n == tp.questions.length);
+        var total = parseInt(e.dataset.total, 10) || 0;
+        var n = 0;
+        if (tp) n = nb_repondues(tp.questions);
+        else {
+            var qs = suivi_tp(c[0], c[1]).questions;
+            Object.keys(qs).forEach(function (k) { if (qs[k].repondue) n++; });
+        }
+        if (n == 0) { e.textContent = ''; return; }
+        e.textContent = n >= total ? 'Toutes les questions ont une réponse' : n + ' / ' + total + ' avec une réponse';
+        e.classList.toggle('fini', n >= total);
     });
 }
 
@@ -632,7 +693,9 @@ function affiche_questions() {
           + '<li>Cliquez sur une question pour y répondre ; « Précédente » et « Suivante » passent d\'une question à l\'autre.</li>'
           + '<li>« ▶️ Exécuter » (ou Ctrl+Entrée) lance votre requête sur votre copie de la base, ou la requête donnée quand il faut en trouver l\'intention.</li>'
           + '<li>Pour une question d\'intention, « ✅ Faire corriger mon intention » la fait évaluer (par l\'IA quand le serveur l\'a activée).</li>'
-          + '<li>Votre réponse est gardée quand vous changez de question ; elle est perdue si vous rechargez la page.</li>'
+          + '<li>Une requête qui s\'exécute sans erreur ne répond pas forcément à la question : vérifiez son résultat.</li>'
+          + '<li>Vos réponses sont gardées dans ce navigateur, même si vous rechargez la page. Sur un poste partagé, effacez-les en partant.</li>'
+          + '<li>« 📄 Ma copie » présente vos réponses, prêtes à imprimer ou à enregistrer en PDF.</li>'
           + '</ul></details>';
     if (qs.length == 0) {
         t = t + '<p class="indicateur">Aucune question n\'est disponible actuellement.</p>';
@@ -644,19 +707,154 @@ function affiche_questions() {
             t = t + '<span class="numero">' + q.numero + '</span>';
             t = t + '<span class="corps"><span class="type">' + echappe(q.libelle || '') + '</span>';
             t = t + '<span class="resume">' + echappe(resume_question(q)) + '</span></span>';
-            t = t + '<span class="etat">' + (faite ? '✅ Répondue' : 'À faire') + '</span>';
+            t = t + '<span class="etat">' + (faite ? '✍️ Réponse saisie' : 'À faire') + '</span>';
             t = t + '</button></li>';
         });
         t = t + '</ol>';
         var suivante = qs.findIndex(function (q) { return !est_repondue(q); });
         t = t + '<div class="actions"><button type="button" class="btn" onclick="ouvre_question(' + (suivante < 0 ? 0 : suivante) + ')">'
-              + (faites == 0 ? '🚀 Commencer' : (suivante < 0 ? '🔁 Revoir la question 1' : '▶️ Reprendre à la question ' + qs[suivante].numero)) + '</button></div>';
+              + (faites == 0 ? '🚀 Commencer' : (suivante < 0 ? '🔁 Revoir la question 1' : '▶️ Reprendre à la question ' + qs[suivante].numero)) + '</button>'
+              + '<button type="button" class="btn secondaire" onclick="affiche_copie()">📄 Ma copie</button>'
+              + '<button type="button" class="btn danger" onclick="efface_reponses()">🗑️ Effacer mes réponses</button></div>';
     }
     t = t + '</div>';
     cache($('posts'));
     maj($('posts'), t);
     apparait($('posts'));
     window.scrollTo(0, 0);
+}
+
+// Efface les réponses et le suivi du TP courant (poste partagé, nouveau départ)
+function efface_reponses() {
+    if (!confirm('Effacer toutes vos réponses au TP ' + tp_courant.tp + ' dans ce navigateur ? '
+            + 'Elles ne pourront pas être récupérées.')) return;
+    efface_suivi(tp_courant.base, tp_courant.tp);
+    volet_base.choisies = [];
+    affiche_questions();
+}
+
+//-----------------------------------------------------------------
+// Copie de l'élève : ses réponses et ce qu'il en a fait (exécutions, corrections
+// d'intention), à imprimer ou enregistrer en PDF par le navigateur
+//-----------------------------------------------------------------
+
+function date_lisible(ms) {
+    var d = new Date(ms);
+    return d.toLocaleDateString('fr-FR') + ' à ' + d.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'});
+}
+
+function pluriel(n, mot) {
+    return n + ' ' + mot + (n > 1 ? 's' : '');
+}
+
+// Ce que la copie dit de l'exécution d'une réponse de type requête
+function copie_execution(sq) {
+    var e = sq.execution;
+    if (!e) return '<p class="copie-etat attention">Requête jamais exécutée.</p>';
+    var t = '<p class="copie-etat">Dernière exécution, le ' + date_lisible(e.date) + ' : ';
+    if (!e.ok) t = t + '<strong>erreur</strong>' + (e.erreur ? ' (' + echappe(e.erreur) + ')' : '') + '.';
+    else if (e.lignes != null) t = t + 'sans erreur, ' + pluriel(e.lignes, 'ligne') + ' obtenue' + (e.lignes > 1 ? 's' : '')
+        + (e.tronque ? ' (affichage limité)' : '') + '.';
+    else if (e.modifiees != null) t = t + 'sans erreur, ' + pluriel(e.modifiees, 'ligne') + ' modifiée' + (e.modifiees > 1 ? 's' : '') + '.';
+    else t = t + 'sans erreur.';
+    t = t + '</p>';
+    if ((sq.reponse || '').trim() !== (e.requete || '').trim())
+        t = t + '<p class="copie-etat attention">La réponse a été modifiée depuis cette exécution.</p>';
+    return t;
+}
+
+// Ce que la copie dit des corrections d'une intention
+function copie_corrections(sq) {
+    var cs = sq.corrections || [];
+    if (cs.length == 0) return '<p class="copie-etat">Correction non demandée.</p>';
+    var c = cs[cs.length - 1];
+    var t = '<p class="copie-etat">Correction demandée ' + (cs.length == 1 ? 'une fois' : cs.length + ' fois')
+          + ', la dernière le ' + date_lisible(c.date) + '.</p>';
+    if (c.auto) {
+        t = t + '<p class="copie-etat attention">Auto-évaluation : l\'intention attendue par l\'enseignant a été affichée.</p>';
+    } else {
+        var libelles = {correct: 'intention correcte', partiel: 'intention partiellement correcte', incorrect: 'intention incorrecte'};
+        t = t + '<div class="copie-correction"><p><strong>Avis de l\'IA' + (c.modele ? ' (' + echappe(c.modele) + ')' : '') + ' : '
+              + echappe(libelles[c.verdict] || 'sans verdict') + '</strong></p>'
+              + (c.explication ? '<p>' + texte_ia(c.explication) + '</p>' : '') + '</div>';
+    }
+    if (cs.some(function (x) { return x.auto; }) && !c.auto)
+        t = t + '<p class="copie-etat attention">Une auto-évaluation antérieure a affiché l\'intention attendue.</p>';
+    if ((sq.reponse || '').trim() !== (c.texte || '').trim())
+        t = t + '<p class="copie-etat attention">La réponse a été modifiée après la dernière correction.</p>';
+    return t;
+}
+
+function affiche_copie() {
+    var qs = tp_courant.questions;
+    var s = suivi_tp(tp_courant.base, tp_courant.tp);
+    var nb_rep = nb_repondues(qs), nb_exec = 0, nb_corr = 0;
+    qs.forEach(function (q) {
+        var sq = s.questions[q.code] || {};
+        if (q.attendu == 'R' && sq.execution && sq.execution.ok && est_repondue(q)) nb_exec++;
+        if (q.attendu == 'I' && sq.corrections && sq.corrections.length) nb_corr++;
+    });
+    var t = '<div class="sans-impression">' + fil_ariane(null)
+          + '<div class="actions"><button type="button" class="btn" onclick="imprime_copie()">🖨️ Imprimer ou enregistrer en PDF</button>'
+          + '<button type="button" class="btn secondaire" onclick="affiche_questions()">⬅️ Retour au TP</button></div>'
+          + '<p class="astuce">Dans la fenêtre d\'impression, choisissez « Enregistrer au format PDF » comme imprimante.</p></div>';
+    t = t + '<article class="copie">';
+    t = t + '<header class="copie-entete"><h2>Copie — TP ' + echappe(tp_courant.tp) + '</h2>';
+    t = t + '<p><label for="copie-nom">Nom et prénom :</label> <input type="text" id="copie-nom" maxlength="100" autocomplete="name" value="'
+          + echappe(s.nom || '').replace(/"/g, '&quot;') + '" oninput="note_nom(this.value)"></p>';
+    t = t + '<p>Base <strong>' + echappe(tp_courant.base) + '</strong> · copie établie le ' + date_lisible(Date.now())
+          + ' · SQLSandbox ' + echappe(typeof version_appli == 'undefined' ? '' : version_appli) + '</p>';
+    t = t + '<p class="copie-bilan">' + nb_rep + ' / ' + pluriel(qs.length, 'question') + ' avec une réponse';
+    if (qs.some(function (q) { return q.attendu == 'R'; })) t = t + ' · ' + pluriel(nb_exec, 'requête') + ' exécutée' + (nb_exec > 1 ? 's' : '') + ' sans erreur';
+    if (qs.some(function (q) { return q.attendu == 'I'; })) t = t + ' · ' + pluriel(nb_corr, 'intention') + ' soumise' + (nb_corr > 1 ? 's' : '') + ' à correction';
+    t = t + '</p>';
+    t = t + '<p class="copie-avertissement">« Exécutée sans erreur » ne veut pas dire « juste » : seule la comparaison du résultat '
+          + 'avec ce qui est demandé le dit.</p></header>';
+    qs.forEach(function (q) {
+        var sq = s.questions[q.code] || {};
+        var faite = est_repondue(q);
+        t = t + '<section class="copie-question">';
+        t = t + '<h3>Question ' + q.numero + ' <span class="type">' + echappe(q.libelle || '') + '</span></h3>';
+        if (q.instructions) t = t + '<p class="copie-consigne">' + echappe(q.instructions) + '</p>';
+        if (q.attendu == 'I') t = t + '<p class="libelle">Requête donnée :</p><pre class="cm-s-default copie-sql">' + colore_sql(q.requete) + '</pre>';
+        else t = t + '<p class="copie-enonce">' + echappe(q.intention) + '</p>';
+        t = t + '<p class="libelle">' + (q.attendu == 'I' ? 'Intention rédigée' : 'Requête proposée') + ' :</p>';
+        if (!faite) {
+            t = t + '<p class="copie-vide">Non traitée.</p>';
+        } else if (q.attendu == 'I') {
+            t = t + '<blockquote class="copie-texte">' + echappe(sq.reponse).replace(/\n/g, '<br/>') + '</blockquote>';
+            t = t + copie_corrections(sq);
+        } else {
+            t = t + '<pre class="cm-s-default copie-sql">' + colore_sql(sq.reponse) + '</pre>';
+            t = t + copie_execution(sq);
+        }
+        t = t + '</section>';
+    });
+    t = t + '<footer class="copie-pied">Copie établie par le navigateur de l\'élève à partir de ce qu\'il y a saisi et exécuté.</footer>';
+    t = t + '</article>';
+    question_courante = null;
+    cache($('posts'));
+    maj($('posts'), t);
+    apparait($('posts'));
+    window.scrollTo(0, 0);
+}
+
+function note_nom(nom) {
+    suivi_tp(tp_courant.base, tp_courant.tp).nom = nom;
+    enregistre_suivi(tp_courant.base, tp_courant.tp);
+}
+
+function imprime_copie() {
+    if ($('copie-nom') && $('copie-nom').value.trim() == '') {
+        alert('Indiquez votre nom et votre prénom en haut de la copie.');
+        $('copie-nom').focus();
+        return;
+    }
+    // Nom proposé pour le fichier PDF : le titre de la page
+    var titre = document.title;
+    document.title = 'Copie ' + tp_courant.tp + ' - ' + $('copie-nom').value.trim();
+    window.print();
+    document.title = titre;
 }
 
 function bascule_aide() {
@@ -676,7 +874,7 @@ function ouvre_question(i) {
     t = t + '<div class="navigation-questions" role="group" aria-label="Questions du TP">';
     qs.forEach(function (autre, j) {
         t = t + '<button type="button" class="pastille-question' + (j == i ? ' courante' : '') + (est_repondue(autre) ? ' faite' : '')
-              + '" title="Question ' + autre.numero + (est_repondue(autre) ? ' (répondue)' : '') + '"'
+              + '" title="Question ' + autre.numero + (est_repondue(autre) ? ' (réponse saisie)' : '') + '"'
               + (j == i ? ' aria-current="step"' : '') + ' onclick="ouvre_question(' + j + ')">' + autre.numero + '</button>';
     });
     t = t + '</div>';
@@ -694,9 +892,18 @@ function ouvre_question(i) {
         t = t + '<p class="enonce">' + echappe(q.intention) + '</p>';
         if (q.table) t = t + '<p class="libelle">Table attendue :</p><div class="table-attendue">' + q.table + '</div>';
         t = t + html_volet_base(q.base);
-        t = t + '<p class="libelle"><label for="requete">' + (q.modele ? 'Complétez la requête suivante' : 'Écrivez la requête');
-        t = t + ' <span class="astuce">(Ctrl+Entrée pour l\'exécuter)</span></label></p>';
-        t = t + '<textarea rows="10" cols="80" id="requete"></textarea>';
+        if (a_trous(q)) {
+            // Requête à trous (comme dans QueryCraft) : un champ par « ___ » ; la requête
+            // assemblée va dans la zone #requete, masquée, lue par l'exécution et le suivi
+            t = t + '<p class="libelle">Complétez la requête en remplissant les trous '
+                  + '<span class="astuce">(Entrée : trou suivant, Ctrl+Entrée : exécuter)</span></p>';
+            t = t + '<div class="trous" id="trous"></div><p class="statut ko" id="trous-erreur" hidden></p>';
+            t = t + '<textarea id="requete" hidden></textarea>';
+        } else {
+            t = t + '<p class="libelle"><label for="requete">' + (q.modele ? 'Complétez la requête suivante' : 'Écrivez la requête');
+            t = t + ' <span class="astuce">(Ctrl+Entrée pour l\'exécuter)</span></label></p>';
+            t = t + '<textarea rows="10" cols="80" id="requete"></textarea>';
+        }
     }
     // Le commentaire de l'enseignant (indice) est du texte : il est échappé
     if (q.aide) {
@@ -731,6 +938,10 @@ function ouvre_question(i) {
     if (volet_base.ouvert) charge_volet_base();
     // L'intention se rédige en français : zone de saisie simple
     // La réponse est gardée à chaque frappe : elle survit à tout changement de vue
+    if (a_trous(q)) {
+        dessine_trous(q);
+        return;
+    }
     var editeur = (q.attendu != 'I') ? editeur_sql($('requete'), reponse) : null;
     if (editeur) editeur.on('change', function () { memorise_reponse(false); });
     else $('requete').addEventListener('input', function () { memorise_reponse(false); });
@@ -738,12 +949,101 @@ function ouvre_question(i) {
 
 // Exécute la réponse de l'élève sur sa copie de la base
 function reponse() {
-    execute_sur_copie($('requete').value);
+    if (a_trous(question_courante) && !trous_complets()) return;
+    execute_sur_copie($('requete').value, true);
+}
+
+//-----------------------------------------------------------------
+// Requête à trous (types rI->R, rIT->R), saisie comme dans QueryCraft : le modèle marque
+// chaque trou par « ___ » (trois soulignés ou plus) ; chaque trou a son champ, la requête
+// assemblée (« ___ » pour un trou vide) est la réponse. L'exécution attend tous les trous.
+//-----------------------------------------------------------------
+
+var MARQUE_TROU = /_{3,}/;
+
+function a_trous(q) {
+    return !!(q && q.attendu == 'R' && q.modele && MARQUE_TROU.test(q.modele));
+}
+
+function parties_modele(modele) {
+    return modele.split(MARQUE_TROU);
+}
+
+// Valeurs des trous retrouvées dans une réponse complète, ou null si elle ne suit pas le modèle
+function valeurs_trous(modele, requete) {
+    var esc = function (x) { return x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); };
+    var m = new RegExp('^' + parties_modele(modele).map(esc).join('([\\s\\S]*?)') + '$').exec(requete || '');
+    if (!m) return null;
+    return m.slice(1).map(function (v) { return MARQUE_TROU.test(v) && !v.replace(MARQUE_TROU, '').trim() ? '' : v; });
+}
+
+function champs_trous() {
+    return Array.prototype.slice.call(document.querySelectorAll('#trous .trou'));
+}
+
+function assemble_trous(modele) {
+    var parties = parties_modele(modele), champs = champs_trous(), r = parties[0];
+    for (var i = 1; i < parties.length; i++) r += ((champs[i - 1] ? champs[i - 1].value.trim() : '') || '___') + parties[i];
+    return r;
+}
+
+function ajuste_trou(champ) {
+    champ.style.width = Math.max(8, champ.value.length + 2) + 'ch';
+}
+
+function dessine_trous(q) {
+    var conteneur = $('trous');
+    var valeurs = valeurs_trous(q.modele, reponse_de(q) || '');
+    var parties = parties_modele(q.modele);
+    conteneur.textContent = '';
+    parties.forEach(function (texte, i) {
+        if (i > 0) {
+            var champ = document.createElement('input');
+            champ.type = 'text';
+            champ.className = 'trou';
+            champ.spellcheck = false;
+            champ.autocomplete = 'off';
+            champ.setAttribute('autocapitalize', 'off');
+            champ.setAttribute('aria-label', 'Trou ' + i + ' sur ' + (parties.length - 1));
+            champ.value = valeurs ? valeurs[i - 1] : '';
+            ajuste_trou(champ);
+            champ.addEventListener('input', function () {
+                ajuste_trou(champ);
+                champ.classList.remove('vide');
+                $('trous-erreur').hidden = true;
+                $('requete').value = assemble_trous(q.modele);
+                memorise_reponse(false);
+            });
+            champ.addEventListener('keydown', function (e) {
+                if (e.key != 'Enter') return;
+                e.preventDefault();
+                if (e.ctrlKey || e.metaKey) { reponse(); return; }
+                var champs = champs_trous(), suivant = champs[champs.indexOf(champ) + 1];
+                if (suivant) suivant.focus();
+            });
+            conteneur.appendChild(champ);
+        }
+        conteneur.appendChild(document.createTextNode(texte));
+    });
+    $('requete').value = assemble_trous(q.modele);
+}
+
+// Avant exécution : tous les trous remplis, sinon les vides sont signalés
+function trous_complets() {
+    var vides = champs_trous().filter(function (c) { return !c.value.trim(); });
+    vides.forEach(function (c) { c.classList.add('vide'); });
+    if (vides.length == 0) return true;
+    var e = $('trous-erreur');
+    e.textContent = vides.length == 1 ? '⚠️ Il reste un trou à compléter avant d\'exécuter la requête.'
+                                      : '⚠️ Il reste ' + vides.length + ' trous à compléter avant d\'exécuter la requête.';
+    e.hidden = false;
+    vides[0].focus();
+    return false;
 }
 
 // Exécute la requête donnée d'une question d'intention (sans correction)
 function execute_requete_donnee() {
-    execute_sur_copie(question_courante.requete);
+    execute_sur_copie(question_courante.requete, false);
 }
 
 // Texte de l'IA (Markdown simple) en HTML sûr : échappé, gras et retours à la ligne
@@ -760,6 +1060,7 @@ function corrige_intention() {
         return;
     }
     memorise_reponse(false);
+    var q = question_courante;
     $('corriger_intention').disabled = true;
     maj($('correction'), '<p>⏳ Correction en cours…</p>');
     appel('post', {
@@ -767,9 +1068,11 @@ function corrige_intention() {
             exercice: question_courante.exercice, question: question_courante.code, intention: texte
         },
         function (trs) {
-            $('corriger_intention').disabled = false;
             var r = null;
             try { r = JSON.parse(trs.responseText); } catch (e) { r = null; }
+            if (r && r.ok) note_correction(q, texte, r);
+            if (question_courante !== q || !$('correction')) return; // l'élève a changé de question
+            $('corriger_intention').disabled = false;
             if (!r || !r.ok) {
                 maj($('correction'), '<p class="statut ko">' + echappe(r && r.erreur ? r.erreur : 'Réponse inattendue du serveur.') + '</p>');
             } else if (r.ia) {
@@ -785,17 +1088,21 @@ function corrige_intention() {
             }
         },
         function (trs) {
+            if (session_perdue(trs) || question_courante !== q || !$('correction')) return;
             $('corriger_intention').disabled = false;
-            if (session_perdue(trs)) return;
             var r = null;
             try { r = JSON.parse(trs.responseText); } catch (e) { r = null; }
             maj($('correction'), '<p class="statut ko">' + echappe(r && r.erreur ? r.erreur : 'La correction a échoué.') + '</p>');
         });
 }
 
-function execute_sur_copie(requete) {
+// Exécute une requête sur la copie de l'étudiant ; reponse_eleve : c'est sa réponse
+// (mode 0, exécution notée dans le suivi), sinon la requête donnée d'une question d'intention
+function execute_sur_copie(requete, reponse_eleve) {
+    var q = question_courante;
     appel('post', {
-            Soumettre: 'Envoyer', csrf: csrf_token, requete64: base64_utf8(requete), base: question_courante.base, mode: 0
+            Soumettre: 'Envoyer', csrf: csrf_token, requete64: base64_utf8(requete), base: q.base,
+            mode: reponse_eleve ? 0 : 2
         },
         function (trs) {
             if (trs.responseText == '') {
@@ -805,6 +1112,7 @@ function execute_sur_copie(requete) {
             cache($('results'));
             maj($('results'), trs.responseText);
             apparait($('results'));
+            if (reponse_eleve) note_execution(q, requete, $('results'));
             rafraichit_volet_base(requete);
         },
         function (trs) {
@@ -812,11 +1120,45 @@ function execute_sur_copie(requete) {
         });
 }
 
+// Dernière exécution de la réponse de l'élève : sans erreur (nombre de lignes) ou en échec
+function note_execution(q, requete, zone) {
+    var etat = zone.querySelector('[data-execution]');
+    if (!etat) return;
+    var e = {date: Date.now(), requete: requete, ok: etat.getAttribute('data-execution') == 'ok'};
+    var table = zone.querySelector('table.resultat');
+    if (e.ok && table && table.tBodies[0]) {
+        e.lignes = table.tBodies[0].rows.length;
+        e.tronque = /premières lignes/.test(zone.textContent);
+    } else if (e.ok) {
+        var m = zone.textContent.match(/(\d+) ligne\(s\) modifiée/);
+        if (m) e.modifiees = parseInt(m[1], 10);
+    } else {
+        e.erreur = zone.textContent.replace(/❌ Échec de la requête/, '').replace(/\s+/g, ' ').trim().slice(0, 300);
+    }
+    suivi_question(q).execution = e;
+    enregistre_suivi(q.base, q.exercice);
+}
+
+// Correction d'intention demandée : gardée pour la copie (avec le texte corrigé, pour savoir
+// si la réponse a changé ensuite)
+function note_correction(q, texte, r) {
+    var sq = suivi_question(q);
+    if (!sq.corrections) sq.corrections = [];
+    var c = {date: Date.now(), texte: texte};
+    if (r.ia) { c.ia = true; c.verdict = r.verdict || ''; c.explication = r.explication || ''; c.modele = r.modele || ''; }
+    else c.auto = true;
+    sq.corrections.push(c);
+    enregistre_suivi(q.base, q.exercice);
+}
+
 // Garde la réponse de la question courante (en mémoire de la page)
 function memorise_reponse(message) {
     if (!question_courante || !$('requete')) return;
     var q = question_courante;
-    reponses[cle_reponse(q.base, q.exercice, q.code)] = $('requete').value;
+    var sq = suivi_question(q);
+    sq.reponse = $('requete').value;
+    sq.repondue = est_repondue(q);
+    enregistre_suivi(q.base, q.exercice);
     var pastille = document.querySelector('.pastille-question.courante');
     if (pastille) pastille.classList.toggle('faite', est_repondue(q));
     if (message) ajoute($('results'), '<p class="statut ok">🧺 Réponse mémorisée</p>');

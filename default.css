@@ -430,6 +430,12 @@ select:focus, #posts textarea:focus {
 	border-color: var(--sb-ok-border);
 }
 
+.statut.neutre {
+	color: var(--sb-ink-soft);
+	background: var(--sb-surface-2);
+	border-color: var(--sb-border-strong);
+}
+
 .statut.ko {
 	color: var(--sb-danger);
 	background: var(--sb-danger-soft);
@@ -875,7 +881,7 @@ table.historique td .btn {
 }
 
 .carte-tp-suivi.fini {
-	color: var(--sb-ok);
+	color: var(--sb-accent-2);
 	font-weight: 600;
 }
 
@@ -977,10 +983,11 @@ table.historique td .btn {
 	border-radius: 999px;
 }
 
+/* Réponse saisie (pas forcément juste) : couleur d'accent, pas le vert de la réussite */
 .ligne-question.faite .numero, .pastille-question.faite {
-	color: var(--sb-ok);
-	background: var(--sb-ok-soft);
-	border-color: var(--sb-ok-border);
+	color: #FFFFFF;
+	background: var(--sb-accent-2);
+	border-color: var(--sb-accent-2);
 }
 
 .ligne-question .corps {
@@ -1014,7 +1021,7 @@ table.historique td .btn {
 }
 
 .ligne-question.faite .etat {
-	color: var(--sb-ok);
+	color: var(--sb-accent-2);
 	font-weight: 600;
 }
 
@@ -1096,6 +1103,201 @@ table.historique td .btn {
 	.pied-question .btn {
 		flex: 1 1 auto;
 		justify-content: center;
+	}
+}
+
+/* Requête à trous (comme dans QueryCraft) : un champ par trou dans le texte de la requête */
+.trous {
+	margin: 0 0 8px 0;
+	padding: 10px 12px;
+	font-family: var(--sb-mono);
+	font-size: 15px;
+	line-height: 2.2;
+	white-space: pre-wrap;
+	color: var(--sb-ink);
+	background: var(--sb-surface);
+	border: 2px solid var(--sb-border-strong);
+	border-radius: var(--sb-radius-sm);
+}
+
+.trou {
+	min-width: 6ch;
+	padding: 1px 6px;
+	font: inherit;
+	line-height: 1.4;
+	color: var(--sb-ink);
+	background: var(--sb-accent-soft);
+	border: 2px dashed var(--sb-accent);
+	border-radius: 4px;
+}
+
+.trou:focus {
+	outline: none;
+	border-style: solid;
+	background: var(--sb-surface);
+	box-shadow: 0 0 0 3px var(--sb-accent-ring);
+}
+
+.trou.vide {
+	border-color: var(--sb-danger);
+}
+
+#trous-erreur[hidden] {
+	display: none;
+}
+
+/* Copie de l'élève (TP), à imprimer ou enregistrer en PDF */
+.copie {
+	padding: 28px 32px;
+	background: var(--sb-surface);
+	border: 1px solid var(--sb-border);
+	border-radius: var(--sb-radius-md);
+	box-shadow: var(--sb-shadow-card);
+}
+
+.copie-entete {
+	margin-bottom: 18px;
+	padding-bottom: 12px;
+	border-bottom: 2px solid var(--sb-accent-soft);
+}
+
+.copie-entete h2 {
+	margin: 0 0 10px 0;
+}
+
+.copie-entete p {
+	margin: 0 0 6px 0;
+}
+
+.copie-entete label {
+	display: inline;
+	color: var(--sb-ink);
+}
+
+#copie-nom {
+	width: min(100%, 360px);
+	padding: 6px 10px;
+	font: inherit;
+	border: 2px solid var(--sb-border-strong);
+	border-radius: var(--sb-radius-sm);
+}
+
+.copie-bilan {
+	font-weight: 600;
+}
+
+.copie-avertissement, .copie-pied {
+	font-size: .88em;
+	color: var(--sb-ink-faint);
+}
+
+.copie-question {
+	padding: 14px 0;
+	border-bottom: 1px solid var(--sb-border);
+	break-inside: avoid;
+}
+
+.copie-question h3 {
+	margin: 0 0 8px 0;
+}
+
+.copie-question h3 .type {
+	margin-left: 6px;
+	font-size: .75em;
+	font-weight: 600;
+	text-transform: uppercase;
+	color: var(--sb-ink-faint);
+}
+
+.copie-question p {
+	margin: 0 0 8px 0;
+}
+
+.copie-enonce {
+	font-weight: 600;
+}
+
+.copie-consigne {
+	font-style: italic;
+	color: var(--sb-ink-soft);
+}
+
+#posts pre.copie-sql {
+	margin: 0 0 8px 0;
+	padding: 10px 14px;
+	background: var(--sb-surface-2);
+	border: 1px solid var(--sb-border);
+	border-radius: var(--sb-radius-sm);
+	cursor: auto;
+}
+
+.copie-texte {
+	margin: 0 0 8px 0;
+	padding: 10px 14px;
+	background: var(--sb-surface-2);
+	border-left: 4px solid var(--sb-accent);
+	border-radius: var(--sb-radius-sm);
+}
+
+.copie-vide {
+	font-style: italic;
+	color: var(--sb-ink-faint);
+}
+
+.copie-etat {
+	font-size: .92em;
+	color: var(--sb-ink-soft);
+}
+
+.copie-etat.attention {
+	color: var(--sb-warn);
+	font-weight: 600;
+}
+
+.copie-correction {
+	margin: 0 0 8px 0;
+	padding: 8px 12px;
+	font-size: .92em;
+	border: 1px solid var(--sb-border);
+	border-radius: var(--sb-radius-sm);
+}
+
+.copie-pied {
+	margin-top: 16px;
+}
+
+@media print {
+	@page {
+		margin: 15mm;
+	}
+	body {
+		padding: 0;
+		background: #FFFFFF;
+	}
+	.container {
+		box-shadow: none;
+		border-radius: 0;
+		max-width: none;
+	}
+	.entete, .navigation, .pied, .sans-impression, #session-restante {
+		display: none !important;
+	}
+	#contenu {
+		padding: 0;
+	}
+	.copie {
+		padding: 0;
+		border: none;
+		box-shadow: none;
+	}
+	#copie-nom {
+		padding: 0;
+		border: none;
+		font-weight: 600;
+	}
+	pre, .copie-texte, .copie-sql {
+		white-space: pre-wrap;
+		break-inside: avoid;
 	}
 }
 
