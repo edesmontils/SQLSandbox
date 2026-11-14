@@ -689,6 +689,10 @@ function apropos() {
     rubrique('SQL', 'messages_apropos', 'apropos');
 }
 
+function credits() {
+    rubrique('credits', 'messages_credits', 'crédits');
+}
+
 function aides() {
     rubrique('aides', 'messages_aides', 'aide', 'onglet-aide');
 }

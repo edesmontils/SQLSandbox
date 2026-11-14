@@ -140,10 +140,107 @@
 				</ul>
 				<p>En bas de page : <strong>ℹ️ À propos de SQL et SQLite</strong> présente les
 					particularités du SGBD utilisé, <strong>🛡️ Mentions légales</strong> les
-					conditions d'utilisation et les licences.</p>
+					conditions d'utilisation et les licences, <strong>🙏 Crédits</strong> l'auteur,
+					les technologies utilisées et les références.</p>
 			</div>
 		</div>
 	</aides>
+
+	<credits>
+		<div class="post credits">
+			<h2 class="title">📖 À propos</h2>
+			<div class="story">
+				<p><strong>SQL Sandbox</strong> est un bac à sable pédagogique pour apprendre à
+					interroger et à manipuler des bases de données en SQL. Chaque étudiant travaille
+					sur sa propre copie des bases : il peut les interroger, les modifier, revenir à la
+					base d'origine, et suivre des travaux pratiques corrigés automatiquement.</p>
+				<p>Pour visualiser l'exécution pas à pas d'une requête <code>SELECT</code>, il
+					existe <strong>QueryCraft</strong>, du même auteur, qui partage la charte
+					graphique de SQL Sandbox et le format de ses exercices.</p>
+				<p class="liens"><a class="btn" href="https://pedago.desmontils.net/querycraft/">🔍 QueryCraft</a></p>
+			</div>
+		</div>
+
+		<div class="post credits">
+			<h2 class="title">👨‍🏫 Auteur</h2>
+			<div class="story">
+				<div class="carte-auteur">
+					<div class="icone-auteur">👨🏻‍💻</div>
+					<div>
+						<h3>Emmanuel Desmontils</h3>
+						<p>Nantes Université</p>
+						<p>Laboratoire des Sciences du Numérique de Nantes (LS2N) - Équipe VELO</p>
+						<p>Centre de Recherche en Éducation de Nantes (CREN)</p>
+						<p>📧 <a href="mailto:emmanuel.desmontils@univ-nantes.fr">emmanuel.desmontils@univ-nantes.fr</a></p>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="post credits">
+			<h2 class="title">🛠️ Technologies utilisées</h2>
+			<div class="story">
+				<div class="grille-techno">
+					<div><span class="icone">🐘</span><strong>PHP</strong><span>8.0 et plus</span></div>
+					<div><span class="icone">🗄️</span><strong>SQLite</strong><span>3.32.3 et plus recommandé</span></div>
+					<div><span class="icone">📄</span><strong>SimpleXML</strong><span>Configuration et contenus</span></div>
+					<div><span class="icone">✏️</span><strong>CodeMirror 5</strong><span>Éditeur SQL (licence MIT)</span></div>
+					<div><span class="icone">🔤</span><strong>Atkinson Hyperlegible Next</strong><span>Police (Braille Institute)</span></div>
+					<div><span class="icone">🤖</span><strong>IA générative</strong><span>Correction des intentions, génération de données</span></div>
+				</div>
+			</div>
+		</div>
+
+		<div class="post credits">
+			<h2 class="title">📜 Licence</h2>
+			<div class="story">
+				<p>SQL Sandbox est un logiciel libre développé à des fins pédagogiques et de
+					recherche, distribué sous la licence <a rel="license"
+						href="https://www.gnu.org/licenses/gpl-3.0.fr.html">GNU GPL version 3</a>.</p>
+				<p>© 2010-2026 Emmanuel Desmontils, Nantes Université</p>
+			</div>
+		</div>
+
+		<div class="post credits">
+			<h2 class="title">🔗 Liens utiles</h2>
+			<div class="story">
+				<p class="liens">
+					<a class="btn" href="https://github.com/edesmontils/SQLSandbox">📦 GitHub</a>
+					<a class="btn" href="https://pedago.desmontils.net/querycraft/">🔍 QueryCraft</a>
+					<a class="btn" href="https://www.ls2n.fr/equipe/velo/">🏛️ LS2N</a>
+					<a class="btn" href="https://cren.univ-nantes.fr/presentation/theme-1-conception-de-formation-et-mediation-par-le-numerique">🏛️ CREN</a>
+					<a class="btn" href="https://www.univ-nantes.fr/">🎓 Nantes Université</a>
+				</p>
+			</div>
+		</div>
+
+		<div class="post credits">
+			<h2 class="title">🤖 Développement assisté par IA</h2>
+			<div class="story">
+				<p>Les dernières évolutions de SQL Sandbox ont bénéficié de l'assistance de
+					<strong>Claude Code</strong>, l'outil d'assistance au développement
+					d'Anthropic.</p>
+				<p class="liens"><a class="btn secondaire" href="https://claude.ai/code">🔗 En savoir plus sur Claude Code</a></p>
+			</div>
+		</div>
+
+		<div class="post credits">
+			<h2 class="title">📓 Références</h2>
+			<div class="story">
+				<ul>
+					<li>Emmanuel Desmontils, Laura Monceaux. <a
+							href="https://hal.science/hal-04144210">Enseigner SQL en NSI</a>. Atelier
+						« Apprendre la Pensée Informatique de la Maternelle à l'Université »,
+						Conférence Environnements Informatiques pour l'Apprentissage Humain (EIAH),
+						Juin 2023, Brest, France. pp.17-24.</li>
+					<li>Emmanuel Desmontils. <a href="https://hal.science/hal-05030037v1">Enseigner
+							SQL en NSI : typologie et cas de la jointure</a>. Journée des enseignants
+						de SNT et de NSI 2024, Académie de la Réunion et IREMI de La Réunion, Dec
+						2024, Saint-Denis (La Réunion), France.</li>
+				</ul>
+			</div>
+		</div>
+	</credits>
 
 	<!-- messages d'acceuil -->
 	<listeMessages>

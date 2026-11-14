@@ -115,6 +115,19 @@ if (isset($_SESSION['debug']) && $session_ok) {
 		}	
 	}
 	//======================================================
+	else if ($Soumettre == "credits"){
+		try {
+			$config = new SimpleXMLElement('./config.xml',
+		                                LIBXML_DTDATTR|LIBXML_DTDLOAD|LIBXML_DTDVALID
+		                                |LIBXML_NOBLANKS|LIBXML_NOCDATA,
+		                                true);
+			foreach($config->credits->children() as $c)
+				echo $c->asXML();
+		} catch(Exception $e) {
+  			echo "<p>erreur<br/>Pb (Exception) ! ".htmlspecialchars($e->getMessage())."<br/>".$libxml->afficheErreurs()."<br/></p>";
+		}
+	}
+	//======================================================
 	// Travaux pratiques (exercices au format QueryCraft) : base et TP vérifiés dans le catalogue
 	else if ($Soumettre == "tp") {
 		liste_TP(param('nom_base'));

@@ -322,7 +322,8 @@ $listeNoms = array_keys($listeBase);
 		<span class="separateur">·</span> Logiciel libre sous <a href="https://www.gnu.org/licenses/gpl-3.0.fr.html">licence GPL v3</a></p>
 	<p><?php echo "<a href='mailto:emmanuel.desmontils@univ-nantes.fr?subject=".rawurlencode("SQLSandbox $version - question")."'>✉️ Contact</a>"; ?>
 		<span class="separateur">·</span> <button type="button" onclick="apropos()">ℹ️ À propos de SQL et SQLite</button>
-		<span class="separateur">·</span> <button type="button" onclick="mentions()">🛡️ Mentions légales</button></p>
+		<span class="separateur">·</span> <button type="button" onclick="mentions()">🛡️ Mentions légales</button>
+		<span class="separateur">·</span> <button type="button" onclick="credits()">🙏 Crédits</button></p>
 	<p class="session-restante" id="session-restante" title="La session, vos bases modifiées comprises, est conservée tant que vous restez moins de ce temps sans rien faire"></p>
 </footer>
 

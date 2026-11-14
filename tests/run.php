@@ -817,6 +817,8 @@ verifie('requête avec jeton exécutée', $code == 200 && strpos($corps, 'Dupont
 verifie('copie faite à la première requête', tailles() > 0, tailles());
 list($code, $corps) = http("$u/controler.php?Soumettre=inexistante");
 verifie('rubrique inconnue refusée', strpos($corps, 'inconnue') !== false, $corps);
+list($code, $corps) = http("$u/controler.php?Soumettre=credits");
+verifie('rubrique Crédits', $code == 200 && strpos($corps, 'hal-04144210') !== false && strpos($corps, 'hal-05030037v1') !== false, $corps);
 list($code, $corps) = http("$u/tp.php?base=tp-em&tp=tp-em-01");
 verifie('page d\'un TP', substr_count($corps, 'ouvre_question(') == 4, $corps);
 list($code, $corps) = http("$u/tp.php?base=tp-em&tp=".urlencode('<img src=x>'));
