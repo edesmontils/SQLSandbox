@@ -35,6 +35,11 @@ define('EXOS_DELAI_APPEL', 10);   // secondes d'attente de la réponse de QueryC
 define('EXOS_TAILLE_MAX', 5 * 1024 * 1024);
 define('BASES_TAILLE_MAX', 20 * 1024 * 1024);   // taille maximale d'une base téléchargée
 define('BASES_CORBEILLE_JOURS', 7);              // conservation des bases retirées
+// Tenants : n'importe qui peut essayer un code à 6 chiffres, et chaque code inconnu coûte un
+// appel à QueryCraft. Un refus est donc retenu un moment, et les vérifications de tenants
+// encore inconnus (sans cache) sont limitées pour toute l'application.
+define('TENANTS_REFUS_DUREE', 120);      // secondes pendant lesquelles un refus est retenu
+define('TENANTS_ESSAIS_MINUTE', 20);     // vérifications de tenants sans cache, par minute
 
 // Bases synchronisées depuis QueryCraft : <DOSSIER_BASES>/<nom>/<nom>.db, description.html (et .md)
 // et meta.json (hors du site, comme les copies de session ; null si aucun dossier utilisable)
@@ -110,10 +115,19 @@ function tenant_choisi($demande) {
 	$ini = exos_ini();
 	$tenant = ($ini['source'] !== '' && tenant_valide($demande)) ? $demande : '';
 	$message = null;
-	if ($tenant !== '' && is_null(exos_distants(exos_conf_tenant($ini, $tenant)))) {
-		$message = "L'instance QueryCraft $tenant est inconnue, injoignable ou n'autorise pas SQLSandbox"
+	if ($tenant !== '') {
+		$conf_t = exos_conf_tenant($ini, $tenant);
+		$inconnu = "L'instance QueryCraft $tenant est inconnue, injoignable ou n'autorise pas SQLSandbox"
 		         ." (réglage « Partage avec SQLSandbox » de sa configuration) : voici les bases par défaut.";
-		$tenant = '';
+		if (tenants_refuse($tenant)) {
+			$message = $inconnu;
+		} elseif (!is_file(exos_fichier_cache($conf_t)) && !tenants_essai_permis()) {
+			$message = "Trop de vérifications d'instances QueryCraft en ce moment : réessayez dans une minute."
+			         ." Voici les bases par défaut.";
+		} elseif (is_null(exos_distants($conf_t))) {
+			$message = $inconnu;
+		}
+		if (!is_null($message)) $tenant = '';
 	}
 	if ((string)($_SESSION['qc'] ?? '') !== $tenant) {
 		if (function_exists('purge_db')) purge_db();
@@ -123,6 +137,57 @@ function tenant_choisi($demande) {
 		$_SESSION['qc'] = $tenant;
 	}
 	return $message;
+}
+
+// Registre des tenants (exos-tenants.json du dossier de travail) : refus récents
+// {code: date} et compteur des vérifications de la minute en cours. $modifie reçoit le
+// registre et le modifie ; la valeur qu'il renvoie est renvoyée. Sans dossier de travail,
+// $modifie reçoit un registre vide, non gardé.
+function tenants_registre($modifie) {
+	$vide = array('refus' => array(), 'minute' => 0, 'essais' => 0);
+	if (is_null(DOSSIER_TMP)) { $r = $vide; return $modifie($r); }
+	$f = @fopen(DOSSIER_TMP.'/exos-tenants.json', 'c+');
+	if (!$f) { $r = $vide; return $modifie($r); }
+	flock($f, LOCK_EX);
+	$r = json_decode((string)stream_get_contents($f), true);
+	if (!is_array($r) || !is_array($r['refus'] ?? null)) $r = $vide;
+	// Refus expirés oubliés : le registre reste petit
+	foreach ($r['refus'] as $code => $date)
+		if (!tenant_valide((string)$code) || time() - (int)$date >= TENANTS_REFUS_DUREE) unset($r['refus'][$code]);
+	$avant = json_encode($r);
+	$resultat = $modifie($r);
+	if (json_encode($r) !== $avant) {
+		ftruncate($f, 0);
+		rewind($f);
+		fwrite($f, json_encode($r));
+		fflush($f);
+	}
+	flock($f, LOCK_UN);
+	fclose($f);
+	return $resultat;
+}
+
+// Vrai si le tenant $tenant a été refusé il y a moins de TENANTS_REFUS_DUREE secondes
+function tenants_refuse($tenant) {
+	return tenants_registre(function (&$r) use ($tenant) { return isset($r['refus'][$tenant]); });
+}
+
+// Retient le refus du tenant $tenant (inconnu, non autorisé ou injoignable)
+function tenants_note_refus($tenant) {
+	if (!tenant_valide($tenant)) return;
+	tenants_registre(function (&$r) use ($tenant) { $r['refus'][$tenant] = time(); return null; });
+}
+
+// Compte une vérification d'un tenant sans cache. Retourne false si la limite de la
+// minute (TENANTS_ESSAIS_MINUTE) est atteinte.
+function tenants_essai_permis() {
+	return tenants_registre(function (&$r) {
+		$minute = intdiv(time(), 60);
+		if ((int)$r['minute'] !== $minute) { $r['minute'] = $minute; $r['essais'] = 0; }
+		if ($r['essais'] >= TENANTS_ESSAIS_MINUTE) return false;
+		$r['essais']++;
+		return true;
+	});
 }
 
 // Fichier du cache du catalogue (exos-catalogue.json, exos-catalogue-123456.json pour un tenant)
@@ -252,6 +317,9 @@ function exos_distants($conf) {
 			// Rien à garder (tenant inconnu, par exemple) : pas de verrou laissé, sans quoi
 			// chaque code essayé laisserait un fichier dans le dossier de travail
 			if (!$cache) @unlink(exos_fichier_cache($conf, 'verrou'));
+			// Tenant refusé ou injoignable : retenu, pour qu'un nouvel essai ne rappelle pas
+			// QueryCraft tout de suite (voir tenant_choisi)
+			if (!$cache) tenants_note_refus((string)($conf['tenant'] ?? ''));
 		}
 		if ($verrou) fclose($verrou);
 	}
@@ -329,19 +397,37 @@ function exos_question($base, $code_ex, $code_q) {
 
 // Table résultat (HTML) de $requete sur la base d'ORIGINE de $base (lecture seule) : la table
 // attendue ne dépend pas des modifications que l'étudiant a faites dans sa copie.
+// La requête vient du catalogue, écrit par l'enseignant d'un tenant : elle n'est pas de
+// confiance et passe par les mêmes protections que celles des étudiants (autorizer, mémoire,
+// durée, places d'exécution par adresse IP). Le résultat est gardé en cache (table_* du
+// dossier de travail, purgés par index.php) : la page d'un TP ne réexécute pas ses requêtes.
+// Une requête arrêtée par la limite de durée laisse « Table indisponible » dans le cache,
+// pour ne pas être relancée à chaque affichage.
 function exos_table_resultat($base, $requete) {
 	if (!isset($_SESSION['originaux'][$base])) return '';
-	try {
-		$db = new SQLite3($_SESSION['originaux'][$base], SQLITE3_OPEN_READONLY);
-	} catch (Exception $e) {
-		return '';
+	$original = $_SESSION['originaux'][$base];
+	$indisponible = '<p>Table indisponible.</p>';
+	if (!sqlite_recent() && utilise_fenetrage($requete)) return $indisponible;
+	$cache = is_null(DOSSIER_TMP) ? null
+	       : DOSSIER_TMP.'/table_'.hash('sha256', $original."\n".@filemtime($original)."\n".$requete).'.html';
+	if (!is_null($cache) && is_file($cache)) {
+		@touch($cache); // gardé tant qu'il sert
+		return (string)@file_get_contents($cache);
 	}
-	$db->enableExceptions(false);
-	$db->busyTimeout(DELAI_MAX * 1000);
+	if (!reserve_execution()) return $indisponible;
+	if (!is_null($cache)) @file_put_contents($cache, $indisponible);
+	try {
+		$db = new SQLite3($original, SQLITE3_OPEN_READONLY);
+	} catch (Exception $e) {
+		return $indisponible;
+	}
+	limite_connexion($db);
+	$db->setAuthorizer('autorisation_sql');
+	set_time_limit(DELAI_MAX);
 	$r = @$db->query($requete);
 	if (!$r || $r->numColumns() == 0) {
 		$db->close();
-		return '<p>Table indisponible.</p>';
+		return $indisponible;
 	}
 	$t = '<table class="resultat"><thead><tr>';
 	for ($i = 0; $i < $r->numColumns(); $i++) $t .= '<th>'.htmlspecialchars($r->columnName($i)).'</th>';
@@ -354,8 +440,14 @@ function exos_table_resultat($base, $requete) {
 		$n++;
 	}
 	$t .= "</tbody></table><p>$n ligne(s)</p>";
+	$erreur = !in_array($db->lastErrorCode(), array(0, 100, 101), true); // erreur en cours de lecture
 	$r->finalize();
 	$db->close();
+	if ($erreur) return $indisponible;
+	if (!is_null($cache)) {
+		$tmp = $cache.'.'.getmypid();
+		if (@file_put_contents($tmp, $t) !== false) @rename($tmp, $cache);
+	}
 	return $t;
 }
 
@@ -382,6 +474,74 @@ function exos_question_client($base, $code_ex, $code_q, $q, $numero) {
 //============================================================================
 // Bases synchronisées depuis QueryCraft
 //============================================================================
+
+// Description HTML venue de QueryCraft : rédigée par l'enseignant d'un tenant, elle n'est pas
+// de confiance, même si QueryCraft l'assainit déjà. Seules les balises et attributs de mise
+// en forme sont gardés ; les liens et images ne pointent que vers http(s) (ou mailto pour
+// un lien) ou une adresse relative. Les éléments actifs (script, style, iframe, form...)
+// disparaissent avec leur contenu, les balises inconnues sont retirées en gardant leur texte.
+define('HTML_BALISES', array('p', 'br', 'hr', 'div', 'span', 'ul', 'ol', 'li', 'dl', 'dt', 'dd',
+	'strong', 'b', 'em', 'i', 'u', 's', 'del', 'ins', 'mark', 'small', 'sub', 'sup', 'code', 'pre',
+	'kbd', 'samp', 'var', 'blockquote', 'q', 'cite', 'abbr', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+	'table', 'caption', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'col', 'colgroup',
+	'a', 'img', 'figure', 'figcaption'));
+define('HTML_ATTRIBUTS', array('class', 'title', 'lang', 'colspan', 'rowspan', 'scope', 'start',
+	'href', 'src', 'alt', 'width', 'height'));
+define('HTML_SUPPRIMES', array('script', 'style', 'iframe', 'frame', 'frameset', 'object', 'embed',
+	'applet', 'template', 'noscript', 'svg', 'math', 'form', 'input', 'button', 'textarea', 'select',
+	'option', 'title', 'head', 'meta', 'link', 'base', 'audio', 'video', 'source', 'track', 'canvas'));
+
+// Adresse acceptable pour l'attribut $attribut (href ou src)
+function html_url_sure($url, $attribut) {
+	// Les navigateurs ignorent blancs et caractères de contrôle dans le schéma (« java\tscript: »)
+	$u = preg_replace('/[\x00-\x20\x7f]+/', '', (string)$url);
+	if (!preg_match('/^([a-z][a-z0-9+.-]*):/i', $u, $m)) return true; // adresse relative ou ancre
+	$schemas = $attribut === 'href' ? array('http', 'https', 'mailto') : array('http', 'https');
+	return in_array(strtolower($m[1]), $schemas, true);
+}
+
+function html_assainit_noeud($parent) {
+	for ($n = $parent->firstChild; $n; $n = $suivant) {
+		$suivant = $n->nextSibling;
+		if ($n instanceof DOMText) continue; // texte (et CDATA), échappé à la sérialisation
+		if (!($n instanceof DOMElement)) { $parent->removeChild($n); continue; } // commentaires...
+		$nom = strtolower($n->nodeName);
+		if (in_array($nom, HTML_SUPPRIMES, true)) { $parent->removeChild($n); continue; }
+		html_assainit_noeud($n);
+		if (!in_array($nom, HTML_BALISES, true)) { // balise inconnue : son contenu prend sa place
+			while ($n->firstChild) $parent->insertBefore($n->firstChild, $n);
+			$parent->removeChild($n);
+			continue;
+		}
+		foreach (iterator_to_array($n->attributes) as $a) {
+			$att = strtolower($a->nodeName);
+			$garde = in_array($att, HTML_ATTRIBUTS, true)
+			      && (!in_array($att, array('href', 'src'), true) || html_url_sure($a->nodeValue, $att));
+			if (!$garde) $n->removeAttribute($a->nodeName);
+		}
+		if ($nom === 'a' && $n->hasAttribute('href')) $n->setAttribute('rel', 'noopener noreferrer');
+	}
+}
+
+function assainit_html($html) {
+	$html = (string)$html;
+	if (trim($html) === '') return '';
+	// Sans l'extension dom : texte seul
+	if (!class_exists('DOMDocument')) return '<p>'.htmlspecialchars(trim(strip_tags($html)), ENT_QUOTES).'</p>';
+	$doc = new DOMDocument();
+	$erreurs = libxml_use_internal_errors(true);
+	// La déclaration d'encodage fait lire le texte en UTF-8 ; le div sert de racine
+	$ok = $doc->loadHTML('<?xml encoding="utf-8"?><div>'.$html.'</div>',
+	                     LIBXML_NONET | LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+	libxml_clear_errors();
+	libxml_use_internal_errors($erreurs);
+	$racine = $ok ? $doc->getElementsByTagName('div')->item(0) : null;
+	if (is_null($racine)) return '';
+	html_assainit_noeud($racine);
+	$sortie = '';
+	foreach ($racine->childNodes as $n) $sortie .= $doc->saveHTML($n);
+	return $sortie;
+}
 
 // Nom de fichier de base acceptable (em.db), sans chemin
 function bases_nom_valide($fichier) {
@@ -518,7 +678,7 @@ function bases_synchronisees() {
 			'fichier' => "$dossier/$nom.db",
 			'prefixe' => '',
 			'référence' => (string)($meta['reference'] ?? ''),
-			'description' => (string)@file_get_contents("$dossier/description.html"),
+			'description' => assainit_html((string)@file_get_contents("$dossier/description.html")),
 			'tables' => array(),
 		);
 	}

@@ -1,16 +1,16 @@
-# Graph Report - SQLSandbox  (2026-11-11)
+# Graph Report - SQLSandbox  (2026-11-14)
 
 ## Corpus Check
-- 48 files · ~376,889 words
+- 48 files · ~379,564 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 770 nodes · 2063 edges · 43 communities (39 shown, 4 thin omitted)
-- Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 67 edges (avg confidence: 0.8)
+- 785 nodes · 2109 edges · 46 communities (42 shown, 4 thin omitted)
+- Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 74 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `600a1f4b`
+- Built from commit: `322d01ac`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -49,6 +49,9 @@
 - [[_COMMUNITY_Community 31|Community 31]]
 - [[_COMMUNITY_Community 33|Community 33]]
 - [[_COMMUNITY_Community 34|Community 34]]
+- [[_COMMUNITY_Community 43|Community 43]]
+- [[_COMMUNITY_Community 44|Community 44]]
+- [[_COMMUNITY_Community 45|Community 45]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `addEditorMethods()` - 58 edges
@@ -74,55 +77,55 @@
 - `ia_prepare()` --calls--> `ouvre_base()`  [INFERRED]
   ia.php → fonctions.php
 
-## Communities (43 total, 4 thin omitted)
+## Communities (46 total, 4 thin omitted)
 
 ### Community 0 - "Community 0"
 Cohesion: 0.06
 Nodes (87): $(), aides(), ajoute(), apparait(), appel(), apropos(), attr_js(), bascule_aide() (+79 more)
 
 ### Community 1 - "Community 1"
-Cohesion: 0.06
-Nodes (71): addClass(), addModifierNames(), clearCaches(), clearDragCursor(), clickInGutter(), clickRepeat(), CodeMirror(), configureMouse() (+63 more)
+Cohesion: 0.05
+Nodes (84): activeElt(), addClass(), addModifierNames(), belongsToInput(), clearCaches(), clearDragCursor(), clickInGutter(), clickRepeat() (+76 more)
 
 ### Community 2 - "Community 2"
-Cohesion: 0.07
-Nodes (58): bases_dossiers(), bases_nom_valide(), bases_racine(), bases_supprime_dossier(), bases_synchronise(), bases_synchronisees(), bases_telecharge(), exos_appel() (+50 more)
+Cohesion: 0.06
+Nodes (70): assainit_html(), bases_dossiers(), bases_nom_valide(), bases_racine(), bases_sans_markdown(), bases_supprime_dossier(), bases_synchronise(), bases_synchronisees() (+62 more)
 
 ### Community 3 - "Community 3"
 Cohesion: 0.05
-Nodes (31): bind(), buildCollapsedSpan(), buildToken(), copyObj(), createObj(), ensureGlobalHandlers(), eventMixin(), extendMode() (+23 more)
+Nodes (32): attachMarkedSpans(), buildToken(), cleanUpLine(), clearLineMeasurementCache(), clearLineMeasurementCacheFor(), copyObj(), createObj(), detachMarkedSpans() (+24 more)
 
 ### Community 4 - "Community 4"
-Cohesion: 0.07
-Nodes (54): addLineWidget(), addToScrollTop(), adjustScrollWhenAboveVisible(), bidiSimplify(), boxIsAfter(), charCoords(), charWidth(), coordsBidiPart() (+46 more)
+Cohesion: 0.12
+Nodes (31): bidiSimplify(), boxIsAfter(), charCoords(), coordsBidiPart(), coordsBidiPartWrapped(), coordsChar(), coordsCharInner(), cursorCoords() (+23 more)
 
 ### Community 5 - "Community 5"
-Cohesion: 0.09
-Nodes (40): alignHorizontally(), buildLineContent(), buildLineElement(), buildTokenBadBidi(), classTest(), compensateForHScroll(), defaultSpecialCharPlaceholder(), Display() (+32 more)
+Cohesion: 0.14
+Nodes (24): buildLineContent(), buildTokenBadBidi(), defaultSpecialCharPlaceholder(), Display(), drawSelectionCursor(), elt(), eltP(), getGutters() (+16 more)
 
 ### Community 6 - "Community 6"
-Cohesion: 0.10
-Nodes (37): activeElt(), belongsToInput(), calculateScrollPos(), copyableRanges(), countDirtyView(), disableBrowserMagic(), displayHeight(), displayWidth() (+29 more)
+Cohesion: 0.21
+Nodes (20): calculateScrollPos(), displayHeight(), displayWidth(), drawSelectionRange(), endOperation_R2(), endOperation_W2(), endOperations(), ensureFocus() (+12 more)
 
 ### Community 7 - "Community 7"
-Cohesion: 0.12
-Nodes (31): addEditorMethods(), callBlankLine(), clearLineMeasurementCache(), clearLineMeasurementCacheFor(), copyState(), deleteNearSelection(), directionChanged(), docMethodOp() (+23 more)
+Cohesion: 0.09
+Nodes (44): addEditorMethods(), addToScrollTop(), adjustScrollWhenAboveVisible(), callBlankLine(), charWidth(), copyState(), deleteNearSelection(), directionChanged() (+36 more)
 
 ### Community 8 - "Community 8"
-Cohesion: 0.17
-Nodes (28): ia_appel(), ia_appliquer(), ia_compteur_global(), ia_config(), ia_corriger_intention(), ia_ecrit(), ia_erreur(), ia_est_liste() (+20 more)
+Cohesion: 0.15
+Nodes (31): ia_appel(), ia_appliquer(), ia_compteur_global(), ia_config(), ia_corriger_intention(), ia_description_base(), ia_ecrit(), ia_erreur() (+23 more)
 
 ### Community 9 - "Community 9"
 Cohesion: 0.10
 Nodes (18): c, charge(), classes(), cm, colores, echappe, element(), fs (+10 more)
 
 ### Community 10 - "Community 10"
-Cohesion: 0.11
-Nodes (21): attachDoc(), attachMarkedSpans(), cleanUpLine(), collapsedSpanAtEnd(), collapsedSpanAtSide(), collapsedSpanAtStart(), detachMarkedSpans(), endOperation_R1() (+13 more)
+Cohesion: 0.22
+Nodes (10): attachDoc(), collapsedSpanAtEnd(), collapsedSpanAtSide(), collapsedSpanAtStart(), endOperation_R1(), findMaxLine(), lineLength(), maybeClipScrollbars() (+2 more)
 
 ### Community 11 - "Community 11"
-Cohesion: 0.14
-Nodes (20): cmp(), copyHistoryArray(), detachSharedMarkers(), equalCursorPos(), filterSelectionChange(), findColumn(), findPosH(), indexOf() (+12 more)
+Cohesion: 0.17
+Nodes (16): addMarkedSpan(), adjustForChange(), cmp(), copySharedMarkers(), equalCursorPos(), findPosH(), markText(), maxPos() (+8 more)
 
 ### Community 12 - "Community 12"
 Cohesion: 0.11
@@ -133,20 +136,20 @@ Cohesion: 0.11
 Nodes (18): code:nginx (location ~ ^/SQLSandbox/(tmp|bdd|lib|tests)/ {), code:ini ([sqlsandbox]), code:sh (sudo setfacl -m u:caddy:x /home/<utilisateur>), code:caddy (redir /SQLSandbox /SQLSandbox/ 308), code:caddy (@tenant_barre path_regexp tenant_barre ^/SQLSandbox/([0-9]{6), code:sh (cd /home/<utilisateur>/programmation && git clone https://gi), code:sh (cd /home/<utilisateur>/programmation/SQLSandbox && git pull ), code:sh (php tests/run.php) (+10 more)
 
 ### Community 14 - "Community 14"
-Cohesion: 0.24
-Nodes (17): addChangeToHistory(), addSelectionToHistory(), adjustForChange(), attachLocalSpans(), changeEnd(), clearSelectionEvents(), computeSelAfterChange(), historyChangeFromChange() (+9 more)
+Cohesion: 0.20
+Nodes (20): addChangeToHistory(), addSelectionToHistory(), attachLocalSpans(), changeEnd(), clearSelectionEvents(), computeSelAfterChange(), copyPos(), detachSharedMarkers() (+12 more)
 
 ### Community 15 - "Community 15"
-Cohesion: 0.16
-Nodes (16): addMarkedSpan(), adjustView(), buildViewArray(), changeLine(), clipLine(), copySharedMarkers(), findViewIndex(), markText() (+8 more)
+Cohesion: 0.14
+Nodes (20): adjustView(), alignHorizontally(), bind(), buildViewArray(), compensateForHScroll(), countDirtyView(), endOperation_W1(), findViewForLine() (+12 more)
 
 ### Community 16 - "Community 16"
-Cohesion: 0.21
-Nodes (15): badPos(), clipPos(), clipPosArray(), clipToLen(), computeReplacedSel(), copyPos(), domToPos(), findSharedMarkers() (+7 more)
+Cohesion: 0.23
+Nodes (14): badPos(), clipPos(), clipPosArray(), clipToLen(), computeReplacedSel(), domToPos(), findSharedMarkers(), locateNodeInLineView() (+6 more)
 
 ### Community 17 - "Community 17"
-Cohesion: 0.26
-Nodes (14): applyTextInput(), countColumn(), findStartLine(), getBetween(), getLine(), indentLine(), isWholeLineUpdate(), makeChangeSingleDoc() (+6 more)
+Cohesion: 0.22
+Nodes (16): applyTextInput(), countColumn(), findStartLine(), getLine(), indentLine(), isWholeLineUpdate(), lineStart(), lineStartSmart() (+8 more)
 
 ### Community 18 - "Community 18"
 Cohesion: 0.14
@@ -157,8 +160,8 @@ Cohesion: 0.22
 Nodes (3): tokenBase(), tokenComment(), tokenLiteral()
 
 ### Community 20 - "Community 20"
-Cohesion: 0.20
-Nodes (10): clearEmptySpans(), getMarkedSpanFor(), getOldSpans(), isLine(), lineIsHiddenInner(), markedSpansAfter(), markedSpansBefore(), mergeOldSpans() (+2 more)
+Cohesion: 0.29
+Nodes (7): clearEmptySpans(), getMarkedSpanFor(), isLine(), lineIsHiddenInner(), markedSpansAfter(), markedSpansBefore(), stretchSpansOverChange()
 
 ### Community 21 - "Community 21"
 Cohesion: 0.24
@@ -185,8 +188,8 @@ Cohesion: 0.29
 Nodes (6): database, name, type, questions, re-em-02, tr-em-02
 
 ### Community 28 - "Community 28"
-Cohesion: 0.50
-Nodes (5): collapsedSpanAround(), compareCollapsedMarkers(), conflictingCollapsedRange(), extraLeft(), extraRight()
+Cohesion: 0.29
+Nodes (8): buildCollapsedSpan(), collapsedSpanAround(), compareCollapsedMarkers(), conflictingCollapsedRange(), extraLeft(), extraRight(), insertLineContent(), interpretTokenStyle()
 
 ### Community 29 - "Community 29"
 Cohesion: 0.40
@@ -195,6 +198,18 @@ Nodes (4): code:sql ({{ requete }}), Format de la réponse, Instructions, Situat
 ### Community 30 - "Community 30"
 Cohesion: 0.83
 Nodes (3): ajoute(), copie(), ensemble()
+
+### Community 43 - "Community 43"
+Cohesion: 0.20
+Nodes (16): buildLineElement(), classTest(), ensureLineWrapped(), getLineContent(), insertLineWidgets(), insertLineWidgetsFor(), joinClasses(), lineNumberFor() (+8 more)
+
+### Community 44 - "Community 44"
+Cohesion: 0.18
+Nodes (14): addLineWidget(), changeLine(), clipLine(), copyHistoryArray(), findColumn(), indexOf(), isWordChar(), isWordCharBasic() (+6 more)
+
+### Community 45 - "Community 45"
+Cohesion: 0.40
+Nodes (6): extendSelections(), filterSelectionChange(), selectAll(), setSelection(), setSelectionNoUndo(), setSelectionReplaceHistory()
 
 ## Knowledge Gaps
 - **80 isolated node(s):** `fs`, `vm`, `path`, `racine`, `echappe` (+75 more)
@@ -205,9 +220,9 @@ Nodes (3): ajoute(), copie(), ensemble()
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `CodeMirror()` connect `Community 1` to `Community 0`, `Community 3`, `Community 5`, `Community 7`, `Community 10`?**
-  _High betweenness centrality (0.086) - this node is a cross-community bridge._
+  _High betweenness centrality (0.083) - this node is a cross-community bridge._
 - **Why does `affiche_sql()` connect `Community 0` to `Community 1`?**
-  _High betweenness centrality (0.085) - this node is a cross-community bridge._
+  _High betweenness centrality (0.082) - this node is a cross-community bridge._
 - **Are the 14 inferred relationships involving `$()` (e.g. with `ia_apercu()` and `ia_applique()`) actually correct?**
   _`$()` has 14 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `fs`, `vm`, `path` to the rest of the system?**
@@ -215,6 +230,6 @@ _Questions this graph is uniquely positioned to answer:_
 - **Should `Community 0` be split into smaller, more focused modules?**
   _Cohesion score 0.06246134817563389 - nodes in this community are weakly interconnected._
 - **Should `Community 1` be split into smaller, more focused modules?**
-  _Cohesion score 0.06277665995975855 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.051061388410786 - nodes in this community are weakly interconnected._
 - **Should `Community 2` be split into smaller, more focused modules?**
-  _Cohesion score 0.06971153846153846 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.06185919343814081 - nodes in this community are weakly interconnected._

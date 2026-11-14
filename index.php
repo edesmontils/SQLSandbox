@@ -132,19 +132,27 @@ if ($debug) {
 
 // Purge de TMP s'il reste des fichiers non supprimés...
 // (dans le dossier de travail, et dans tmp/ où se trouvaient les copies des versions précédentes)
+// Le total des copies restantes est noté pour espace_sature() (fonctions.php).
+$occupation = 0;
 foreach (array_unique(array_filter(array(DOSSIER_TMP, realpath('./tmp')))) as $dossier) {
 	$dir=@opendir($dossier);
 	while ($dir && ($nom=readdir($dir)) !== false) {
 		$chemin = $dossier.'/'.$nom;
-		if ((substr($nom,0,6)=='copie_' || substr($nom,0,7)=='verrou_') && is_file($chemin)) {
+		if ((substr($nom,0,6)=='copie_' || substr($nom,0,7)=='verrou_' || substr($nom,0,6)=='table_') && is_file($chemin)) {
 			$delta = time() - filemtime($chemin);
 			if ($delta>$seuil) {
 				if ($debug) echo "<p>Suppression de $nom (ancien de $delta secondes)</p>";
 				unlink($chemin);
+			} elseif ($dossier === DOSSIER_TMP) {
+				$occupation += (int)@filesize($chemin);
 			}
 		}
 	}
 	if ($dir) closedir($dir);
+}
+if (!is_null(fichier_occupation())) {
+	$tmp_occupation = fichier_occupation().'.'.getmypid();
+	if (@file_put_contents($tmp_occupation, (string)$occupation) !== false) @rename($tmp_occupation, fichier_occupation());
 }
 
 // Mise en place des BD temporaires pour l'utilisation courante (session)

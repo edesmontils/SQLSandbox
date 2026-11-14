@@ -55,6 +55,14 @@ define('ATTENTE_PLACE', 3);
 define('LONGUEUR_MAX_REQUETE', 64 * 1024);
 // Taille maximale (octets) d'une copie de base, pour éviter de remplir le disque
 define('TAILLE_MAX_BASE', 20 * 1024 * 1024);
+// Croissance maximale (octets) d'une copie par rapport à sa base d'origine : une copie
+// grossit au plus de cette valeur, sans dépasser TAILLE_MAX_BASE
+define('CROISSANCE_MAX_BASE', 10 * 1024 * 1024);
+// Espace disque : n'importe qui pouvant ouvrir une session, le total des copies est
+// plafonné. Au-delà (ou si le disque manque de place), aucune copie n'est créée et les
+// copies existantes ne grossissent plus, jusqu'à ce que la purge en libère.
+define('OCCUPATION_MAX', 1024 * 1024 * 1024);   // total des copies (octets)
+define('ESPACE_LIBRE_MIN', 200 * 1024 * 1024);  // espace libre à garder sur le disque (octets)
 // Mémoire maximale (octets) de SQLite, qui alloue hors du memory_limit de PHP
 // (printf('%.*c', 500000000, 'x') occupait sinon 500 Mo)
 define('MEMOIRE_MAX_SQLITE', 64 * 1024 * 1024);
@@ -193,14 +201,44 @@ function utilise_fenetrage($sql) {
 	return false;
 }
 
+// Fichier où la purge de index.php note la place occupée par toutes les copies
+function fichier_occupation() {
+	return is_null(DOSSIER_TMP) ? null : DOSSIER_TMP.'/occupation';
+}
+
+// Vrai si les copies ne doivent plus grossir : total des copies au-delà de OCCUPATION_MAX
+// (relevé par la purge de index.php) ou disque presque plein
+function espace_sature() {
+	if (is_null(DOSSIER_TMP)) return false;
+	$libre = @disk_free_space(DOSSIER_TMP);
+	if ($libre !== false && $libre < ESPACE_LIBRE_MIN) return true;
+	return (int)@file_get_contents(fichier_occupation()) > OCCUPATION_MAX;
+}
+
+// Taille maximale (octets) de la copie d'une base d'origine de $taille_origine octets
+function taille_max_copie($taille_origine) {
+	return min(TAILLE_MAX_BASE, max(0, (int)$taille_origine) + CROISSANCE_MAX_BASE);
+}
+
+// Réglages communs des connexions SQLite : attente d'un verrou, erreurs sans exception,
+// mémoire de SQLite plafonnée (à faire avant l'autorizer, qui refuse ensuite les PRAGMA)
+function limite_connexion($db) {
+	$db->busyTimeout(DELAI_MAX * 1000);
+	$db->enableExceptions(false);
+	$db->exec('PRAGMA hard_heap_limit = '.MEMOIRE_MAX_SQLITE);
+}
+
 // Ouvre la copie de session de la base $base (null si elle n'existe pas).
 function ouvre_base($base) {
 	if (!is_string($base) || !isset($_SESSION["copie_$base"])) return null;
 	$fic = $_SESSION["copie_$base"];
+	$original = $_SESSION['originaux'][$base] ?? null;
+	$sature = espace_sature();
 	// La copie est faite à la première utilisation (index.php ne réserve qu'un fichier
 	// vide), ou refaite si elle a été purgée (onglet principal fermé pendant un TP).
-	if ((!is_file($fic) || filesize($fic) == 0) && isset($_SESSION['originaux'][$base])) {
-		@copy($_SESSION['originaux'][$base], $fic);
+	// Pas de nouvelle copie quand la place manque.
+	if ((!is_file($fic) || filesize($fic) == 0) && !is_null($original) && !$sature) {
+		@copy($original, $fic);
 		clearstatcache(true, $fic); // sinon filesize() renvoie encore la taille d'avant la copie
 	}
 	if (!is_file($fic) || filesize($fic) == 0) return null;
@@ -212,12 +250,14 @@ function ouvre_base($base) {
 	} catch (Exception $e) {
 		return null;
 	}
-	$db->busyTimeout(DELAI_MAX * 1000);
-	$db->enableExceptions(false);
-	$db->exec('PRAGMA hard_heap_limit = '.MEMOIRE_MAX_SQLITE);
-	// Limites fixées avant l'autorizer, qui interdit ensuite de les modifier
+	limite_connexion($db);
+	// Limites fixées avant l'autorizer, qui interdit ensuite de les modifier. Place
+	// manquante : la copie ne grossit plus (max_page_count ramené à sa taille actuelle).
 	$taille_page = (int)$db->querySingle('PRAGMA page_size');
-	if ($taille_page > 0) $db->exec('PRAGMA max_page_count = '.(int)(TAILLE_MAX_BASE / $taille_page));
+	$taille_origine = is_null($original) ? 0 : (int)@filesize($original);
+	$GLOBALS['TAILLE_MAX_COPIE'] = $sature ? null : taille_max_copie($taille_origine);
+	if ($taille_page > 0) $db->exec('PRAGMA max_page_count = '
+		.($sature ? 1 : (int)(taille_max_copie($taille_origine) / $taille_page)));
 	// Clés étrangères vérifiées, comme dans les autres SGBD : SQLite ne le fait pas par
 	// défaut, et l'étudiant ne peut pas l'activer lui-même (PRAGMA refusé)
 	$db->exec('PRAGMA foreign_keys = ON');
@@ -228,8 +268,12 @@ function ouvre_base($base) {
 // Message d'erreur SQLite échappé, complété si la base a atteint sa taille maximale
 function message_erreur($db) {
 	$m = htmlspecialchars($db->lastErrorMsg()).' ('.$db->lastErrorCode().')';
-	if ($db->lastErrorCode() == 13) // SQLITE_FULL
-		$m .= ' : la base a atteint sa taille maximale ('.(TAILLE_MAX_BASE / 1024 / 1024).' Mo).';
+	if ($db->lastErrorCode() == 13) { // SQLITE_FULL
+		$max = array_key_exists('TAILLE_MAX_COPIE', $GLOBALS) ? $GLOBALS['TAILLE_MAX_COPIE'] : TAILLE_MAX_BASE;
+		$m .= is_null($max)
+			? ' : le serveur manque de place, les bases ne peuvent plus grossir pour le moment. Réessayez plus tard.'
+			: ' : la base a atteint sa taille maximale ('.round($max / 1024 / 1024, 1).' Mo).';
+	}
 	if (stripos($db->lastErrorMsg(), 'FOREIGN KEY constraint failed') !== false)
 		$m .= '<br/>Une clé étrangère n\'est pas respectée : soit la ligne fait référence à une valeur '
 		     .'absente de la table référencée, soit la ligne supprimée ou modifiée est encore '
@@ -277,8 +321,12 @@ function reserve_execution() {
 function get($requete,$base) {
 	$db = ouvre_base($base);
 	if (is_null($db)) {
-		echo "<script>result_type='ko';</script><p>Base inconnue ou inaccessible. "
-		    ."Rouvrez l'application depuis sa page d'accueil pour réinitialiser les bases.</p>";
+		if (is_string($base) && isset($_SESSION["copie_$base"]) && espace_sature())
+			echo "<script>result_type='ko';</script><p>Le serveur manque de place pour préparer votre "
+			    ."copie de la base : réessayez dans quelques minutes.</p>";
+		else
+			echo "<script>result_type='ko';</script><p>Base inconnue ou inaccessible. "
+			    ."Rouvrez l'application depuis sa page d'accueil pour réinitialiser les bases.</p>";
 		return null;
 	}
 	// La session n'est plus modifiée : on la libère pour que les autres onglets
@@ -576,8 +624,8 @@ function description_base($base) {
 	echo "<div class='post'><h2 class='title'>Base ".html($base)."</h2><div class='story'>";
 	$synchro = is_string($base) ? ($_SESSION['descriptions'][$base] ?? null) : null;
 	if (is_string($synchro) && is_file($synchro)) {
-		// Base synchronisée depuis QueryCraft : description rendue (et assainie) par QueryCraft
-		echo (string)@file_get_contents($synchro);
+		// Base synchronisée depuis QueryCraft : description rendue par QueryCraft, assainie ici aussi
+		echo assainit_html((string)@file_get_contents($synchro));
 		$ref = (string)($_SESSION['references'][$base] ?? '');
 		if ($ref !== '') echo "<p>Référence : <a href='".html($ref)."'>".html($ref)."</a></p>";
 	} elseif ($conf) {

@@ -320,6 +320,24 @@ list($r, $o) = execute("insert into big select hex(zeroblob(500000)) from (with 
 clearstatcache();
 verifie('taille de la base limitée', $r === null && strpos($o, 'taille maximale') !== false
                                     && filesize($copie) <= TAILLE_MAX_BASE, $o);
+verifie('croissance d\'une copie limitée', taille_max_copie(filesize('./bdd/cours/cours.db')) < TAILLE_MAX_BASE
+        && taille_max_copie(TAILLE_MAX_BASE) == TAILLE_MAX_BASE && taille_max_copie(0) == CROISSANCE_MAX_BASE);
+// Total des copies au-delà de OCCUPATION_MAX : les copies ne grossissent plus, aucune n'est créée
+$occupation_avant = is_file(fichier_occupation()) ? file_get_contents(fichier_occupation()) : null;
+file_put_contents(fichier_occupation(), (string)(OCCUPATION_MAX + 1));
+verifie('place manquante détectée', espace_sature());
+list($r, $o) = execute("insert into big select hex(zeroblob(100000)) from (with recursive r(n) as "
+                     ."(select 1 union all select n+1 from r limit 20) select n from r)");
+verifie('place manquante : la copie ne grossit plus', $r === null && strpos($o, 'manque de place') !== false, $o);
+$_SESSION['originaux']['test'] = realpath('./bdd/cours/cours.db');
+file_put_contents($copie, '');
+list($r, $o) = execute("select 1");
+verifie('place manquante : pas de nouvelle copie', $r === null && strpos($o, 'manque de place') !== false && filesize($copie) == 0, $o);
+if (is_null($occupation_avant)) unlink(fichier_occupation()); else file_put_contents(fichier_occupation(), $occupation_avant);
+list($r, $o) = execute("select count(*) from etudiants");
+verifie('place retrouvée : copie recréée', $r === true && filesize($copie) > 0, $o);
+unset($_SESSION['originaux']['test']);
+execute("create table t(a)"); // copie recréée : table des tests suivants
 foreach (array("create temp table tt(a)", "create temp view tv as select 1",
                "create temp trigger tg after insert on t begin select 1; end") as $q) {
 	list($r, $o) = execute($q);
@@ -450,6 +468,15 @@ verifie('rI->R : requête à trous envoyée, solution cachée', $c['requete'] ==
 $c = exos_question_client('tp-em', 'tp-em-02', 'tr-em-02', exos_question('tp-em', 'tp-em-02', 'tr-em-02'), 1);
 verifie('rIT->R : table attendue calculée sur la base d\'origine', strpos($c['table'], '<table class="resultat">') !== false
         && strpos($c['table'], '52 ligne(s)') !== false, $c['table']);
+// Requêtes du catalogue : mêmes protections que celles des étudiants, résultat en cache
+$caches_table = glob(DOSSIER_TMP.'/table_*');
+verifie('table attendue : résultat gardé en cache', count($caches_table) >= 1, json_encode($caches_table));
+foreach ($caches_table as $f) file_put_contents($f, '<p>depuis le cache</p>');
+$c = exos_question_client('tp-em', 'tp-em-02', 'tr-em-02', exos_question('tp-em', 'tp-em-02', 'tr-em-02'), 1);
+verifie('table attendue : requête non réexécutée', $c['table'] === '<p>depuis le cache</p>', $c['table']);
+verifie('table attendue : PRAGMA refusé (autorizer)', exos_table_resultat('tp-em', 'select * from pragma_database_list')
+        === '<p>Table indisponible.</p>');
+foreach (glob(DOSSIER_TMP.'/table_*') as $f) unlink($f);
 ob_start(); liste_question('tp-em', '<script>x</script>'); $o = ob_get_clean();
 verifie('nom de TP non reconnu non affiché', strpos($o, '<script>x') === false && strpos($o, 'TP inconnu') !== false, $o);
 ob_start(); liste_question('tp-em', 'tp-em-01'); $o = ob_get_clean();
@@ -583,6 +610,15 @@ $_SESSION['descriptions']['tp-cinema-sync'] = $b['cinema'].'/description.html';
 file_put_contents($b['cinema'].'/description.html', '<p>Les cinémas</p>');
 ob_start(); description_base('tp-cinema-sync'); $o = ob_get_clean();
 verifie('description d\'une base synchronisée affichée', strpos($o, 'Les cinémas') !== false, $o);
+file_put_contents($b['cinema'].'/description.html', '<p onclick="x()">Les <b>salles</b><script>alert(1)</script>'
+                  .'<img src="y" onerror="alert(2)"><a href="javascript:alert(3)">lien</a></p>');
+ob_start(); description_base('tp-cinema-sync'); $o = ob_get_clean();
+verifie('description synchronisée assainie', strpos($o, 'Les <b>salles</b>') !== false && stripos($o, '<script') === false
+        && stripos($o, 'onerror') === false && stripos($o, 'onclick') === false && stripos($o, 'javascript:') === false, $o);
+verifie('HTML assaini : liens http gardés, éléments actifs retirés',
+        assainit_html('<a href="https://ex.org/">a</a><iframe src="https://ex.org"></iframe><x-y>t</x-y>')
+        === '<a href="https://ex.org/" rel="noopener noreferrer">a</a>t', assainit_html('<a href="https://ex.org/">a</a><iframe></iframe><x-y>t</x-y>'));
+file_put_contents($b['cinema'].'/description.html', '<p>Les cinémas</p>');
 file_put_contents($b['cinema'].'/description.md', "Les **cinémas** et leurs salles");
 verifie('IA : description synchronisée lue en Markdown', ia_description_base('tp-cinema-sync') === 'Les **cinémas** et leurs salles');
 unlink($b['cinema'].'/description.md');
@@ -599,6 +635,16 @@ verifie('tenant : code à 6 chiffres seulement', tenant_valide('123456') && !ten
 $conf_t = exos_conf_tenant($conf_cat, '123456');
 verifie('tenant : source du tenant', $conf_t['source'] === $conf_cat['source'].'/123456' && $conf_t['tenant'] === '123456');
 verifie('tenant : ignoré sans source', exos_conf_tenant(array('source' => '') + $conf_cat, '123456')['tenant'] === '');
+$registre_avant = is_file(DOSSIER_TMP.'/exos-tenants.json') ? file_get_contents(DOSSIER_TMP.'/exos-tenants.json') : null;
+@unlink(DOSSIER_TMP.'/exos-tenants.json');
+tenants_note_refus('111111');
+verifie('tenant refusé : retenu', tenants_refuse('111111') && !tenants_refuse('222222'));
+file_put_contents(DOSSIER_TMP.'/exos-tenants.json', json_encode(array('refus' => array('111111' => time() - TENANTS_REFUS_DUREE),
+                  'minute' => intdiv(time(), 60), 'essais' => TENANTS_ESSAIS_MINUTE - 1)));
+verifie('tenant refusé : oublié après TENANTS_REFUS_DUREE', !tenants_refuse('111111'));
+verifie('tenants : vérifications limitées par minute', tenants_essai_permis() && !tenants_essai_permis());
+if (is_null($registre_avant)) unlink(DOSSIER_TMP.'/exos-tenants.json');
+else file_put_contents(DOSSIER_TMP.'/exos-tenants.json', $registre_avant);
 verifie('tenant : cache du catalogue séparé', basename(exos_fichier_cache($conf_t)) === 'exos-catalogue-123456.json'
         && basename(exos_fichier_cache($conf_cat)) === 'exos-catalogue.json');
 copy('./bdd/em/em.db', $reponse_faux.'.bases/em.db');
@@ -836,6 +882,9 @@ file_put_contents("$tmp/qc.ini", "exos_source = \"http://127.0.0.1:$port_faux/qc
 $caches_avant = array();
 foreach (array('exos-catalogue.json', 'exos-catalogue-123456.json') as $f)
 	$caches_avant[$f] = is_file("$travail/$f") ? file_get_contents("$travail/$f") : null;
+// Refus de tenants retenus par un essai précédent : oubliés le temps des tests
+$registre_serveur_avant = is_file("$travail/exos-tenants.json") ? file_get_contents("$travail/exos-tenants.json") : null;
+@unlink("$travail/exos-tenants.json");
 $serveur_qc = proc_open(array(PHP_BINARY, '-S', "127.0.0.1:$port_qc", '-t', $racine, "$racine/tests/routeur.php"),
                         array(array('file', '/dev/null', 'r'), array('file', '/dev/null', 'w'), array('file', '/dev/null', 'w')),
                         $tubes_qc, $racine, array_merge($env_serveurs, array('SQLSANDBOX_INI' => "$tmp/qc.ini")));
@@ -866,6 +915,10 @@ list($code, $page) = http("$uq/?654321");
 verifie('tenant inconnu ou non autorisé : message, instance par défaut', $code == 200 && strpos($page, 'instance QueryCraft 654321') !== false
         && strpos($page, 'QueryCraft : <strong>') === false, substr($page, 0, 300));
 verifie('tenant inconnu : aucun fichier laissé', count(glob("$travail/exos-catalogue-654321.*")) == 0, json_encode(glob("$travail/exos-catalogue-654321.*")));
+file_put_contents($reponse_faux.'.uri', 'aucun appel');
+list($code, $page) = http("$uq/?654321");
+verifie('tenant inconnu : refus retenu, QueryCraft non rappelé', $code == 200 && strpos($page, 'instance QueryCraft 654321') !== false
+        && strpos((string)@file_get_contents($reponse_faux.'.uri'), '654321') === false, (string)@file_get_contents($reponse_faux.'.uri'));
 list($code, $page) = http("$uq/?12345");
 verifie('code mal formé ignoré', $code == 200 && strpos($page, 'QueryCraft : <strong>') === false && strpos($page, '12345') === false);
 proc_terminate($serveur_qc);
@@ -874,6 +927,8 @@ foreach ($caches_avant as $f => $contenu) {
 	if (is_null($contenu)) @unlink("$travail/$f"); else file_put_contents("$travail/$f", $contenu);
 }
 foreach (array('exos-catalogue.verrou', 'exos-catalogue-123456.verrou', 'exos-catalogue-654321.verrou') as $f) @unlink("$travail/$f");
+if (is_null($registre_serveur_avant)) @unlink("$travail/exos-tenants.json");
+else file_put_contents("$travail/exos-tenants.json", $registre_serveur_avant);
 $bases_serveur = dirname($racine).'/'.INSTANCE.'-bases';
 @rmdir("$bases_serveur/.tenant-123456");
 @rmdir("$bases_serveur/.tenant-654321");

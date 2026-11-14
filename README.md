@@ -38,6 +38,8 @@ location ~ ^/SQLSandbox/(tmp|bdd|lib|tests)/ {
 
 Les copies des bases et les sessions sont rangées hors du site (`sqlsandbox-tmp` et `sessions-sqlsandbox`, voir l'installation), pour que leur protection ne dépende pas d'un `.htaccess` : le nom d'un fichier de session contient l'identifiant de session. `tmp/` n'est utilisé qu'en repli, protégé par `tmp/.htaccess` et un `index.html` vide.
 
+L'application étant ouverte à tous sans compte, l'espace disque des copies est borné (constantes de `fonctions.php`) : une copie grossit au plus de 10 Mo par rapport à sa base d'origine, sans dépasser 20 Mo, et le total des copies est plafonné à 1 Go (relevé à chaque ouverture de l'application, dans le fichier `occupation` du dossier de travail). Au-delà, ou s'il reste moins de 200 Mo libres sur le disque, aucune nouvelle copie n'est faite et les copies existantes ne grossissent plus, jusqu'à ce que la purge en libère ; les étudiants en sont avertis par un message.
+
 ## Déploiement derrière Caddy
 
 Exemple d'installation sous Debian (remplacer `<utilisateur>` par le compte qui héberge l'application) : l'application est dans `/home/<utilisateur>/programmation/SQLSandbox`, servie sous `/SQLSandbox/` par Caddy et PHP-FPM (paquets `php8.4-fpm`, `php8.4-sqlite3` et `php8.4-xml`, à installer avec `--no-install-recommends` pour ne pas tirer Apache).
@@ -144,6 +146,8 @@ L'intention rédigée pour une question `…->I` est corrigée par l'IA quand el
 
 **Bases synchronisées.** Avec une source, SQLSandbox reproduit aussi les **bases SQLite** de l'instance QueryCraft et leurs descriptions (rédigées en Markdown dans QueryCraft, par l'enseignant ou par l'IA, et transmises déjà rendues en HTML ; le Markdown est gardé pour l'IA). Une base nouvelle ou modifiée est téléchargée (taille limitée à 20 Mo, empreinte sha256, format et `PRAGMA quick_check` vérifiés) dans un dossier de travail hors du site, `sqlsandbox-bases` à côté de la racine web (`tmp/bases` en repli) ; une base supprimée dans QueryCraft y passe à la corbeille (`.corbeille`, vidée après 7 jours). Rien n'est jamais écrit dans `bdd/`, qui reste versionné. Dès qu'une base a été synchronisée, ce sont les bases de QueryCraft qui sont proposées ; `bdd/` ne sert qu'en l'absence de source ou tant qu'aucune synchronisation n'a réussi. Les copies de session déjà faites par les étudiants gardent l'ancienne version jusqu'à leur expiration ou au bouton « ↩️ Revenir à la base d'origine ».
 
+Le contenu venu de QueryCraft n'est pas tenu pour sûr, les tenants étant rédigés par d'autres enseignants : les descriptions HTML sont assainies par SQLSandbox (balises de mise en forme seulement, liens et images en http(s) ou relatifs ; scripts, styles, cadres et formulaires retirés), et les requêtes des questions dont la table résultat est affichée passent par les mêmes protections que celles des étudiants (autorizer, mémoire, durée de 5 s, places d'exécution par adresse). Ces tables sont gardées en cache dans le dossier de travail (`table_*`, purgés comme les copies).
+
 Un exercice dont la base n'existe pas dans SQLSandbox n'est pas proposé.
 
 **Ouvrir une requête dans QueryCraft.** Le catalogue indique aussi la base que l'instance QueryCraft interroge (`base_active`, réglée par l'enseignant dans QueryCraft). Sur cette base seulement, la page d'édition propose « 🚀 Ouvrir dans QueryCraft » : QueryCraft s'ouvre dans un nouvel onglet avec la requête de l'étudiant, passée dans le fragment de l'URL (`<source>/#requete=…`), que le navigateur n'envoie pas au serveur. QueryCraft l'exécute sur sa base d'origine, sans les modifications faites dans la copie de session.
@@ -154,6 +158,8 @@ Un exercice dont la base n'existe pas dans SQLSandbox n'est pas proposé.
 - que l'enseignant ait coché **« Partage avec SQLSandbox »** dans la configuration de son instance : sans cela, QueryCraft refuse le jeton général pour ce tenant, et SQLSandbox revient à l'instance par défaut avec un message (de même pour un code inconnu).
 
 Le tenant est gardé dans la session : `/SQLSandbox/` sans code revient à l'instance par défaut. Changer de tenant oublie les copies de bases de la session (deux tenants peuvent avoir une base du même nom mais pas du même contenu). Chaque tenant a son cache de catalogue (`exos-catalogue-123456.json`) et ses bases synchronisées (`sqlsandbox-bases/.tenant-123456/`).
+
+Chaque code encore inconnu coûte un appel à QueryCraft : un refus (tenant inconnu, partage non autorisé, QueryCraft injoignable) est donc retenu 2 minutes, et SQLSandbox vérifie au plus 20 tenants sans cache par minute pour toute l'installation (registre `exos-tenants.json` du dossier de travail). Un enseignant qui vient d'autoriser le partage attend donc au plus 2 minutes.
 
 L'adresse `/SQLSandbox/123456` fonctionne aussi là où le serveur la réécrit en `index.php?qc=123456` : le `.htaccess` fourni à la racine s'en charge sous Apache (à envoyer avec les autres), et pour Caddy voir ci-dessous. Sans barre finale : `/SQLSandbox/123456/` y est renvoyée, pour que les adresses relatives de l'application restent valables.
 

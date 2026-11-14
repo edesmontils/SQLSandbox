@@ -13,13 +13,16 @@ function echappe(texte) {
     return String(texte).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-// Exécute, juste après leur insertion, les <script> d'un fragment HTML venu du
-// serveur (ils positionnent result_type) : innerHTML ne les exécute pas.
+// Applique, juste après leur insertion, les <script> d'un fragment HTML venu du serveur.
+// Les réponses de l'application n'en contiennent qu'une sorte, qui positionne result_type
+// (get(), arret_requete() dans fonctions.php) : seule cette affectation est reconnue, et
+// rien n'est évalué. Un script glissé dans un contenu (description d'une base...) est
+// donc ignoré, comme innerHTML le fait déjà.
 function execute_scripts(html) {
-    var re = /<script[^>]*>([\s\S]*?)<\/script>/gi, m, codes = [];
-    while ((m = re.exec(html)) !== null) codes.push(m[1]);
-    if (codes.length > 0) setTimeout(function () {
-        codes.forEach(function (code) { (0, eval)(code); });
+    var re = /<script[^>]*>\s*result_type\s*=\s*'(ok|ko)'\s*;?\s*<\/script>/gi, m, types = [];
+    while ((m = re.exec(html)) !== null) types.push(m[1]);
+    if (types.length > 0) setTimeout(function () {
+        types.forEach(function (t) { result_type = t; });
     }, 0);
 }
 
