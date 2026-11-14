@@ -1142,6 +1142,11 @@ table.historique td .btn {
 	border-color: var(--sb-danger);
 }
 
+/* Un champ placé dans un mot coloré (chaîne...) garde la couleur normale du texte */
+.trous .trou {
+	font-weight: 400;
+}
+
 #trous-erreur[hidden] {
 	display: none;
 }

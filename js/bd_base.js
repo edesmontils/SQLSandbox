@@ -897,7 +897,7 @@ function ouvre_question(i) {
             // assemblée va dans la zone #requete, masquée, lue par l'exécution et le suivi
             t = t + '<p class="libelle">Complétez la requête en remplissant les trous '
                   + '<span class="astuce">(Entrée : trou suivant, Ctrl+Entrée : exécuter)</span></p>';
-            t = t + '<div class="trous" id="trous"></div><p class="statut ko" id="trous-erreur" hidden></p>';
+            t = t + '<div class="trous cm-s-default" id="trous"></div><p class="statut ko" id="trous-erreur" hidden></p>';
             t = t + '<textarea id="requete" hidden></textarea>';
         } else {
             t = t + '<p class="libelle"><label for="requete">' + (q.modele ? 'Complétez la requête suivante' : 'Écrivez la requête');
@@ -991,39 +991,46 @@ function ajuste_trou(champ) {
     champ.style.width = Math.max(8, champ.value.length + 2) + 'ch';
 }
 
+// Repère d'un trou pendant la coloration : un mot ASCII, que l'analyseur SQL garde d'un bloc
+function repere_trou(i) {
+    return 'qqtrou' + i + 'qq';
+}
+
 function dessine_trous(q) {
     var conteneur = $('trous');
     var valeurs = valeurs_trous(q.modele, reponse_de(q) || '');
     var parties = parties_modele(q.modele);
-    conteneur.textContent = '';
-    parties.forEach(function (texte, i) {
-        if (i > 0) {
-            var champ = document.createElement('input');
-            champ.type = 'text';
-            champ.className = 'trou';
-            champ.spellcheck = false;
-            champ.autocomplete = 'off';
-            champ.setAttribute('autocapitalize', 'off');
-            champ.setAttribute('aria-label', 'Trou ' + i + ' sur ' + (parties.length - 1));
-            champ.value = valeurs ? valeurs[i - 1] : '';
+    // La partie visible est colorée d'un seul tenant (chaque trou y est un repère), pour
+    // que l'analyse ne soit pas coupée par les trous ; les repères deviennent les champs
+    var texte = parties[0];
+    for (var k = 1; k < parties.length; k++) texte += repere_trou(k) + parties[k];
+    conteneur.innerHTML = colore_sql(texte).replace(/qqtrou(\d+)qq/g, '<span class="place-trou" data-trou="$1"></span>');
+    conteneur.querySelectorAll('.place-trou').forEach(function (place) {
+        var i = parseInt(place.getAttribute('data-trou'), 10);
+        var champ = document.createElement('input');
+        champ.type = 'text';
+        champ.className = 'trou';
+        champ.spellcheck = false;
+        champ.autocomplete = 'off';
+        champ.setAttribute('autocapitalize', 'off');
+        champ.setAttribute('aria-label', 'Trou ' + i + ' sur ' + (parties.length - 1));
+        champ.value = valeurs ? valeurs[i - 1] : '';
+        ajuste_trou(champ);
+        champ.addEventListener('input', function () {
             ajuste_trou(champ);
-            champ.addEventListener('input', function () {
-                ajuste_trou(champ);
-                champ.classList.remove('vide');
-                $('trous-erreur').hidden = true;
-                $('requete').value = assemble_trous(q.modele);
-                memorise_reponse(false);
-            });
-            champ.addEventListener('keydown', function (e) {
-                if (e.key != 'Enter') return;
-                e.preventDefault();
-                if (e.ctrlKey || e.metaKey) { reponse(); return; }
-                var champs = champs_trous(), suivant = champs[champs.indexOf(champ) + 1];
-                if (suivant) suivant.focus();
-            });
-            conteneur.appendChild(champ);
-        }
-        conteneur.appendChild(document.createTextNode(texte));
+            champ.classList.remove('vide');
+            $('trous-erreur').hidden = true;
+            $('requete').value = assemble_trous(q.modele);
+            memorise_reponse(false);
+        });
+        champ.addEventListener('keydown', function (e) {
+            if (e.key != 'Enter') return;
+            e.preventDefault();
+            if (e.ctrlKey || e.metaKey) { reponse(); return; }
+            var champs = champs_trous(), suivant = champs[champs.indexOf(champ) + 1];
+            if (suivant) suivant.focus();
+        });
+        place.replaceWith(champ);
     });
     $('requete').value = assemble_trous(q.modele);
 }
