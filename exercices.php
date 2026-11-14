@@ -77,12 +77,8 @@ function exos_lit_ini($fichier) {
 function exos_ini() {
 	static $conf = null;
 	if (!is_null($conf)) return $conf;
-	$candidats = array();
-	if (getenv('SQLSANDBOX_INI')) $candidats[] = getenv('SQLSANDBOX_INI');
-	if (!empty($_SERVER['DOCUMENT_ROOT']))
-		$candidats[] = dirname(rtrim($_SERVER['DOCUMENT_ROOT'], '/')).'/'.INSTANCE.'.ini';
-	foreach ($candidats as $f) if (is_file($f)) return $conf = exos_lit_ini($f);
-	return $conf = exos_lit_ini('');
+	$f = fichier_ini();
+	return $conf = exos_lit_ini(is_null($f) ? '' : $f);
 }
 
 // Tenants de QueryCraft. /SQLSandbox/123456 (réécrite en index.php?qc=123456) suit le tenant

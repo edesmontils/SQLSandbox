@@ -943,7 +943,13 @@ list($code, $corps) = http("$u/controler.php?Soumettre=modele&nom_base=inconnue"
 verifie('modèle d\'une base inconnue refusé (404)', $code == 404, $corps);
 // Durée de vie : une seule source (config.xml), cookie prolongé, rechargement sans perte
 $conf = new SimpleXMLElement('./config.xml', LIBXML_DTDATTR|LIBXML_DTDLOAD|LIBXML_DTDVALID|LIBXML_NOBLANKS|LIBXML_NOCDATA, true);
-verifie('durée de vie : identique au seuil de config.xml', duree_vie() === (int)$conf->seuil && duree_vie() > 0, duree_vie().' / '.$conf->seuil);
+verifie('durée de vie : identique au seuil de config.xml', duree_vie('') === (int)$conf->seuil && duree_vie('') > 0, duree_vie('').' / '.$conf->seuil);
+$ini_duree = tempnam(sys_get_temp_dir(), 'ini');
+file_put_contents($ini_duree, "duree_session_min = 90\n");
+verifie('durée de vie : duree_session_min de sqlsandbox.ini prioritaire', duree_vie($ini_duree) === 5400, duree_vie($ini_duree));
+file_put_contents($ini_duree, "exos_ttl = 300\n");
+verifie('durée de vie : config.xml sans duree_session_min', duree_vie($ini_duree) === (int)$conf->seuil);
+@unlink($ini_duree);
 http("$u/controler.php", array('Soumettre' => 'Envoyer', 'base' => 'cours', 'mode' => '1', 'csrf' => $jeton,
                                'requete' => 'create table rechargement(a)'));
 $nb_copies = copies();

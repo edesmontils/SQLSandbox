@@ -25,11 +25,31 @@ function dossier_prive($nom, $repli) {
 // n'est accessible en écriture)
 if (!defined('DOSSIER_TMP')) define('DOSSIER_TMP', dossier_prive(INSTANCE.'-tmp', __DIR__.'/tmp'));
 
+// Fichier sqlsandbox.ini de cette installation, hors du site : variable d'environnement
+// SQLSANDBOX_INI, puis à côté de la racine web (~/sqlsandbox.ini chez OVH) ; null s'il
+// n'existe pas. Voir exos_ini() (exercices.php) et duree_vie().
+function fichier_ini() {
+	$candidats = array();
+	if (getenv('SQLSANDBOX_INI')) $candidats[] = getenv('SQLSANDBOX_INI');
+	if (!empty($_SERVER['DOCUMENT_ROOT']))
+		$candidats[] = dirname(rtrim($_SERVER['DOCUMENT_ROOT'], '/')).'/'.INSTANCE.'.ini';
+	foreach ($candidats as $f) if (is_file($f)) return $f;
+	return null;
+}
+
 // Durée de vie (secondes) d'une session et des copies de bases d'un utilisateur, depuis
-// l'inactivité : le « seuil » de config.xml (3 heures par défaut). Lue sans analyser tout le XML,
-// car chaque requête en a besoin avant de démarrer la session. C'est l'unique source de cette
-// durée : cookie, session, copies de bases et purge s'en servent, et restent donc alignés.
-function duree_vie() {
+// l'inactivité : duree_session_min (minutes) de sqlsandbox.ini s'il est renseigné, sinon le
+// « seuil » de config.xml (3 heures par défaut). Lue sans analyser tout le XML, car chaque
+// requête en a besoin avant de démarrer la session. C'est l'unique source de cette durée :
+// cookie, session, copies de bases et purge s'en servent, et restent donc alignés.
+// $ini : fichier à lire (fichier_ini() par défaut, '' pour l'ignorer).
+function duree_vie($ini = null) {
+	if (is_null($ini)) $ini = fichier_ini() ?? '';
+	if ($ini !== '' && is_file($ini) && is_readable($ini)) {
+		$valeurs = @parse_ini_file($ini);
+		if (is_array($valeurs) && isset($valeurs['duree_session_min']) && (int)$valeurs['duree_session_min'] > 0)
+			return max(60, (int)$valeurs['duree_session_min'] * 60);
+	}
 	$xml = @file_get_contents(__DIR__.'/config.xml');
 	if ($xml !== false) {
 		if (preg_match("/<!ENTITY\\s+seuil\\s+['\"]\\s*(\\d+)\\s*['\"]/", $xml, $m) && preg_match('#<seuil>\\s*&seuil;\\s*</seuil>#', $xml)) return max(60, (int)$m[1]);

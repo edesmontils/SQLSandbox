@@ -27,3 +27,7 @@ exos_ttl = 300
 ; dédié qui a de la place.
 ; occupation_max_mo = 1024
 ; espace_libre_min_mo = 200
+
+; Durée de vie d'une session et des copies de bases d'un étudiant, depuis sa dernière
+; activité (facultatif, en minutes ; à défaut, le seuil de config.xml : 180 minutes).
+; duree_session_min = 180
