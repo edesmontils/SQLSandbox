@@ -78,6 +78,11 @@ sudo setfacl -m u:caddy:x /home/<utilisateur>
 redir /SQLSandbox /SQLSandbox/ 308
 handle /SQLSandbox/* {
 	root * /home/<utilisateur>/programmation
+	@casse {
+		path_regexp casse (?i)^/sqlsandbox(/.*)?$
+		not path_regexp ^/SQLSandbox(/|$)
+	}
+	redir @casse /SQLSandbox{re.casse.1}{?query} 308
 	@interdit path_regexp ^/SQLSandbox/(\.[^/]*|tmp|bdd|lib|tests)(/|$)
 	respond @interdit 403
 	@repertoire path */
@@ -87,7 +92,7 @@ handle /SQLSandbox/* {
 }
 ```
 
-La règle `@repertoire` est nécessaire avec Caddy 2.11 : sans elle, `/SQLSandbox/` est servi comme un répertoire (404) au lieu de son `index.php`. La chaîne de requête est conservée (`/SQLSandbox/?123456`).
+La règle `@repertoire` est nécessaire avec Caddy 2.11 : sans elle, `/SQLSandbox/` est servi comme un répertoire (404) au lieu de son `index.php`. La chaîne de requête est conservée (`/SQLSandbox/?123456`). La règle `@casse` renvoie `/sqlsandbox/…` (ou toute autre casse) vers `/SQLSandbox/…` : les chemins de Caddy ne tiennent pas compte de la casse, mais le disque si, et PHP-FPM répondrait sinon « File not found. ».
 
 Facultatif, l'adresse `/SQLSandbox/123456` d'un tenant de QueryCraft (`/SQLSandbox/?123456` fonctionne sans cela), dans le bloc `handle /SQLSandbox/*`, avant `php_fastcgi` :
 
