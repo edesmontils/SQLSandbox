@@ -52,36 +52,97 @@
 
 	<aPropos>
 		<div class="post">
-			<h2 class="title">A propos de SQL et du SGBD utilisé</h2>
+			<h2 class="title">À propos de SQL et du SGBD utilisé</h2>
 			<h3 class="posted">par E. Desmontils</h3>
 			<div class="story">
-				<p>Cette petite application est développée sous PHP 8.0 min. (<a
-						href="http://www.php.net/">http://www.php.net/</a>), avec SQLite3
-					comme SGBD (<a href="http://www.sqlite.org/">http://www.sqlite.org/</a>). Par
-					conséquent la syntaxe de SQL et les fonctions associées sont celles de SQLite.
-					Pour plus de renseignements, consulter <a href="http://www.sqlite.org/lang.html"
-						>http://www.sqlite.org/lang.html</a>.</p>
-				<p><a href="http://www.sqlite.org/"><img src="./images/sqlite.gif" alt="SQLite.org"
+				<p>SQL Sandbox est écrite en <a href="https://www.php.net/">PHP</a> (version 8.0 au
+					moins) et utilise <a href="https://www.sqlite.org/">SQLite</a> comme SGBD : chaque
+					base est un simple fichier, dont vous recevez une copie personnelle. La syntaxe de
+					SQL et les fonctions disponibles sont donc celles de SQLite, dont la version est
+					affichée en haut de la page.</p>
+				<p>Documentation de référence (en anglais) : <a
+						href="https://www.sqlite.org/lang.html">la syntaxe SQL de SQLite</a>, <a
+						href="https://www.sqlite.org/lang_corefunc.html">les fonctions usuelles</a>,
+					<a href="https://www.sqlite.org/lang_aggfunc.html">les fonctions
+						d'agrégation</a>, <a href="https://www.sqlite.org/lang_datefunc.html">les
+						fonctions de date</a> et <a href="https://www.sqlite.org/datatype3.html">les
+						types de données</a>.</p>
+				<p><a href="https://www.sqlite.org/"><img src="./images/sqlite.gif" alt="SQLite.org"
 						/></a></p>
 			</div>
 		</div>
 
 		<div class="post">
-			<h2 class="title">Quelques remarques sur SQLite</h2>
+			<h2 class="title">Particularités de SQLite à connaître</h2>
 			<div class="story">
-				<h3>Opérateur SQL 'Distinct' et SQLite</h3>
-				<p>Attention, certaines versions de SQLite (dont celle utilisée à ce jour par OVH)
-					n’acceptent pas les «distinct» dans une fonction de calcul. Il faut alors
-					trouver d’autres solutions. Par exemple : <br/> "Select count(X) From (select
-					distinct X From Table Where ...)" <br/>= <br/>"Select count(distinct X) From
-					Table Where ..." </p>
-				<h3>Parenthèses et jointures dans SQLite</h3>
-				<p>Attention, dans le "from", SQLite (version actuelle) "t1 natural join t2 natural
-					join t3" ne donne pas le même résultat que "(t1 natural join t2) natural join
-					t3". En effet, il considère les parenthèses comme une sous requête. Il renomme
-					donc les colonnes avec un nom "aléatoire". Du coup, l'utilisation des attributs
-					(dans le "select" ou le "where" par exemple), n'est plus possible. Il faut donc
-					préférer la version sans parenthèses.</p>
+				<p>SQLite respecte l'essentiel du SQL standard, mais il est plus permissif que les
+					autres SGBD (PostgreSQL, MySQL, Oracle...). Une requête acceptée ici peut donc être
+					refusée ailleurs, ou donner un autre résultat.</p>
+
+				<h3>Apostrophes et guillemets</h3>
+				<p>Les chaînes de caractères s'écrivent entre apostrophes (<code>'Dupont'</code>),
+					comme en SQL standard. Les guillemets (<code>"nom"</code>) désignent un nom de
+					colonne ou de table. Attention au piège : si la colonne n'existe pas, SQLite
+					considère <code>"Dupont"</code> comme une chaîne, sans signaler d'erreur. Une faute
+					de frappe dans un nom entre guillemets passe donc inaperçue.</p>
+
+				<h3>Types de données</h3>
+				<p>Le type déclaré d'une colonne n'est qu'une indication (on parle
+					d'« affinité ») : une colonne <code>INTEGER</code> peut contenir le texte
+					<code>'abc'</code> sans erreur. La fonction <code>typeof(x)</code> donne le type
+					réellement stocké. Il n'existe pas de type booléen (on utilise 0 et 1, ou
+					<code>TRUE</code> et <code>FALSE</code>) ni de type date (voir plus bas).</p>
+
+				<h3>Division entière</h3>
+				<p>La division de deux entiers donne un entier : <code>5 / 2</code> vaut 2. Pour
+					obtenir 2.5, il faut qu'un des deux nombres soit réel : <code>5 / 2.0</code> ou
+					<code>CAST(5 AS REAL) / 2</code>. C'est utile pour calculer un pourcentage ou une
+					moyenne « à la main ».</p>
+
+				<h3>Comparaison de textes</h3>
+				<p>L'égalité tient compte des majuscules : <code>'Dupont' = 'dupont'</code> est faux.
+					<code>LIKE</code> les ignore, mais seulement pour les lettres sans accent :
+					<code>'e' LIKE 'E'</code> est vrai, <code>'é' LIKE 'É'</code> est faux. Les textes
+					sont comparés caractère par caractère : <code>'10' &lt; '9'</code> est vrai, alors
+					que <code>10 &lt; 9</code> est faux.</p>
+
+				<h3>Concaténation et valeurs NULL</h3>
+				<p>On concatène des chaînes avec l'opérateur <code>||</code> : <code>prenom || ' ' ||
+						nom</code>. Si l'une des valeurs est NULL, le résultat est NULL. On teste une
+					valeur absente avec <code>IS NULL</code> (et non <code>= NULL</code>, toujours
+					faux). Dans un tri croissant, les NULL apparaissent en premier.</p>
+
+				<h3>Dates</h3>
+				<p>Les dates sont stockées comme du texte au format <code>'AAAA-MM-JJ'</code> (ou
+					<code>'AAAA-MM-JJ HH:MM:SS'</code>), ce qui permet de les comparer et de les trier
+					directement. Les fonctions <code>date()</code>, <code>strftime()</code> et
+					<code>julianday()</code> les manipulent : <code>strftime('%Y', d)</code> donne
+					l'année, <code>julianday(d2) - julianday(d1)</code> le nombre de jours entre deux
+					dates, <code>date('now')</code> la date du jour. Les fonctions
+					<code>YEAR()</code>, <code>MONTH()</code> ou <code>NOW()</code> d'autres SGBD
+					n'existent pas.</p>
+
+				<h3>Regroupements</h3>
+				<p>SQLite accepte dans le <code>SELECT</code> une colonne qui n'est ni dans le
+					<code>GROUP BY</code> ni dans une fonction d'agrégation : il prend alors la valeur
+					d'une ligne quelconque du groupe. Les autres SGBD refusent cette requête, à juste
+					titre : écrivez toujours dans le <code>GROUP BY</code> toutes les colonnes non
+					agrégées du <code>SELECT</code>. <code>COUNT(DISTINCT x)</code> est accepté, mais
+					avec une seule colonne.</p>
+
+				<h3>Limiter le nombre de lignes</h3>
+				<p>On garde les premières lignes d'un résultat avec <code>LIMIT</code> (et on en saute
+					avec <code>OFFSET</code>) : <code>... ORDER BY prix DESC LIMIT 3</code>. Les
+					écritures <code>SELECT TOP 3</code> (SQL Server) et <code>FETCH FIRST 3 ROWS
+						ONLY</code> (standard) ne sont pas reconnues.</p>
+
+				<h3>Parenthèses et jointures</h3>
+				<p>Avec les versions récentes de SQLite, <code>(t1 NATURAL JOIN t2) NATURAL JOIN
+						t3</code> donne le même résultat que <code>t1 NATURAL JOIN t2 NATURAL JOIN
+						t3</code>. Certaines anciennes versions traitaient une jointure entre
+					parenthèses comme une sous-requête, dont les colonnes n'étaient plus accessibles
+					par leur nom : en cas d'erreur « no such column », retirez les parenthèses.</p>
+
 				<h3>Clés étrangères</h3>
 				<p>SQLite ne vérifie pas les clés étrangères par défaut. SQL Sandbox active cette
 					vérification sur votre copie de la base, comme le font les autres SGBD : une
@@ -89,10 +150,6 @@
 					encore référencée, est refusée (« FOREIGN KEY constraint failed »). Pour supprimer
 					une table référencée par d'autres, supprimez d'abord les lignes ou les tables qui
 					la référencent.</p>
-				<h3>Guillemets et apostrophes</h3>
-				<p>Les valeurs de type chaîne de caractères s'écrivent entre apostrophes (par exemple
-					'Dupont'), comme en SQL standard. SQLite accepte aussi les guillemets ("Dupont"),
-					mais ceux-ci désignent normalement des noms de colonnes ou de tables.</p>
 			</div>
 		</div>
 	</aPropos>

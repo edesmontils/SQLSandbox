@@ -17,6 +17,7 @@ modele = "proxyiag/gemma-4-31b"
 ; par_session_intention = 30 ; corrections d'intention par session et par jour (compteur à part)
 ; delai = 5              ; secondes minimum entre deux générations d'une session
 ; lignes_max = 30        ; lignes par génération
+; par_ip = 150          ; appels par adresse IP et par jour, générations et corrections (0 = sans limite)
 ; plafond_global = 500   ; générations par jour pour toute l'application (0 = sans limite)
 ; max_tokens = 3000      ; longueur maximale de la réponse
 ; delai_appel = 60       ; secondes d'attente de la réponse

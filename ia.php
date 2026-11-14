@@ -17,6 +17,7 @@ define('IA_PAR_SESSION', 20);   // générations par session et par jour
 define('IA_PAR_SESSION_INTENTION', 30); // corrections d'intention par session et par jour (compteur à part)
 define('IA_DELAI', 5);          // secondes minimum entre deux générations d'une session
 define('IA_LIGNES_MAX', 30);    // lignes par génération
+define('IA_PAR_IP', 150);        // appels par adresse IP et par jour, générations et corrections confondues (0 = sans limite)
 define('IA_PLAFOND_GLOBAL', 500); // générations par jour pour toute l'application (0 = sans limite)
 define('IA_MAX_TOKENS', 3000);  // longueur maximale de la réponse
 define('IA_DELAI_APPEL', 60);   // secondes d'attente de la réponse du proxy
@@ -42,6 +43,7 @@ function ia_lit_ini($fichier) {
 		'par_session_intention' => max(1, (int)($ini['par_session_intention'] ?? IA_PAR_SESSION_INTENTION)),
 		'delai' => max(0, (int)($ini['delai'] ?? IA_DELAI)),
 		'lignes_max' => max(1, (int)($ini['lignes_max'] ?? IA_LIGNES_MAX)),
+		'par_ip' => max(0, (int)($ini['par_ip'] ?? IA_PAR_IP)),
 		'plafond_global' => max(0, (int)($ini['plafond_global'] ?? IA_PLAFOND_GLOBAL)),
 		'max_tokens' => max(200, (int)($ini['max_tokens'] ?? IA_MAX_TOKENS)),
 		'delai_appel' => max(5, (int)($ini['delai_appel'] ?? IA_DELAI_APPEL)),
@@ -121,6 +123,35 @@ function ia_compteur_global($delta, $plafond) {
 	return $ok;
 }
 
+// Compteur du jour de l'adresse IP du client (fichier ia_ip du dossier de travail, une
+// ligne « jour » puis une ligne par adresse hachée). Changer de cookie ouvre une nouvelle
+// session, pas une nouvelle adresse : ce compteur empêche un seul poste d'épuiser le
+// plafond global. Il doit rester assez large pour une salle de TP derrière une même adresse.
+// Retourne false si le plafond de l'adresse est atteint.
+function ia_compteur_ip($delta, $plafond) {
+	if (is_null(DOSSIER_TMP) || ($delta > 0 && $plafond <= 0)) return true;
+	$f = @fopen(DOSSIER_TMP.'/ia_ip', 'c+');
+	if (!$f) return true;
+	flock($f, LOCK_EX);
+	$d = json_decode((string)stream_get_contents($f), true);
+	$jour = date('Y-m-d');
+	if (!is_array($d) || ($d['jour'] ?? '') !== $jour || !is_array($d['n'] ?? null)) $d = array('jour' => $jour, 'n' => array());
+	$ip = md5($_SERVER['REMOTE_ADDR'] ?? 'cli');
+	$n = (int)($d['n'][$ip] ?? 0);
+	$ok = !($delta > 0 && $n + $delta > $plafond);
+	if ($ok) {
+		$n = max(0, $n + $delta);
+		if ($n > 0) $d['n'][$ip] = $n; else unset($d['n'][$ip]);
+		ftruncate($f, 0);
+		rewind($f);
+		fwrite($f, json_encode($d));
+		fflush($f);
+	}
+	flock($f, LOCK_UN);
+	fclose($f);
+	return $ok;
+}
+
 // Réserve un appel pour la session. Retourne null si c'est accordé, sinon le message de refus.
 // $compteur : 'ia' pour le remplissage (par_session), 'ia_intention' pour la correction des
 // intentions (par_session_intention) ; chacun a son compteur de session, le plafond global
@@ -140,11 +171,16 @@ function ia_reserve($conf, $compteur = 'ia') {
 	$attente = $conf['delai'] - (time() - $s['dernier']);
 	if ($attente > 0)
 		return "Patientez $attente seconde(s) avant ".($intention ? 'une nouvelle correction.' : 'une nouvelle génération.');
-	if (!ia_compteur_global(1, $conf['plafond_global']))
+	if (!ia_compteur_ip(1, $conf['par_ip']))
+		return "La limite d'utilisation de l'IA depuis ce poste (ou ce réseau) est atteinte pour aujourd'hui."
+			.($intention ? '' : ' Vous pouvez saisir des données avec des requêtes INSERT et UPDATE.');
+	if (!ia_compteur_global(1, $conf['plafond_global'])) {
+		ia_compteur_ip(-1, $conf['par_ip']);
 		return $intention
 			? "La limite d'utilisation de l'IA de l'application est atteinte pour aujourd'hui."
 			: "La limite de générations de l'application est atteinte pour aujourd'hui. "
 			  ."Vous pouvez saisir des données avec des requêtes INSERT et UPDATE.";
+	}
 	$s['n']++;
 	$s['dernier'] = time();
 	return null;
@@ -168,6 +204,7 @@ function ia_rend($conf, $compteur = 'ia') {
 	ia_rouvre_session();
 	if (isset($_SESSION[$compteur]['n']) && $_SESSION[$compteur]['n'] > 0) $_SESSION[$compteur]['n']--;
 	if (isset($_SESSION[$compteur])) $_SESSION[$compteur]['dernier'] = 0;
+	ia_compteur_ip(-1, $conf['par_ip']);
 	ia_compteur_global(-1, $conf['plafond_global']);
 }
 
@@ -568,14 +605,36 @@ define('VERDICTS_INTENTION', array('correct', 'partiel', 'incorrect'));
 
 // Prompt de correction (templates/intention_prompt.md, partagé avec QueryCraft) : seules
 // des substitutions simples {{ nom }} y figurent.
+// Le texte de l'étudiant est placé entre balises <intention_etudiant> : il ne peut pas les
+// refermer lui-même pour glisser des consignes hors de la zone citée.
 function ia_prompt_intention($requete, $reference, $intention) {
 	$modele = @file_get_contents(__DIR__.'/templates/intention_prompt.md');
 	if ($modele === false) return null;
+	$intention = preg_replace('#<\s*/?\s*intention_etudiant[^>]*>#i', ' ', $intention);
 	return strtr($modele, array(
 		'{{ requete }}' => $requete,
 		'{{ intention_attendue }}' => $reference,
 		'{{ intention_etudiant }}' => $intention,
 	));
+}
+
+// Mots d'un texte, en minuscules, sans ponctuation
+function ia_mots($texte) {
+	return preg_split('/[^\p{L}\p{N}]+/u', mb_strtolower((string)$texte), -1, PREG_SPLIT_NO_EMPTY);
+}
+
+// Vrai si $explication recopie l'intention de référence : la référence entière (dès
+// 3 mots) ou une suite de 6 de ses mots, à la ponctuation et à la casse près. C'est ce
+// que produirait un étudiant qui demande au modèle, dans son intention, de la révéler.
+function ia_revele_reference($explication, $reference) {
+	$ref = ia_mots($reference);
+	$exp = ' '.implode(' ', ia_mots($explication)).' ';
+	$n = count($ref);
+	if ($n < 3) return false;
+	$long = min(6, $n);
+	for ($i = 0; $i + $long <= $n; $i++)
+		if (strpos($exp, ' '.implode(' ', array_slice($ref, $i, $long)).' ') !== false) return true;
+	return false;
 }
 
 // Verdict et explication extraits de la réponse JSON du modèle : array(verdict|null, texte)
@@ -639,6 +698,11 @@ function ia_corriger_intention($base, $code_ex, $code_q, $intention) {
 	$r = ia_appel($conf, $messages, 'ia_intention', 0.2);
 	if (isset($r['erreur'])) return $r;
 	list($verdict, $explication) = ia_lit_verdict($r['texte']);
+	if (ia_revele_reference($explication, $q['intention'])) {
+		error_log('SQLSandbox : correction d\'intention masquée (référence recopiée), question '.$code_ex.'/'.$code_q);
+		$explication = "Le retour de l'IA a été retiré parce qu'il reprenait l'intention attendue. "
+		              ."Reformulez votre intention avec vos propres mots et demandez une nouvelle correction.";
+	}
 	return array('ok' => true, 'ia' => true, 'verdict' => $verdict, 'explication' => $explication,
 	             'modele' => $conf['modele']);
 }

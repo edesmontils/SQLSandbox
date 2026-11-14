@@ -2,6 +2,64 @@
 
 require './session.php';
 
+// Section de « À propos de SQL et SQLite » calculée sur le serveur : ce que permet la
+// version de SQLite installée (chaque fonctionnalité est essayée sur une base en mémoire)
+// et les limites propres à SQL Sandbox
+function fonctionnalites_sqlite() {
+	$recent = sqlite_recent();
+	$db = new SQLite3(':memory:');
+	$db->exec('CREATE TABLE t(a INTEGER PRIMARY KEY, b TEXT); CREATE TABLE u(a INTEGER, c TEXT)');
+	// libellé, requête d'essai, version de SQLite qui l'introduit, refus propre à SQL Sandbox
+	$essais = array(
+		array('Fonctions de fenêtrage : <code>ROW_NUMBER() OVER (...)</code>, <code>RANK()</code>...',
+		      'SELECT row_number() OVER (ORDER BY a) FROM t', '3.25 (3.32.3 dans SQL Sandbox)', !$recent),
+		array('<code>RIGHT JOIN</code> et <code>FULL JOIN</code>',
+		      'SELECT * FROM t RIGHT JOIN u USING (a) FULL JOIN t AS v USING (a)', '3.39', false),
+		array('<code>NULLS FIRST</code> et <code>NULLS LAST</code> dans un tri',
+		      'SELECT a FROM t ORDER BY b NULLS LAST', '3.30', false),
+		array('Agrégat filtré : <code>COUNT(*) FILTER (WHERE ...)</code>',
+		      'SELECT count(*) FILTER (WHERE a > 1) FROM t', '3.30', false),
+		array('Alternative <code>iif(condition, si_vrai, si_faux)</code>',
+		      'SELECT iif(a > 1, 1, 0) FROM t', '3.32', false),
+		array('Fonctions mathématiques : <code>sqrt()</code>, <code>power()</code>, <code>ln()</code>...',
+		      'SELECT sqrt(a), power(a, 2) FROM t', '3.35, selon la compilation', false),
+		array('<code>ALTER TABLE ... DROP COLUMN</code>',
+		      'ALTER TABLE u DROP COLUMN c', '3.35', false),
+		array('<code>RETURNING</code> après <code>INSERT</code>, <code>UPDATE</code> ou <code>DELETE</code>',
+		      'DELETE FROM t WHERE a = 0 RETURNING *', '3.35', false),
+		array('Fonctions JSON : <code>json_extract()</code>, opérateur <code>-&gt;&gt;</code>',
+		      "SELECT json_extract('{\"x\":1}', '$.x'), '{\"x\":1}' ->> 'x'", '3.38', false),
+		array('<code>concat()</code> et <code>string_agg()</code> (sinon <code>||</code> et <code>group_concat()</code>)',
+		      "SELECT concat(b, 'x'), string_agg(b, ', ') FROM t", '3.44', false),
+		array('<code>printf()</code> pour mettre en forme un nombre',
+		      "SELECT printf('%.2f', a) FROM t", '3.8 (3.32.3 dans SQL Sandbox)', !$recent),
+	);
+	$h = "<div class='post'><h2 class='title'>Ce que permet la version installée</h2><div class='story'>\n"
+	   ."<p>SQL Sandbox utilise ici SQLite <strong>".htmlspecialchars(SQLite3::version()['versionString'])
+	   ."</strong>. Les fonctionnalités récentes de SQL ne sont pas disponibles sur les versions plus anciennes : "
+	   ."ce tableau indique celles que vous pouvez utiliser sur ce serveur.</p>\n"
+	   ."<table class='resultat'><thead><tr><th>Fonctionnalité</th><th>Depuis SQLite</th><th>Ici</th></tr></thead><tbody>\n";
+	foreach ($essais as $e) {
+		$ok = !$e[3] && @$db->prepare($e[1]) !== false;
+		$h .= "<tr><td>$e[0]</td><td>$e[2]</td><td>".($ok ? '✅ oui' : '❌ non')."</td></tr>\n";
+	}
+	$db->close();
+	$duree = round(DUREE_SESSION / 3600, 1);
+	$h .= "</tbody></table>\n"
+	   ."<h3>Limites de SQL Sandbox</h3><ul>\n"
+	   ."<li>Une requête est arrêtée au bout de ".DELAI_MAX." secondes, et seules les ".MAX_LIGNES
+	   ." premières lignes d'un résultat sont affichées.</li>\n"
+	   ."<li>Votre copie d'une base peut grossir de ".round(CROISSANCE_MAX_BASE / 1048576)." Mo au plus, sans dépasser "
+	   .round(TAILLE_MAX_BASE / 1048576)." Mo. Elle est conservée ".str_replace('.', ',', $duree)
+	   ." h après votre dernière action.</li>\n"
+	   ."<li>Les commandes qui agissent sur le serveur plutôt que sur votre base sont refusées : "
+	   ."<code>ATTACH</code>, la plupart des <code>PRAGMA</code> (seuls <code>table_info</code>, "
+	   ."<code>index_list</code>, <code>foreign_key_list</code> et leurs variantes restent permis), "
+	   ."les tables, vues et déclencheurs temporaires (<code>CREATE TEMP ...</code>) et les tables virtuelles.</li>\n"
+	   ."</ul></div></div>\n";
+	return $h;
+}
+
 if (isset($_SESSION['debug']) && $session_ok) {
 	$debug = $_SESSION['debug'];
 	if ($debug) ini_set('display_errors', '1');
@@ -106,6 +164,7 @@ if (isset($_SESSION['debug']) && $session_ok) {
 			$apropos = $config->aPropos;
 			foreach($apropos->children() as $c)
 				echo $c->asXML();
+			echo fonctionnalites_sqlite();
 		} catch(Exception $e) {
   			echo "<p>erreur<br/>Pb (Exception) ! ".htmlspecialchars($e->getMessage())."<br/>".$libxml->afficheErreurs()."<br/></p>";
 		}	
