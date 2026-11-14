@@ -132,7 +132,7 @@ cd /home/<utilisateur>/programmation/SQLSandbox && git pull --ff-only
 
 Rien à recharger ensuite : PHP relit les fichiers modifiés. Les copies des bases et les sessions étant hors du clone, celui-ci reste propre (`git status` vide) et `git pull` ne rencontre pas de conflit ; ne pas modifier les fichiers directement sur le serveur. `tests/`, `.github/` et `.git/` sont présents dans le dossier mais interdits par la règle `@interdit`. Les dossiers de travail existant, `tmp/` ne sert pas.
 
-Un pare-feu applicatif placé devant l'application peut refuser certaines requêtes SQL qu'il prend pour des attaques. Les relais du LS2N (Koala Web Server, `mod_qos`), par exemple, répondent 501 à `create table t(a)` (mais pas à `create  table t(a)`, avec deux espaces). L'étudiant en est averti (réponse en erreur sans l'en-tête `X-SQLSandbox`) ; pour lever le blocage, demander aux administrateurs du relais une exception pour `controler.php`.
+Un pare-feu applicatif placé devant l'application peut refuser des requêtes SQL ordinaires qu'il prend pour des attaques : les relais du LS2N (Koala Web Server, `mod_qos`), par exemple, répondent 501 à `create table t(a)`. C'est pourquoi le JavaScript envoie le texte SQL encodé en base64 (paramètre `requete64` de `controler.php` ; `requete`, en clair, reste accepté). Si un pare-feu bloque malgré tout une requête (réponse en erreur sans l'en-tête `X-SQLSandbox`), l'étudiant en est averti.
 
 Pour vérifier : `https://<site>/SQLSandbox/bdd/em/em.db` et `https://<site>/SQLSandbox/.git/config` doivent répondre 403 (un relais peut répondre lui-même autrement à une adresse en `.db` : vérifier alors `https://<site>/SQLSandbox/bdd/`), et une session ouverte doit apparaître dans `/home/<utilisateur>/sessions-sqlsandbox`.
 

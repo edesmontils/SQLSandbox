@@ -71,7 +71,7 @@ if (isset($_SESSION['debug']) && $session_ok) {
 	prolonge_copies();
 
 	$Soumettre = is_null(param('Soumettre')) ? 'rien' : param('Soumettre');
-	$requete = param('requete');
+	$requete = requete_recue();
 	$base = param('base');
 	
 	if ($debug) { 

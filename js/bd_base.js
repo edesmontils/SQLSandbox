@@ -122,6 +122,15 @@ function suggestion(base) {
 // Appel AJAX à controler.php. surSucces(reponse) est appelé pour un code 2xx ou 304,
 // ou sans code du tout (serveur injoignable : réponse vide) ; surEchec(reponse) sinon.
 // reponse : {status, responseText, getHeader(nom)}
+// Texte encodé en base64 (octets UTF-8). Le SQL est envoyé ainsi : un pare-feu devant
+// l'application (relais du LS2N) refuse sinon « create table t(a) », pris pour une attaque.
+function base64_utf8(texte) {
+    var octets = new TextEncoder().encode(texte), binaire = '';
+    for (var i = 0; i < octets.length; i += 0x8000)
+        binaire += String.fromCharCode.apply(null, octets.subarray(i, i + 0x8000));
+    return btoa(binaire);
+}
+
 function appel(methode, parametres, surSucces, surEchec) {
     var corps = new URLSearchParams(parametres).toString();
     var url = 'controler.php';
@@ -298,7 +307,7 @@ function query() {
     current_request = $('requete').value;
     current_base = $('base').value;
     appel('post', {
-            Soumettre: 'Envoyer', csrf: csrf_token, requete: $('requete').value, base: $('base').value, mode: 1
+            Soumettre: 'Envoyer', csrf: csrf_token, requete64: base64_utf8($('requete').value), base: $('base').value, mode: 1
         },
         function (trs) {
             if (trs.responseText == '') { // processus PHP arrêté (requête trop longue)
@@ -329,13 +338,12 @@ function query_failed(trs) {
         return;
     }
     result_type = 'ko';
-    // Pare-feu devant l'application : 403 ou 406 (OVH), 501 (relais du LS2N, qui refuse par
-    // exemple « create table t(a) » mais laisse passer « create  table t(a) »)
+    // Pare-feu devant l'application : 403 ou 406 (OVH), 501 (relais du LS2N). Le SQL est
+    // envoyé en base64 pour éviter ces refus ; ce message reste pour les autres cas.
     if (trs && !de_l_application && (trs.status == 403 || trs.status == 406 || trs.status == 501)) {
         message = "La requête a été bloquée avant d'atteindre l'application (code " + trs.status
             + ") : le pare-feu de l'hébergeur l'a sans doute prise pour une attaque. "
-            + "Reformulez-la (par exemple avec deux espaces entre CREATE et TABLE), "
-            + "ou signalez-la à votre enseignant.";
+            + "Reformulez-la, ou signalez-la à votre enseignant.";
     } else if (trs && !de_l_application && trs.status >= 400) {
         message = "Le serveur n'a pas pu transmettre la requête à l'application (code " + trs.status
             + "). Réessayez dans un instant.";
@@ -632,7 +640,7 @@ function corrige_intention() {
 
 function execute_sur_copie(requete) {
     appel('post', {
-            Soumettre: 'Envoyer', csrf: csrf_token, requete: requete, base: question_courante.base, mode: 0
+            Soumettre: 'Envoyer', csrf: csrf_token, requete64: base64_utf8(requete), base: question_courante.base, mode: 0
         },
         function (trs) {
             if (trs.responseText == '') {

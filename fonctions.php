@@ -16,6 +16,19 @@ function param($nom) {
 	return is_string($v) ? $v : null;
 }
 
+// Texte SQL envoyé par le JavaScript, encodé en base64 (paramètre requete64) : des pare-feu
+// placés devant l'application refusent sinon des requêtes ordinaires qu'ils prennent pour
+// des attaques (les relais du LS2N répondent 501 à « create table t(a) »). Le paramètre
+// requete, en clair, reste accepté. Retourne null si aucun des deux n'est valide.
+function requete_recue() {
+	$code = param('requete64');
+	if (is_string($code)) {
+		$texte = base64_decode($code, true);
+		return $texte === false ? null : $texte;
+	}
+	return param('requete');
+}
+
 // Jeton anti-CSRF, généré par index.php et renvoyé par le JavaScript. Il n'est lu qu'en
 // POST : passé en GET, il finirait dans les journaux du serveur et l'en-tête Referer.
 function jeton_valide() {

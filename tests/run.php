@@ -1040,6 +1040,18 @@ verifie('rechargement : même jeton', strpos($page2, '"'.$jeton.'"') !== false);
 list($code, $corps) = http("$u/controler.php", array('Soumettre' => 'Envoyer', 'base' => 'cours', 'mode' => '1',
                            'csrf' => $jeton, 'requete' => 'select * from rechargement'));
 verifie('rechargement : modifications de la base conservées', $code == 200 && strpos($corps, 'Requête réussie') !== false, $corps);
+// SQL encodé en base64 (requete64) : passe les pare-feu qui refusent « create table t(a) »
+list($code, $corps) = http("$u/controler.php", array('Soumettre' => 'Envoyer', 'base' => 'cours', 'mode' => '1',
+                           'csrf' => $jeton, 'requete64' => base64_encode("create table encodée(é); insert into etudiants values('B64', 'Élise', 'Ève')")));
+verifie('requete64 : texte décodé (UTF-8) et exécuté', $code == 200 && strpos($corps, 'Requête réussie') !== false
+        && strpos($corps, 'seule la première instruction') !== false, $corps);
+list($code, $corps) = http("$u/controler.php", array('Soumettre' => 'Envoyer', 'base' => 'cours', 'mode' => '1',
+                           'csrf' => $jeton, 'requete64' => base64_encode("insert into etudiants values('B64', 'Élise', 'Ève'); select 1"),
+                           'requete' => 'select 1'));
+verifie('requete64 : prioritaire sur requete', strpos($corps, 'Requête réussie') !== false && strpos($corps, 'seule la première') !== false, $corps);
+list($code, $corps) = http("$u/controler.php", array('Soumettre' => 'Envoyer', 'base' => 'cours', 'mode' => '1',
+                           'csrf' => $jeton, 'requete64' => 'pas du base64 !'));
+verifie('requete64 : base64 invalide refusé sans exécution', strpos($corps, 'Requête réussie') === false, $corps);
 // Génération par IA à travers l'application
 verifie('IA : bouton activé dans la page', strpos($page2, 'ia_disponible = true') !== false && strpos($page2, 'js/ia.js') !== false);
 $ia = array('Soumettre' => 'ia_generer', 'base' => 'cours', 'table' => 'etudiants', 'mode' => 'ajouter',
