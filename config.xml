@@ -97,28 +97,6 @@
 		</div>
 	</aPropos>
 
-	<mentions>
-		<p>Cette petite application Web a été développée à des fins pédagogiques. Cette instance
-			en ligne est mise à disposition pour cet usage uniquement, dans la mesure où son
-			utilisation n'est pas détournée. L'auteur ne peut être considéré responsable des
-			dysfonctionnements ou pertes de données et se réserve le droit de la supprimer à tout
-			moment.</p>
-		<p>Application développée et testée avec PHP 8.3, SQLite 3.45 et SimpleXML.</p>
-		<p>Charte graphique commune avec <a href="https://pedago.desmontils.net/querycraft/">QueryCraft</a>,
-			du même auteur. Police <a href="https://www.brailleinstitute.org/freefont/">Atkinson
-				Hyperlegible Next</a>, du Braille Institute of America, utilisée sans modification
-			comme le prévoit sa licence.</p>
-		<!--p>Projet soutenu par le Conseil Régional Des Pays de La Loire dans le cadre des projets
-			ENRC 2008-2009.<br/><img src="./images/RVB-PDL_Institutionnel.jpg" width="25%"
-				alt="Région Pays de la Loire"/></p-->
-		<p>Le code de SQLSandbox est un logiciel libre, distribué sous la licence <a rel="license"
-				href="https://www.gnu.org/licenses/gpl-3.0.fr.html">GNU GPL version 3</a>. Il est
-			disponible sur <a href="https://github.com/edesmontils/SQLSandbox"
-				>https://github.com/edesmontils/SQLSandbox</a>.</p>
-		<p>Éditeur SQL : <a href="https://codemirror.net/5/">CodeMirror 5</a>, sous licence
-			MIT.</p>
-	</mentions>
-
 	<aides>
 		<div class="post">
 			<h2 class="title">Utiliser SQL Sandbox</h2>
@@ -178,10 +156,10 @@
 						celle de l'enseignant pour comparer.</li>
 				</ul>
 				<p>En bas de page : <strong>ℹ️ À propos de SQL et SQLite</strong> présente les
-					particularités du SGBD utilisé, <strong>🛡️ Mentions légales</strong> les
-					conditions d'utilisation et les licences, <strong>📰 Nouveautés</strong> les
+					particularités du SGBD utilisé, <strong>📰 Nouveautés</strong> les
 						évolutions de l'application, version après version, <strong>🙏 Crédits</strong> l'auteur,
-					les technologies utilisées et les références.</p>
+					les conditions d'utilisation, les technologies utilisées, les licences et les
+					références.</p>
 			</div>
 		</div>
 	</aides>
@@ -228,6 +206,13 @@
 					<div><span class="icone">🔤</span><strong>Atkinson Hyperlegible Next</strong><span>Police (Braille Institute)</span></div>
 					<div><span class="icone">🤖</span><strong>IA générative</strong><span>Correction des intentions, génération de données</span></div>
 				</div>
+				<p>Application développée et testée avec PHP 8.3, SQLite 3.45 et SimpleXML.</p>
+				<p>Éditeur SQL : <a href="https://codemirror.net/5/">CodeMirror 5</a>, sous licence
+					MIT. Police <a href="https://www.brailleinstitute.org/freefont/">Atkinson
+						Hyperlegible Next</a>, du Braille Institute of America, utilisée sans
+					modification comme le prévoit sa licence. Charte graphique commune avec <a
+						href="https://pedago.desmontils.net/querycraft/">QueryCraft</a>, du même
+					auteur.</p>
 			</div>
 		</div>
 
@@ -236,8 +221,24 @@
 			<div class="story">
 				<p>SQL Sandbox est un logiciel libre développé à des fins pédagogiques et de
 					recherche, distribué sous la licence <a rel="license"
-						href="https://www.gnu.org/licenses/gpl-3.0.fr.html">GNU GPL version 3</a>.</p>
+						href="https://www.gnu.org/licenses/gpl-3.0.fr.html">GNU GPL version 3</a>. Son
+					code est disponible sur <a href="https://github.com/edesmontils/SQLSandbox"
+						>https://github.com/edesmontils/SQLSandbox</a>.</p>
 				<p>© 2010-2026 Emmanuel Desmontils, Nantes Université</p>
+			</div>
+		</div>
+
+		<div class="post credits">
+			<h2 class="title">🛡️ Conditions d'utilisation</h2>
+			<div class="story">
+				<p>Cette petite application Web a été développée à des fins pédagogiques. Cette instance
+					en ligne est mise à disposition pour cet usage uniquement, dans la mesure où son
+					utilisation n'est pas détournée. L'auteur ne peut être considéré responsable des
+					dysfonctionnements ou pertes de données et se réserve le droit de la supprimer à
+					tout moment.</p>
+				<!--p>Projet soutenu par le Conseil Régional Des Pays de La Loire dans le cadre des projets
+					ENRC 2008-2009.<br/><img src="./images/RVB-PDL_Institutionnel.jpg" width="25%"
+						alt="Région Pays de la Loire"/></p-->
 			</div>
 		</div>
 

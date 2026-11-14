@@ -250,7 +250,7 @@ function clear() {
 	// mémorisation des messages et aides pour éviter de charger le serveur.
 	messages_aides = null;
 	messages = null;
-	messages_mentions = null;
+	messages_credits = null;
 	messages_apropos = null;
 
 	// Page effacée
@@ -655,7 +655,7 @@ function retour_questions() {
 }
 
 // Affiche une rubrique du contrôleur, chargée une seule fois puis gardée dans
-// la variable globale `memoire` (messages, mentions...)
+// la variable globale `memoire` (messages, crédits...)
 function rubrique(soumettre, memoire, nom_erreur, onglet) {
     marque_actif(onglet ? $(onglet) : null);
     if (window[memoire] == null) {
@@ -683,10 +683,6 @@ function accueil() {
 
 function news() {
     rubrique('news', 'messages', 'nouveautés');
-}
-
-function mentions() {
-    rubrique('mentions', 'messages_mentions', 'mentions');
 }
 
 function apropos() {

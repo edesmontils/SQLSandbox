@@ -16,9 +16,10 @@ function param($nom) {
 	return is_string($v) ? $v : null;
 }
 
-// Jeton anti-CSRF, généré par index.php et renvoyé par le JavaScript
+// Jeton anti-CSRF, généré par index.php et renvoyé par le JavaScript. Il n'est lu qu'en
+// POST : passé en GET, il finirait dans les journaux du serveur et l'en-tête Referer.
 function jeton_valide() {
-	$jeton = parametre_recu('csrf');
+	$jeton = $_POST['csrf'] ?? null;
 	return isset($_SESSION['csrf']) && is_string($jeton) && hash_equals($_SESSION['csrf'], $jeton);
 }
 
@@ -228,6 +229,16 @@ function limite_connexion($db) {
 	$db->exec('PRAGMA hard_heap_limit = '.MEMOIRE_MAX_SQLITE);
 }
 
+// Copie $source vers $cible sans jamais laisser $cible à moitié écrite : la copie est faite
+// dans un fichier temporaire du même dossier, puis renommée. Une requête en cours sur
+// l'ancienne copie la lit jusqu'au bout (rename remplace le nom, pas le fichier ouvert).
+function copie_atomique($source, $cible) {
+	$tmp = $cible.'.'.bin2hex(random_bytes(4)).'.tmp';
+	if (!@copy($source, $tmp)) { @unlink($tmp); return false; }
+	if (!@rename($tmp, $cible)) { @unlink($tmp); return false; }
+	return true;
+}
+
 // Ouvre la copie de session de la base $base (null si elle n'existe pas).
 function ouvre_base($base) {
 	if (!is_string($base) || !isset($_SESSION["copie_$base"])) return null;
@@ -238,7 +249,7 @@ function ouvre_base($base) {
 	// vide), ou refaite si elle a été purgée (onglet principal fermé pendant un TP).
 	// Pas de nouvelle copie quand la place manque.
 	if ((!is_file($fic) || filesize($fic) == 0) && !is_null($original) && !$sature) {
-		@copy($original, $fic);
+		copie_atomique($original, $fic);
 		clearstatcache(true, $fic); // sinon filesize() renvoie encore la taille d'avant la copie
 	}
 	if (!is_file($fic) || filesize($fic) == 0) return null;
@@ -501,7 +512,7 @@ function modele_origine($base, $modele) {
 // si la base est inconnue ou si la copie a échoué.
 function reinitialise_base($base) {
 	if (!is_string($base) || !isset($_SESSION["copie_$base"], $_SESSION['originaux'][$base])) return false;
-	$ok = @copy($_SESSION['originaux'][$base], $_SESSION["copie_$base"]);
+	$ok = copie_atomique($_SESSION['originaux'][$base], $_SESSION["copie_$base"]);
 	clearstatcache(true, $_SESSION["copie_$base"]);
 	return $ok;
 }

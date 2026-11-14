@@ -10,7 +10,7 @@
 class LibXML {
 private $debug;
 
-	function __construct($deb=true) {
+	function __construct($deb=false) {
 		libxml_use_internal_errors(true);
 		$this->debug = $deb;
 	}
@@ -36,16 +36,20 @@ private $debug;
 		$rep = "";
 		if ($this->debug) $rep .= "Affichage des erreurs :\n<br/>";
 	   	foreach ($tab_erreurs as $error) {
-	   		if ($this->debug) $rep .= $this->display_xml_error($error);
+	   		$detail = $this->display_xml_error($error);
+	   		// Hors débogage, le détail (avec les chemins des fichiers) ne va qu'au journal
+	   		if ($this->debug) $rep .= $detail;
+	   		else error_log('LibXML : '.strip_tags(str_replace("\n", ' ', $detail)));
 	   	}
 	   	if ($this->debug) $rep .= "Fin affichage des erreurs :\n<br/>";
+	   	else if (count($tab_erreurs) > 0) $rep = "Fichier XML invalide (détails dans le journal du serveur).";
 		libxml_clear_errors();
 		return $rep;
 	}
 	
 	function afficheDerniereErreur() {
 		$error = libxml_get_last_error();
-		return $error ? $this->display_xml_error($error) : '';
+		return ($error && $this->debug) ? $this->display_xml_error($error) : '';
 	}
 }
 

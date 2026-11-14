@@ -111,23 +111,6 @@ if (isset($_SESSION['debug']) && $session_ok) {
 		}	
 	}
 	//======================================================
-	else if ($Soumettre == "mentions"){
-		try {
-			$config = new SimpleXMLElement('./config.xml',
-		                                LIBXML_DTDATTR|LIBXML_DTDLOAD|LIBXML_DTDVALID
-		                                |LIBXML_NOBLANKS|LIBXML_NOCDATA,
-		                                true);
-			$mentions = $config->mentions;
-			echo '<div class="post"><h2 class="title">Mentions</h2>
-				  <h3 class="posted">par E. Desmontils</h3><div class="story">';
-			foreach($mentions->children() as $c)
-				echo $c->asXML();
-			echo "</div></div>\n";										
-		} catch(Exception $e) {
-  			echo "<p>erreur<br/>Pb (Exception) ! ".htmlspecialchars($e->getMessage())."<br/>".$libxml->afficheErreurs()."<br/></p>";
-		}	
-	}
-	//======================================================
 	else if ($Soumettre == "credits"){
 		try {
 			$config = new SimpleXMLElement('./config.xml',

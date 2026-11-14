@@ -40,6 +40,8 @@ Les copies des bases et les sessions sont rangées hors du site (`sqlsandbox-tmp
 
 L'application étant ouverte à tous sans compte, l'espace disque des copies est borné (constantes de `fonctions.php`) : une copie grossit au plus de 10 Mo par rapport à sa base d'origine, sans dépasser 20 Mo, et le total des copies est plafonné à 1 Go (relevé à chaque ouverture de l'application, dans le fichier `occupation` du dossier de travail). Au-delà, ou s'il reste moins de 200 Mo libres sur le disque, aucune nouvelle copie n'est faite et les copies existantes ne grossissent plus, jusqu'à ce que la purge en libère ; les étudiants en sont avertis par un message.
 
+Les copies sont écrites dans un fichier temporaire puis renommées : une réinitialisation pendant une requête ne laisse jamais une base à moitié copiée. Le jeton anti-CSRF n'est accepté qu'en POST. Si `config.xml` est invalide, la page n'affiche qu'un message générique ; le détail des erreurs XML, avec les chemins des fichiers, va dans le journal de PHP (`new LibXML(true)` pour l'afficher pendant la mise au point).
+
 ## Déploiement derrière Caddy
 
 Exemple d'installation sous Debian (remplacer `<utilisateur>` par le compte qui héberge l'application) : l'application est dans `/home/<utilisateur>/programmation/SQLSandbox`, servie sous `/SQLSandbox/` par Caddy et PHP-FPM (paquets `php8.4-fpm`, `php8.4-sqlite3` et `php8.4-xml`, à installer avec `--no-install-recommends` pour ne pas tirer Apache).

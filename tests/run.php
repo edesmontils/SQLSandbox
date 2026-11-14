@@ -65,7 +65,14 @@ $m = modele_base('test');
 $orig = modele_origine('test', $m);
 verifie('origine : modèle d\'origine fourni quand le schéma a changé', !is_null($orig)
         && count($orig['tables']) == count($m['tables']) - 2, json_encode(array_column($m['tables'], 'nom')));
+$ouverte = new SQLite3($_SESSION['copie_test'], SQLITE3_OPEN_READONLY); // requête en cours pendant la réinitialisation
 verifie('origine : réinitialisation réussie', reinitialise_base('test') === true);
+verifie('réinitialisation : une connexion déjà ouverte lit toujours l\'ancienne copie entière',
+        @$ouverte->querySingle("select count(*) from sqlite_master where name = 't3'") == 1);
+$ouverte->close();
+verifie('réinitialisation : aucun fichier temporaire laissé', count(glob($_SESSION['copie_test'].'.*.tmp')) == 0);
+verifie('copie atomique : source absente, cible intacte', @copie_atomique('/inexistant.db', $_SESSION['copie_test']) === false
+        && filesize($_SESSION['copie_test']) > 0 && count(glob($_SESSION['copie_test'].'.*.tmp')) == 0);
 $m = modele_base('test');
 verifie('origine : après réinitialisation, plus de table ajoutée et pas de modèle d\'origine distinct',
         !in_array('t3', array_column($m['tables'], 'nom')) && is_null(modele_origine('test', $m)));
@@ -618,6 +625,21 @@ verifie('description synchronisée assainie', strpos($o, 'Les <b>salles</b>') !=
 verifie('HTML assaini : liens http gardés, éléments actifs retirés',
         assainit_html('<a href="https://ex.org/">a</a><iframe src="https://ex.org"></iframe><x-y>t</x-y>')
         === '<a href="https://ex.org/" rel="noopener noreferrer">a</a>t', assainit_html('<a href="https://ex.org/">a</a><iframe></iframe><x-y>t</x-y>'));
+// Erreurs XML : le détail (chemins compris) va au journal, pas à la page
+require_once __DIR__.'/../lib/LibXML.php';
+$journal = tempnam(sys_get_temp_dir(), 'journal');
+$ancien_journal = ini_set('error_log', $journal);
+$mauvais = tempnam(sys_get_temp_dir(), 'conf');
+file_put_contents($mauvais, '<config><a></config>');
+(new DOMDocument())->load($mauvais);
+$affiche = (new LibXML())->afficheErreurs();
+ini_set('error_log', $ancien_journal);
+verifie('LibXML : message générique sans chemin hors débogage', strpos($affiche, 'invalide') !== false
+        && strpos($affiche, $mauvais) === false, $affiche);
+verifie('LibXML : détail écrit dans le journal', strpos((string)file_get_contents($journal), $mauvais) !== false);
+(new DOMDocument())->load($mauvais);
+verifie('LibXML : détail affiché en débogage', strpos((new LibXML(true))->afficheErreurs(), 'Line') !== false);
+@unlink($journal); @unlink($mauvais);
 file_put_contents($b['cinema'].'/description.html', '<p>Les cinémas</p>');
 file_put_contents($b['cinema'].'/description.md', "Les **cinémas** et leurs salles");
 verifie('IA : description synchronisée lue en Markdown', ia_description_base('tp-cinema-sync') === 'Les **cinémas** et leurs salles');
@@ -814,6 +836,8 @@ list($code, $corps) = http("$u/controler.php", $requete);
 verifie('requête sans jeton refusée (403)', $code == 403 && strpos($corps, 'Session expirée') !== false);
 list($code, $corps) = http("$u/controler.php", $requete + array('csrf' => $jeton));
 verifie('requête avec jeton exécutée', $code == 200 && strpos($corps, 'Dupont') !== false, $corps);
+list($code, $corps) = http("$u/controler.php?".http_build_query($requete + array('csrf' => $jeton)));
+verifie('jeton passé en GET refusé (403)', $code == 403, $corps);
 verifie('copie faite à la première requête', tailles() > 0, tailles());
 list($code, $corps) = http("$u/controler.php?Soumettre=inexistante");
 verifie('rubrique inconnue refusée', strpos($corps, 'inconnue') !== false, $corps);
