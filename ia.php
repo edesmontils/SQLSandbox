@@ -67,6 +67,7 @@ function ia_config() {
 		$candidats[] = dirname(rtrim($_SERVER['DOCUMENT_ROOT'], '/')).'/'.INSTANCE.'-ia.ini';
 	foreach ($candidats as $fichier) {
 		if (is_file($fichier)) {
+			ini_signale_illisible($fichier);
 			$conf = ia_lit_ini($fichier);
 			break;
 		}

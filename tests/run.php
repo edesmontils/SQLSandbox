@@ -960,6 +960,27 @@ file_put_contents($ini_duree, "duree_session_min = 90\n");
 verifie('durée de vie : duree_session_min de sqlsandbox.ini prioritaire', duree_vie($ini_duree) === 5400, duree_vie($ini_duree));
 file_put_contents($ini_duree, "exos_ttl = 300\n");
 verifie('durée de vie : config.xml sans duree_session_min', duree_vie($ini_duree) === (int)$conf->seuil);
+// Fichier de réglages illisible : ignoré, mais noté dans le journal (une fois par heure)
+if (function_exists('posix_geteuid') && posix_geteuid() === 0) {
+	echo "  --   ini illisible : non testé sous root\n";
+} else {
+	$journal = tempnam(sys_get_temp_dir(), 'log');
+	$journal_avant = ini_set('error_log', $journal);
+	@unlink(DOSSIER_TMP.'/ini-illisible-'.md5($ini_duree));
+	chmod($ini_duree, 0);
+	ini_signale_illisible($ini_duree);
+	ini_signale_illisible($ini_duree);
+	$lignes = substr_count((string)file_get_contents($journal), 'ne peut pas le lire');
+	verifie('ini illisible : signalé une seule fois dans le journal', $lignes === 1, file_get_contents($journal));
+	verifie('ini illisible : marque posée dans le dossier de travail', is_file(DOSSIER_TMP.'/ini-illisible-'.md5($ini_duree)));
+	chmod($ini_duree, 0644);
+	file_put_contents($journal, '');
+	ini_signale_illisible($ini_duree);
+	verifie('ini lisible : rien dans le journal', file_get_contents($journal) === '');
+	@unlink(DOSSIER_TMP.'/ini-illisible-'.md5($ini_duree));
+	ini_set('error_log', $journal_avant);
+	@unlink($journal);
+}
 @unlink($ini_duree);
 http("$u/controler.php", array('Soumettre' => 'Envoyer', 'base' => 'cours', 'mode' => '1', 'csrf' => $jeton,
                                'requete' => 'create table rechargement(a)'));

@@ -33,8 +33,24 @@ function fichier_ini() {
 	if (getenv('SQLSANDBOX_INI')) $candidats[] = getenv('SQLSANDBOX_INI');
 	if (!empty($_SERVER['DOCUMENT_ROOT']))
 		$candidats[] = dirname(rtrim($_SERVER['DOCUMENT_ROOT'], '/')).'/'.INSTANCE.'.ini';
-	foreach ($candidats as $f) if (is_file($f)) return $f;
+	foreach ($candidats as $f) if (is_file($f)) { ini_signale_illisible($f); return $f; }
 	return null;
+}
+
+// Un fichier de réglages présent mais illisible par PHP (droits, propriétaire) est ignoré
+// comme s'il n'existait pas : l'application revient aux valeurs par défaut sans rien
+// afficher. On le note donc dans le journal de PHP, au plus une fois par heure et par
+// fichier (marque dans le dossier de travail), pour ne pas le remplir à chaque requête.
+function ini_signale_illisible($f) {
+	static $vus = array();
+	if (isset($vus[$f]) || !is_file($f) || is_readable($f)) return;
+	$vus[$f] = true;
+	$marque = is_null(DOSSIER_TMP) ? null : DOSSIER_TMP.'/ini-illisible-'.md5($f);
+	if (!is_null($marque) && is_file($marque) && filemtime($marque) > time() - 3600) return;
+	if (!is_null($marque)) @touch($marque);
+	$qui = (function_exists('posix_geteuid') && function_exists('posix_getpwuid'))
+		? ' (PHP tourne sous '.((posix_getpwuid(posix_geteuid()) ?: array())['name'] ?? posix_geteuid()).')' : '';
+	error_log("SQLSandbox : $f existe mais PHP ne peut pas le lire$qui : ses réglages sont ignorés. Vérifier son propriétaire et ses droits.");
 }
 
 // Durée de vie (secondes) d'une session et des copies de bases d'un utilisateur, depuis
