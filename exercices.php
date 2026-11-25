@@ -404,8 +404,8 @@ function exos_question($base, $code_ex, $code_q) {
 }
 
 // Appel de la route /catalogue/difficulte de QueryCraft pour $questions (liste de tableaux
-// requete, type, modele). Retourne la liste des niveaux, dans le même ordre, ou null si
-// QueryCraft ne répond pas correctement.
+// requete, type, modele). Retourne la liste des array(niveau, score), dans le même ordre, ou
+// null si QueryCraft ne répond pas correctement (un ancien QueryCraft sans scores : score 0).
 function exos_niveaux_qc($conf, $questions) {
 	$c = curl_init(($conf['acces'] ?? $conf['source']).'/catalogue/difficulte');
 	curl_setopt_array($c, array(
@@ -423,8 +423,14 @@ function exos_niveaux_qc($conf, $questions) {
 	$corps = curl_exec($c);
 	$code = (int)curl_getinfo($c, CURLINFO_RESPONSE_CODE);
 	$r = ($code == 200 && is_string($corps)) ? json_decode($corps, true) : null;
-	if (is_array($r) && is_array($r['niveaux'] ?? null) && count($r['niveaux']) === count($questions))
-		return array_values($r['niveaux']);
+	if (is_array($r) && is_array($r['niveaux'] ?? null) && count($r['niveaux']) === count($questions)) {
+		$res = array();
+		foreach (array_values($r['niveaux']) as $i => $n) {
+			$x = $r['scores'][$i] ?? 0;
+			$res[] = array($n, (is_int($x) || is_float($x)) ? (float)$x : 0.0);
+		}
+		return $res;
+	}
 	error_log("SQLSandbox exercices : difficulté indisponible (réponse $code)");
 	return null;
 }
@@ -476,14 +482,14 @@ function exos_difficulte_libre($requete) {
 	if (microtime(true) - $dernier < 1.0) return 0;
 	$_SESSION['difficulte_libre'] = microtime(true);
 	$r = exos_niveaux_qc($conf, array(array('requete' => $requete, 'type' => 'I->R', 'modele' => '')));
-	$n = is_null($r) ? 0 : $r[0];
+	$n = is_null($r) ? 0 : $r[0][0];
 	return (is_int($n) && $n >= 1 && $n <= 5) ? $n : 0;
 }
 
-// Difficulté (niveau 1 à 5) des questions d'un TP, calculée par QueryCraft (route
+// Difficulté des questions d'un TP, calculée par QueryCraft (route
 // /catalogue/difficulte, même jeton que le catalogue) : SQLSandbox n'a pas sa propre fonction
-// de calcul. Retourne array(code question => niveau), sans entrée pour une question dont le
-// niveau est inconnu (requête non analysable, source sans cette route ou injoignable : la
+// de calcul. Retourne array(code question => array(niveau 1 à 5, score)), sans entrée pour une question
+// dont le niveau est inconnu (requête non analysable, source sans cette route ou injoignable : la
 // page s'affiche alors sans étoiles). Les niveaux sont gardés dans un fichier du dossier de
 // travail, par empreinte (requête, type, modèle) et par source : seules les questions nouvelles
 // ou modifiées sont envoyées à QueryCraft.
@@ -502,7 +508,7 @@ function exos_difficultes($base, $code_ex) {
 	foreach ($exos[$code_ex]['questions'] as $cq => $q) {
 		$cle = hash('sha256', $q[0]."\n".$q[3]."\n".($q[5] ?? ''));
 		$cles[(string)$cq] = $cle;
-		if (!array_key_exists($cle, $niveaux))
+		if (!is_array($niveaux[$cle] ?? null)) // absent, ou gardé avant l'ajout du score
 			$a_calculer[$cle] = array('requete' => $q[0], 'type' => $q[3], 'modele' => $q[5] ?? '');
 	}
 	if ($a_calculer) {
@@ -510,8 +516,8 @@ function exos_difficultes($base, $code_ex) {
 		if (!is_null($r)) {
 			$i = 0;
 			foreach (array_keys($a_calculer) as $cle) {
-				$n = $r[$i++];
-				$niveaux[$cle] = (is_int($n) && $n >= 1 && $n <= 5) ? $n : 0; // 0 : non analysable
+				list($n, $x) = $r[$i++];
+				$niveaux[$cle] = (is_int($n) && $n >= 1 && $n <= 5) ? array($n, $x) : array(0, 0.0); // 0 : non analysable
 			}
 			$tmp = $fic.'.'.getmypid();
 			if (@file_put_contents($tmp, json_encode(array('source' => $conf['source'], 'niveaux' => $niveaux))) !== false)
@@ -520,7 +526,7 @@ function exos_difficultes($base, $code_ex) {
 	}
 	$res = array();
 	foreach ($cles as $cq => $cle)
-		if (($niveaux[$cle] ?? 0) > 0) $res[$cq] = (int)$niveaux[$cle];
+		if ((int)($niveaux[$cle][0] ?? 0) > 0) $res[$cq] = array('niveau' => (int)$niveaux[$cle][0], 'score' => (float)$niveaux[$cle][1]);
 	return $res;
 }
 

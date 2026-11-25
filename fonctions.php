@@ -797,23 +797,27 @@ function questions_tp($base, $code) {
 		if ($q) {
 			$c = exos_question_client($base, $code, (string)$code_q, $q, count($questions) + 1);
 			$c['libelle'] = libelle_type($q['type']);
-			$c['difficulte'] = $niveaux[(string)$code_q] ?? 0;
+			$c['difficulte'] = $niveaux[(string)$code_q]['niveau'] ?? 0;
+			$c['_score'] = $niveaux[(string)$code_q]['score'] ?? 0;
 			$questions[] = $c;
 		}
 	}
-	// Par difficulté croissante quand QueryCraft l'a évaluée ; les questions sans niveau
-	// connu suivent, et à difficulté égale l'ordre du TP est gardé. Numérotation refaite.
-	if (array_filter($niveaux)) {
+	// Par difficulté croissante (score de QueryCraft) quand elle est connue ; les questions sans
+	// niveau connu suivent, et à score égal l'ordre du TP est gardé. Numérotation refaite.
+	if ($niveaux) {
 		foreach ($questions as $i => $q) $questions[$i]['_ordre'] = $i;
 		usort($questions, function ($x, $y) {
-			$nx = $x['difficulte'] ?: 6;
-			$ny = $y['difficulte'] ?: 6;
-			return $nx !== $ny ? $nx <=> $ny : $x['_ordre'] <=> $y['_ordre'];
+			$cx = $x['difficulte'] ? 0 : 1;
+			$cy = $y['difficulte'] ? 0 : 1;
+			if ($cx !== $cy) return $cx <=> $cy;
+			if ($x['_score'] != $y['_score']) return $x['_score'] <=> $y['_score'];
+			if ($x['difficulte'] !== $y['difficulte']) return $x['difficulte'] <=> $y['difficulte']; // QueryCraft sans scores
+			return $x['_ordre'] <=> $y['_ordre'];
 		});
-		foreach ($questions as $i => $q) {
-			unset($questions[$i]['_ordre']);
-			$questions[$i]['numero'] = $i + 1;
-		}
+	}
+	foreach ($questions as $i => $q) {
+		unset($questions[$i]['_ordre'], $questions[$i]['_score']);
+		if ($niveaux) $questions[$i]['numero'] = $i + 1;
 	}
 	return array('base' => (string)$base, 'tp' => $code, 'questions' => $questions);
 }
