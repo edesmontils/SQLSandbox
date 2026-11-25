@@ -171,6 +171,7 @@ class Requete {
         this.base = base;
         this.error = res;
         this.result = null;
+        this.difficulte = 0; // niveau 1 à 5 estimé par QueryCraft, 0 : inconnu
     }
 }
 
@@ -199,14 +200,14 @@ class RequestSet {
             return t + '<p>Aucune requête mémorisée pour l\'instant : après avoir exécuté une requête, '
                 + 'cliquez sur « 🧺 Mémoriser » pour la retrouver ici.</p></div></div>';
         }
-        t = t + '<table class="historique">' + '<thead><tr><th>n°</th><th>Base</th><th>Réussite</th><th>Requête</th><th>Actions</th><th>Résultat</th></tr></thead><tbody>';
+        t = t + '<table class="historique">' + '<thead><tr><th>n°</th><th>Base</th><th>Réussite</th><th>Requête</th><th>Difficulté</th><th>Actions</th><th>Résultat</th></tr></thead><tbody>';
 
         for (var i = 0; i < this.nb; i++) {
             r = this.set[i];
             // Numérotation affichée à partir de 1 ; l'indice i (à partir de 0) reste celui du tableau
             t = t + '<tr><td> ' + (i + 1) + ' </td><td>' + echappe(r.base) + '</td><td>';
             if (r.error == 'ok') t = t + "<span class='statut ok' title='Réussite'>✅</span>"; else t = t + "<span class='statut ko' title='Échec'>❌</span>";
-            t = t + "</td><td><pre class='cm-s-default'>" + colore_sql(r.request) + "</pre></td><td>";
+            t = t + "</td><td><pre class='cm-s-default'>" + colore_sql(r.request) + "</pre></td><td>" + (etoiles_difficulte(r.difficulte) || '—') + "</td><td>";
             t = t + "<button type='button' class='btn petit' title='Afficher ou masquer le résultat obtenu' onclick='histo(" + i + ")'>👁️ Résultat</button>";
             t = t + "<button type='button' class='btn secondaire petit' title='Reprendre la requête dans l\'éditeur' onclick='histo_mod(" + i + ")'>✏️ Modifier</button>";
             t = t + "<button type='button' class='btn danger petit' title='Supprimer la requête' onclick='histo_del(" + i + ")'>🗑️ Supprimer</button>";
@@ -303,6 +304,7 @@ function remember() {
     req = new Requete($('requete').value, $('base').value, result_type);
     req.result = current_result;
     rs.add(req);
+    evalue_difficulte(req);
     cache($('memoriser'));
     ajoute($('results'), "<p class='statut ok'>🧺 Requête mémorisée</p>");
 }
@@ -438,6 +440,29 @@ function new_query() {
     suit_difficulte_libre(editeur_courant);
 }
 
+// Difficulté d'une requête, estimée par QueryCraft : appelle surNiveau(niveau), 0 si inconnue.
+// La dernière évaluation faite pour la saisie en direct est réutilisée si le texte n'a pas changé.
+var derniere_evaluation = {requete: null, niveau: 0};
+function demande_difficulte(requete, surNiveau) {
+    if (derniere_evaluation.requete === requete && derniere_evaluation.niveau) {
+        surNiveau(derniere_evaluation.niveau);
+        return;
+    }
+    appel('post', {Soumettre: 'difficulte', csrf: csrf_token, requete64: base64_utf8(requete)},
+        function (r) {
+            var niveau = 0;
+            try { niveau = JSON.parse(r.responseText).niveau || 0; } catch (e) { }
+            if (niveau) derniere_evaluation = {requete: requete, niveau: niveau};
+            surNiveau(niveau);
+        },
+        function () { surNiveau(0); });
+}
+
+// Renseigne la difficulté d'une requête mémorisée (affichée dans l'onglet Mémoire)
+function evalue_difficulte(req) {
+    demande_difficulte(req.request, function (niveau) { req.difficulte = niveau; });
+}
+
 // Difficulté de la requête en cours de saisie, estimée par QueryCraft : évaluée 800 ms après
 // la dernière frappe, sans bloquer la saisie. Rien ne s'affiche si le niveau est inconnu
 // (requête incomplète, SQLSandbox non relié à QueryCraft).
@@ -447,14 +472,10 @@ function suit_difficulte_libre(editeur) {
         var zone = $('difficulte-libre'), texte = $('requete');
         if (!zone || !texte) return;
         var moi = ++numero_difficulte;
-        appel('post', {Soumettre: 'difficulte', csrf: csrf_token, requete64: base64_utf8(texte.value)},
-            function (r) {
-                if (moi != numero_difficulte || !$('difficulte-libre')) return; // réponse périmée
-                var niveau = 0;
-                try { niveau = JSON.parse(r.responseText).niveau || 0; } catch (e) { }
-                $('difficulte-libre').innerHTML = niveau ? 'Difficulté estimée : ' + etoiles_difficulte(niveau) : '';
-            },
-            function () { if ($('difficulte-libre')) $('difficulte-libre').innerHTML = ''; });
+        demande_difficulte(texte.value, function (niveau) {
+            if (moi != numero_difficulte || !$('difficulte-libre')) return; // réponse périmée
+            $('difficulte-libre').innerHTML = niveau ? 'Difficulté estimée : ' + etoiles_difficulte(niveau) : '';
+        });
     };
     var programme = function () {
         clearTimeout(minuterie_difficulte);

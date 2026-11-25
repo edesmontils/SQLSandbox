@@ -801,6 +801,20 @@ function questions_tp($base, $code) {
 			$questions[] = $c;
 		}
 	}
+	// Par difficulté croissante quand QueryCraft l'a évaluée ; les questions sans niveau
+	// connu suivent, et à difficulté égale l'ordre du TP est gardé. Numérotation refaite.
+	if (array_filter($niveaux)) {
+		foreach ($questions as $i => $q) $questions[$i]['_ordre'] = $i;
+		usort($questions, function ($x, $y) {
+			$nx = $x['difficulte'] ?: 6;
+			$ny = $y['difficulte'] ?: 6;
+			return $nx !== $ny ? $nx <=> $ny : $x['_ordre'] <=> $y['_ordre'];
+		});
+		foreach ($questions as $i => $q) {
+			unset($questions[$i]['_ordre']);
+			$questions[$i]['numero'] = $i + 1;
+		}
+	}
 	return array('base' => (string)$base, 'tp' => $code, 'questions' => $questions);
 }
 
