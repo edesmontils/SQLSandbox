@@ -32,6 +32,7 @@ define('EXOS_DOSSIER_LOCAL', __DIR__.'/bdd/exercices');
 define('EXOS_TYPES', array('I->R', 'IT->R', 'rI->R', 'rIT->R', 'R->I', 'RT->I'));
 define('EXOS_TTL', 300);          // secondes entre deux vérifications du catalogue distant
 define('EXOS_DELAI_APPEL', 10);   // secondes d'attente de la réponse de QueryCraft
+define('EXOS_DELAI_DIFFICULTE', 4);  // secondes d'attente du calcul de difficulté
 define('EXOS_TAILLE_MAX', 5 * 1024 * 1024);
 define('BASES_TAILLE_MAX', 20 * 1024 * 1024);   // taille maximale d'une base téléchargée
 define('BASES_CORBEILLE_JOURS', 7);              // conservation des bases retirées
@@ -400,6 +401,67 @@ function exos_question($base, $code_ex, $code_q) {
 	$q = $exos[$code_ex]['questions'][$code_q];
 	return array('requete' => $q[0], 'intention' => $q[1], 'commentaire' => $q[2], 'type' => $q[3],
 	             'instructions' => $q[4], 'modele' => $q[5] ?? '');
+}
+
+// Difficulté (niveau 1 à 5) des questions d'un TP, calculée par QueryCraft (route
+// /catalogue/difficulte, même jeton que le catalogue) : SQLSandbox n'a pas sa propre fonction
+// de calcul. Retourne array(code question => niveau), sans entrée pour une question dont le
+// niveau est inconnu (requête non analysable, source sans cette route ou injoignable : la
+// page s'affiche alors sans étoiles). Les niveaux sont gardés dans un fichier du dossier de
+// travail, par empreinte (requête, type, modèle) et par source : seules les questions nouvelles
+// ou modifiées sont envoyées à QueryCraft.
+function exos_difficultes($base, $code_ex) {
+	$exos = exos_de_base($base);
+	if (!isset($exos[$code_ex]['questions'])) return array();
+	$conf = exos_config();
+	if ($conf['source'] === '' || $conf['jeton'] === '' || is_null(DOSSIER_TMP) || !function_exists('curl_init'))
+		return array();
+	$fic = exos_fichier_cache($conf, 'difficulte.json');
+	$cache = is_file($fic) ? json_decode((string)@file_get_contents($fic), true) : null;
+	$niveaux = (is_array($cache) && ($cache['source'] ?? '') === $conf['source'] && is_array($cache['niveaux'] ?? null))
+	         ? $cache['niveaux'] : array();
+	$cles = array();      // code question => empreinte
+	$a_calculer = array(); // empreinte => question envoyée
+	foreach ($exos[$code_ex]['questions'] as $cq => $q) {
+		$cle = hash('sha256', $q[0]."\n".$q[3]."\n".($q[5] ?? ''));
+		$cles[(string)$cq] = $cle;
+		if (!array_key_exists($cle, $niveaux))
+			$a_calculer[$cle] = array('requete' => $q[0], 'type' => $q[3], 'modele' => $q[5] ?? '');
+	}
+	if ($a_calculer) {
+		$c = curl_init(($conf['acces'] ?? $conf['source']).'/catalogue/difficulte');
+		curl_setopt_array($c, array(
+			CURLOPT_POST => true,
+			CURLOPT_POSTFIELDS => json_encode(array('questions' => array_values($a_calculer))),
+			CURLOPT_HTTPHEADER => array('Content-Type: application/json', 'Accept: application/json',
+			                            'Authorization: Bearer '.$conf['jeton']),
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_CONNECTTIMEOUT => 3,
+			CURLOPT_TIMEOUT => EXOS_DELAI_DIFFICULTE,
+			CURLOPT_FOLLOWLOCATION => false,
+			CURLOPT_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
+			CURLOPT_USERAGENT => 'SQLSandbox',
+		));
+		$corps = curl_exec($c);
+		$code = (int)curl_getinfo($c, CURLINFO_RESPONSE_CODE);
+		$r = ($code == 200 && is_string($corps)) ? json_decode($corps, true) : null;
+		if (is_array($r) && is_array($r['niveaux'] ?? null) && count($r['niveaux']) === count($a_calculer)) {
+			$i = 0;
+			foreach (array_keys($a_calculer) as $cle) {
+				$n = $r['niveaux'][$i++];
+				$niveaux[$cle] = (is_int($n) && $n >= 1 && $n <= 5) ? $n : 0; // 0 : non analysable
+			}
+			$tmp = $fic.'.'.getmypid();
+			if (@file_put_contents($tmp, json_encode(array('source' => $conf['source'], 'niveaux' => $niveaux))) !== false)
+				@rename($tmp, $fic);
+		} else {
+			error_log("SQLSandbox exercices : difficulté indisponible (réponse $code)");
+		}
+	}
+	$res = array();
+	foreach ($cles as $cq => $cle)
+		if (($niveaux[$cle] ?? 0) > 0) $res[$cq] = (int)$niveaux[$cle];
+	return $res;
 }
 
 // Table résultat (HTML) de $requete sur la base d'ORIGINE de $base (lecture seule) : la table

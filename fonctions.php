@@ -791,11 +791,13 @@ function questions_tp($base, $code) {
 	$exos = exos_de_base($base);
 	if (!is_string($code) || !isset($exos[$code])) return null;
 	$questions = array();
+	$niveaux = exos_difficultes($base, $code);
 	foreach ($exos[$code]['questions'] as $code_q => $q) {
 		$q = exos_question($base, $code, (string)$code_q);
 		if ($q) {
 			$c = exos_question_client($base, $code, (string)$code_q, $q, count($questions) + 1);
 			$c['libelle'] = libelle_type($q['type']);
+			$c['difficulte'] = $niveaux[(string)$code_q] ?? 0;
 			$questions[] = $c;
 		}
 	}

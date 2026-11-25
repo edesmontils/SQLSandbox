@@ -633,6 +633,15 @@ function fil_ariane(question) {
     return t + '</nav>';
 }
 
+// Étoiles de difficulté (1 à 5, calculée par QueryCraft) ; vide si le niveau est inconnu
+function etoiles_difficulte(niveau) {
+    var n = parseInt(niveau, 10);
+    if (!(n >= 1 && n <= 5)) return '';
+    var noms = ['', 'très facile', 'facile', 'moyenne', 'difficile', 'très difficile'];
+    return '<span class="difficulte" title="Difficulté : ' + noms[n] + '" aria-label="Difficulté : ' + noms[n] + '">'
+         + '★★★★★'.substring(0, n) + '☆☆☆☆☆'.substring(0, 5 - n) + '</span>';
+}
+
 // Description de la base, repliée, pour l'avoir sous la main pendant le TP
 function description_repliee(nom) {
     var b = listeBases[nom] || {};
@@ -705,7 +714,7 @@ function affiche_questions() {
             var faite = est_repondue(q);
             t = t + '<li><button type="button" class="ligne-question' + (faite ? ' faite' : '') + '" onclick="ouvre_question(' + i + ')">';
             t = t + '<span class="numero">' + q.numero + '</span>';
-            t = t + '<span class="corps"><span class="type">' + echappe(q.libelle || '') + '</span>';
+            t = t + '<span class="corps"><span class="type">' + echappe(q.libelle || '') + '</span> ' + etoiles_difficulte(q.difficulte);
             t = t + '<span class="resume">' + echappe(resume_question(q)) + '</span></span>';
             t = t + '<span class="etat">' + (faite ? '✍️ Réponse saisie' : 'À faire') + '</span>';
             t = t + '</button></li>';
@@ -901,7 +910,7 @@ function ouvre_question(i) {
     });
     t = t + '</div>';
     t = t + '<h2 class="title">Question ' + q.numero + ' <span class="sur">/ ' + qs.length + '</span>'
-          + ' <span class="type">' + echappe(q.libelle || '') + '</span></h2>';
+          + ' <span class="type">' + echappe(q.libelle || '') + '</span> ' + etoiles_difficulte(q.difficulte) + '</h2>';
     t = t + '<div class="story">';
     if (q.instructions) t = t + '<p class="message">' + echappe(q.instructions) + '</p>';
     if (q.attendu == 'I') {
