@@ -173,6 +173,17 @@ if (isset($_SESSION['debug']) && $session_ok) {
 		echo json_encode($r, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
 	}
 	//======================================================
+	// Difficulté estimée de la requête libre en cours de saisie (évaluée par QueryCraft)
+	else if ($Soumettre == "difficulte") {
+		header('Content-Type: application/json; charset=utf-8');
+		if (!jeton_valide() || !is_string($requete)) {
+			http_response_code(403);
+			echo json_encode(array('niveau' => 0));
+		} else {
+			echo json_encode(array('niveau' => exos_difficulte_libre($requete)));
+		}
+	}
+	//======================================================
 	// Modèle d'une base (tables, clés, SQL), en JSON pour le dessin du diagramme
 	else if ($Soumettre == "modele") {
 		$modele = modele_base(param('nom_base'));

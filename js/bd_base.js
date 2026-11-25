@@ -434,6 +434,34 @@ function new_query() {
 
     apparait($('posts'));
     editeur_courant = editeur_sql($('requete'), query);
+    suit_difficulte_libre(editeur_courant);
+}
+
+// Difficulté de la requête en cours de saisie, estimée par QueryCraft : évaluée 800 ms après
+// la dernière frappe, sans bloquer la saisie. Rien ne s'affiche si le niveau est inconnu
+// (requête incomplète, SQLSandbox non relié à QueryCraft).
+var minuterie_difficulte = null, numero_difficulte = 0;
+function suit_difficulte_libre(editeur) {
+    var evalue = function () {
+        var zone = $('difficulte-libre'), texte = $('requete');
+        if (!zone || !texte) return;
+        var moi = ++numero_difficulte;
+        appel('post', {Soumettre: 'difficulte', csrf: csrf_token, requete64: base64_utf8(texte.value)},
+            function (r) {
+                if (moi != numero_difficulte || !$('difficulte-libre')) return; // réponse périmée
+                var niveau = 0;
+                try { niveau = JSON.parse(r.responseText).niveau || 0; } catch (e) { }
+                $('difficulte-libre').innerHTML = niveau ? 'Difficulté estimée : ' + etoiles_difficulte(niveau) : '';
+            },
+            function () { if ($('difficulte-libre')) $('difficulte-libre').innerHTML = ''; });
+    };
+    var programme = function () {
+        clearTimeout(minuterie_difficulte);
+        minuterie_difficulte = setTimeout(evalue, 800);
+    };
+    if (editeur) editeur.on('change', programme);
+    else $('requete').addEventListener('input', programme);
+    programme();
 }
 
 // SQLSandbox est relié à une instance QueryCraft (sqlsandbox.ini) qui interroge la base `base`

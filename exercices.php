@@ -403,6 +403,49 @@ function exos_question($base, $code_ex, $code_q) {
 	             'instructions' => $q[4], 'modele' => $q[5] ?? '');
 }
 
+// Appel de la route /catalogue/difficulte de QueryCraft pour $questions (liste de tableaux
+// requete, type, modele). Retourne la liste des niveaux, dans le même ordre, ou null si
+// QueryCraft ne répond pas correctement.
+function exos_niveaux_qc($conf, $questions) {
+	$c = curl_init(($conf['acces'] ?? $conf['source']).'/catalogue/difficulte');
+	curl_setopt_array($c, array(
+		CURLOPT_POST => true,
+		CURLOPT_POSTFIELDS => json_encode(array('questions' => $questions), JSON_INVALID_UTF8_SUBSTITUTE),
+		CURLOPT_HTTPHEADER => array('Content-Type: application/json', 'Accept: application/json',
+		                            'Authorization: Bearer '.$conf['jeton']),
+		CURLOPT_RETURNTRANSFER => true,
+		CURLOPT_CONNECTTIMEOUT => 3,
+		CURLOPT_TIMEOUT => EXOS_DELAI_DIFFICULTE,
+		CURLOPT_FOLLOWLOCATION => false,
+		CURLOPT_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
+		CURLOPT_USERAGENT => 'SQLSandbox',
+	));
+	$corps = curl_exec($c);
+	$code = (int)curl_getinfo($c, CURLINFO_RESPONSE_CODE);
+	$r = ($code == 200 && is_string($corps)) ? json_decode($corps, true) : null;
+	if (is_array($r) && is_array($r['niveaux'] ?? null) && count($r['niveaux']) === count($questions))
+		return array_values($r['niveaux']);
+	error_log("SQLSandbox exercices : difficulté indisponible (réponse $code)");
+	return null;
+}
+
+// Difficulté (niveau 1 à 5) d'une requête libre de l'étudiant, évaluée en direct par
+// QueryCraft (la requête lui est envoyée : sans source configurée, rien n'est évalué).
+// Retourne 0 si le niveau est inconnu (requête incomplète, source absente ou injoignable).
+// Au plus un appel par seconde et par session, et des requêtes de taille raisonnable.
+function exos_difficulte_libre($requete) {
+	$conf = exos_config();
+	if ($conf['source'] === '' || $conf['jeton'] === '' || !function_exists('curl_init')) return 0;
+	$requete = trim((string)$requete);
+	if ($requete === '' || strlen($requete) > 5000) return 0;
+	$dernier = (float)($_SESSION['difficulte_libre'] ?? 0);
+	if (microtime(true) - $dernier < 1.0) return 0;
+	$_SESSION['difficulte_libre'] = microtime(true);
+	$r = exos_niveaux_qc($conf, array(array('requete' => $requete, 'type' => 'I->R', 'modele' => '')));
+	$n = is_null($r) ? 0 : $r[0];
+	return (is_int($n) && $n >= 1 && $n <= 5) ? $n : 0;
+}
+
 // Difficulté (niveau 1 à 5) des questions d'un TP, calculée par QueryCraft (route
 // /catalogue/difficulte, même jeton que le catalogue) : SQLSandbox n'a pas sa propre fonction
 // de calcul. Retourne array(code question => niveau), sans entrée pour une question dont le
@@ -429,33 +472,16 @@ function exos_difficultes($base, $code_ex) {
 			$a_calculer[$cle] = array('requete' => $q[0], 'type' => $q[3], 'modele' => $q[5] ?? '');
 	}
 	if ($a_calculer) {
-		$c = curl_init(($conf['acces'] ?? $conf['source']).'/catalogue/difficulte');
-		curl_setopt_array($c, array(
-			CURLOPT_POST => true,
-			CURLOPT_POSTFIELDS => json_encode(array('questions' => array_values($a_calculer))),
-			CURLOPT_HTTPHEADER => array('Content-Type: application/json', 'Accept: application/json',
-			                            'Authorization: Bearer '.$conf['jeton']),
-			CURLOPT_RETURNTRANSFER => true,
-			CURLOPT_CONNECTTIMEOUT => 3,
-			CURLOPT_TIMEOUT => EXOS_DELAI_DIFFICULTE,
-			CURLOPT_FOLLOWLOCATION => false,
-			CURLOPT_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
-			CURLOPT_USERAGENT => 'SQLSandbox',
-		));
-		$corps = curl_exec($c);
-		$code = (int)curl_getinfo($c, CURLINFO_RESPONSE_CODE);
-		$r = ($code == 200 && is_string($corps)) ? json_decode($corps, true) : null;
-		if (is_array($r) && is_array($r['niveaux'] ?? null) && count($r['niveaux']) === count($a_calculer)) {
+		$r = exos_niveaux_qc($conf, array_values($a_calculer));
+		if (!is_null($r)) {
 			$i = 0;
 			foreach (array_keys($a_calculer) as $cle) {
-				$n = $r['niveaux'][$i++];
+				$n = $r[$i++];
 				$niveaux[$cle] = (is_int($n) && $n >= 1 && $n <= 5) ? $n : 0; // 0 : non analysable
 			}
 			$tmp = $fic.'.'.getmypid();
 			if (@file_put_contents($tmp, json_encode(array('source' => $conf['source'], 'niveaux' => $niveaux))) !== false)
 				@rename($tmp, $fic);
-		} else {
-			error_log("SQLSandbox exercices : difficulté indisponible (réponse $code)");
 		}
 	}
 	$res = array();
