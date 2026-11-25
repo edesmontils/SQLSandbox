@@ -407,6 +407,7 @@ function new_query() {
     t = t + '	<p>Base : <strong>' + echappe(current_base) + '</strong><input type="hidden" name="base" id="base" value="' + echappe(current_base).replace(/"/g, '&quot;') + '"/></p>';
     t = t + '	<p class="libelle"><label for="requete">Requête SQL <span class="astuce">(Ctrl+Entrée pour l\'exécuter)</span></label></p>';
     t = t + '	<textarea name="requete" rows="10" cols="80" id="requete"></textarea>';
+    t = t + '	<p class="astuce" id="difficulte-libre" aria-live="polite"></p>';
     t = t + '	<input type="hidden" name="Soumettre" value="Envoyer"/>';
     t = t + '	<div class="actions"><button type="submit" class="btn" id="send_new">▶️ Exécuter la requête</button>';
     t = t + '	<button type="button" class="btn secondaire" onclick="modele($(\'base\').value)" title="Diagramme, schéma relationnel et script SQL de la base">🧩 Modèle</button>';
