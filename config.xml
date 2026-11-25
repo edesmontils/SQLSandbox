@@ -4,7 +4,7 @@
 <!ENTITY seuil '10800'>
 ]>
 
-<mab version="7.7" debug="false" name="SQL Sandbox">
+<mab version="7.8" debug="false" name="SQL Sandbox">
 	<!-- numéro de version de l'application -->
 	<!-- durée limite de vie d'une copie de base : 60*60*3 = 3 heures -->
 	<seuil>&seuil;</seuil>
@@ -357,6 +357,21 @@
 	<listeMessages>
 		<!--message titre="" post=""><p></p>
 		</message-->
+		<message titre="Version 7.8" date="25/11/26" auteur="E. Desmontils">
+			<div>
+				<ul>
+					<li>la <b>difficulté des questions</b> d'un TP (de ★☆☆☆☆ à ★★★★★) est affichée quand
+						l'instance QueryCraft la calcule ; les questions sont alors présentées par
+						difficulté croissante ;</li>
+					<li>dans l'édition d'une requête, la <b>difficulté estimée</b> de ce que vous tapez
+						s'affiche en direct, et elle est gardée avec les requêtes mémorisées (colonne
+						« Difficulté » de l'onglet Mémoire) ;</li>
+					<li>les <b>requêtes à trous</b> sont colorées comme le reste du SQL ;</li>
+					<li><b>📄 Ma copie</b> s'imprime de façon plus compacte, et le fichier PDF porte
+						votre nom.</li>
+				</ul>
+			</div>
+		</message>
 		<message titre="Version 7.7" date="14/11/26" auteur="E. Desmontils">
 			<div>
 				<ul>
