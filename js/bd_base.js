@@ -502,7 +502,8 @@ function vers_querycraft() {
             + 'Attention : si vous avez modifié la base dans SQLSandbox (INSERT, UPDATE, DELETE, '
             + 'CREATE…), QueryCraft ne verra pas ces modifications : il utilise la base d\'origine.'))
         return;
-    window.open(querycraft.url + '/#requete=' + encodeURIComponent(requete), '_blank', 'noopener');
+    var code = (typeof code_eleve != 'undefined' && code_eleve) ? '?code_eleve=' + encodeURIComponent(code_eleve) : '';
+    window.open(querycraft.url + '/' + code + '#requete=' + encodeURIComponent(requete), '_blank', 'noopener');
 }
 
 // Valeur JavaScript sûre à placer dans un attribut HTML (onClick="f(...)")
@@ -863,6 +864,8 @@ function affiche_copie() {
           + echappe(s.nom || '').replace(/"/g, '&quot;') + '" oninput="note_nom(this.value)"></p>';
     t = t + '<p>Base <strong>' + echappe(tp_courant.base) + '</strong> · copie établie le ' + date_lisible(Date.now())
           + ' · SQLSandbox ' + echappe(typeof version_appli == 'undefined' ? '' : version_appli) + '</p>';
+    if (typeof code_eleve != 'undefined' && code_eleve)
+        t = t + '<p>Code élève (QueryCraft) : <span style="font-family:monospace">' + echappe(code_eleve) + '</span></p>';
     t = t + '<p class="copie-bilan">' + nb_rep + ' / ' + pluriel(qs.length, 'question') + ' avec une réponse';
     if (qs.some(function (q) { return q.attendu == 'R'; })) t = t + ' · ' + pluriel(nb_exec, 'requête') + ' exécutée' + (nb_exec > 1 ? 's' : '') + ' sans erreur';
     if (qs.some(function (q) { return q.attendu == 'I'; })) t = t + ' · ' + pluriel(nb_corr, 'intention') + ' soumise' + (nb_corr > 1 ? 's' : '') + ' à correction';

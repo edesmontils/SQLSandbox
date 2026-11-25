@@ -29,6 +29,13 @@ if (isset($_GET['qc'])) $demandeTenant = (string)$_GET['qc'];
 elseif (preg_match('/^[0-9]{6}$/D', (string)($_SERVER['QUERY_STRING'] ?? ''))) $demandeTenant = $_SERVER['QUERY_STRING'];
 $messageTenant = tenant_choisi($demandeTenant);
 
+// Code élève de QueryCraft : celui de son cookie qc_pseudo si le navigateur l'envoie aussi ici,
+// sinon un code demandé à QueryCraft (exos_code_eleve). Gardé en session ; il est transmis à
+// QueryCraft par le bouton « Ouvrir dans QueryCraft », qui l'adopte.
+if (isset($_COOKIE['qc_pseudo']) && is_string($_COOKIE['qc_pseudo']) && preg_match('/^[0-9a-f]{32}$/D', $_COOKIE['qc_pseudo']))
+	$_SESSION['code_eleve'] = $_COOKIE['qc_pseudo'];
+$codeEleve = exos_code_eleve();
+
 try { 
 	$config = charge_config();
 	$att = $config->attributes();
@@ -237,6 +244,8 @@ $listeNoms = array_keys($listeBase);
     version_appli = <?php echo json_encode((string)$version, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT); ?>;
     // Instance (tenant QueryCraft) : le suivi des TP gardé dans le navigateur lui est propre
     instance_tp = <?php echo json_encode((string)exos_config()['tenant'], JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT); ?>;
+    // Code élève de QueryCraft (uuid4 hexadécimal), s'il a été transmis (voir plus haut)
+    code_eleve = <?php echo json_encode($codeEleve); ?>;
     ia_disponible = <?php echo ia_config() ? 'true' : 'false'; ?>;
     ia_lignes_max = <?php $ia = ia_config(); echo $ia ? (int)$ia['lignes_max'] : 0; ?>;
     // Instance QueryCraft source et nom (côté SQLSandbox) de la base qu'elle interroge : le
@@ -324,6 +333,9 @@ $listeNoms = array_keys($listeBase);
 		<span class="separateur">·</span> <button type="button" onclick="apropos()">ℹ️ À propos de SQL et SQLite</button>
 		<span class="separateur">·</span> <button type="button" onclick="news()">📰 Nouveautés</button>
 		<span class="separateur">·</span> <button type="button" onclick="credits()">🙏 Crédits</button></p>
+<?php if ($codeEleve !== null) { ?>
+	<p class="code-eleve" title="Identifiant anonyme attribué par QueryCraft (aucune donnée personnelle)" style="color:#aaa;font-size:0.8em;font-family:monospace;">🆔 <?php echo $codeEleve;?></p>
+<?php } ?>
 	<p class="session-restante" id="session-restante" title="La session, vos bases modifiées comprises, est conservée tant que vous restez moins de ce temps sans rien faire"></p>
 </footer>
 

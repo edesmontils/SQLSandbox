@@ -429,6 +429,40 @@ function exos_niveaux_qc($conf, $questions) {
 	return null;
 }
 
+// Code élève attribué par QueryCraft (route POST /catalogue/code, même jeton que le catalogue),
+// gardé en session : l'élève garde le même code dans SQLSandbox et dans QueryCraft. Retourne
+// null si QueryCraft n'en attribue pas (source absente, traçage inactif, injoignable). Un échec
+// n'est retenté qu'au bout de 5 minutes, pour ne pas ralentir chaque page.
+function exos_code_eleve() {
+	$conf = exos_config();
+	// Un code attribué par une autre instance (changement de tenant) ne vaut pas pour celle-ci
+	if (($_SESSION['code_eleve_src'] ?? $conf['source']) !== $conf['source']) unset($_SESSION['code_eleve'], $_SESSION['code_eleve_essai']);
+	if (isset($_SESSION['code_eleve']) && is_string($_SESSION['code_eleve'])
+	    && preg_match('/^[0-9a-f]{32}$/D', $_SESSION['code_eleve'])) return $_SESSION['code_eleve'];
+	$_SESSION['code_eleve_src'] = $conf['source'];
+	if ($conf['source'] === '' || $conf['jeton'] === '' || !function_exists('curl_init')) return null;
+	if (time() - (int)($_SESSION['code_eleve_essai'] ?? 0) < 300) return null;
+	$_SESSION['code_eleve_essai'] = time();
+	$c = curl_init(($conf['acces'] ?? $conf['source']).'/catalogue/code');
+	curl_setopt_array($c, array(
+		CURLOPT_POST => true,
+		CURLOPT_POSTFIELDS => '',
+		CURLOPT_HTTPHEADER => array('Accept: application/json', 'Authorization: Bearer '.$conf['jeton']),
+		CURLOPT_RETURNTRANSFER => true,
+		CURLOPT_CONNECTTIMEOUT => 2,
+		CURLOPT_TIMEOUT => 3,
+		CURLOPT_FOLLOWLOCATION => false,
+		CURLOPT_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
+		CURLOPT_USERAGENT => 'SQLSandbox',
+	));
+	$corps = curl_exec($c);
+	$code = (int)curl_getinfo($c, CURLINFO_RESPONSE_CODE);
+	$r = ($code == 200 && is_string($corps)) ? json_decode($corps, true) : null;
+	if (is_array($r) && is_string($r['code'] ?? null) && preg_match('/^[0-9a-f]{32}$/D', $r['code']))
+		return $_SESSION['code_eleve'] = $r['code'];
+	return null;
+}
+
 // Difficulté (niveau 1 à 5) d'une requête libre de l'étudiant, évaluée en direct par
 // QueryCraft (la requête lui est envoyée : sans source configurée, rien n'est évalué).
 // Retourne 0 si le niveau est inconnu (requête incomplète, source absente ou injoignable).
